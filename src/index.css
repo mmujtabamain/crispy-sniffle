@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+/* Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #e5e7eb;
+  background-color: #030712;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+::selection { background-color: rgba(142, 81, 208, 0.3); color: white; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #030712; }
+::-webkit-scrollbar-thumb { background: rgba(142, 81, 208, 0.3); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(142, 81, 208, 0.5); }
+
+/* Kanban column scrollable */
+.kanban-col { max-height: calc(100vh - 220px); overflow-y: auto; }
