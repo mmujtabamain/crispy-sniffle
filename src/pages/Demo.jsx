@@ -1,31 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  AlertTriangle,
-  Check,
-  CloudUpload,
-  Copy,
-  Eraser,
-  FileDown,
-  FileUp,
-  LoaderCircle,
-  Moon,
-  Redo2,
-  Save,
-  Sparkles,
-  Sun,
-  Trash2,
-  Undo2
-} from 'lucide-react';
+import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { ToastShelf, WorkspaceHeader, WorkspaceMain, WorkspaceSidebar } from '../components/todo';
+import { formatBytes, formatRelativeDate } from '../lib/formatters';
 import {
   clearAllLocalData,
   createBackupSnapshot,
@@ -51,29 +28,6 @@ import {
 const HISTORY_LIMIT = 120;
 const TOAST_LIFETIME_MS = 3200;
 
-function formatBytes(bytes) {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-}
-
-function formatRelativeDate(isoString) {
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    }).format(new Date(isoString));
-  } catch {
-    return 'Unknown';
-  }
-}
-
 function stampWorkspace(workspace) {
   const timestamp = new Date().toISOString();
   return {
@@ -95,120 +49,6 @@ function mergeListTodos(allTodos, listId, listTodos) {
   }));
 
   return [...outsideList, ...normalized];
-}
-
-function ToastShelf({ toasts, onDismiss }) {
-  return (
-    <div className="toast-shelf" aria-live="polite" aria-atomic="true">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <motion.div
-            key={toast.id}
-            className={`toast toast-${toast.type}`}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <span>{toast.message}</span>
-            <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
-              ×
-            </button>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function SortableTodoItem({
-  todo,
-  isEditing,
-  editDraft,
-  onDraftChange,
-  onBeginEdit,
-  onCommitEdit,
-  onCancelEdit,
-  onToggle,
-  onDuplicate,
-  onDelete
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: todo.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition
-  };
-
-  return (
-    <motion.li
-      ref={setNodeRef}
-      style={style}
-      layout
-      initial={{ opacity: 0, y: 16, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.96 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`todo-item ${todo.completed ? 'todo-complete' : ''}`}
-    >
-      <button
-        type="button"
-        className="grab-handle"
-        aria-label="Reorder todo"
-        title="Drag to reorder"
-        {...attributes}
-        {...listeners}
-      >
-        ⋮⋮
-      </button>
-
-      <label className="todo-check-wrap" title="Toggle complete">
-        <input
-          type="checkbox"
-          checked={todo.completed}
-          onChange={() => onToggle(todo.id)}
-          aria-label={`Mark ${todo.text} as ${todo.completed ? 'incomplete' : 'complete'}`}
-        />
-        <span className="todo-check-mark" aria-hidden="true">
-          <Check size={14} />
-        </span>
-      </label>
-
-      <div className="todo-main" onDoubleClick={() => onBeginEdit(todo)}>
-        {isEditing ? (
-          <input
-            className="todo-edit-input"
-            value={editDraft}
-            onChange={(event) => onDraftChange(event.target.value)}
-            onBlur={onCommitEdit}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                onCommitEdit();
-              }
-              if (event.key === 'Escape') {
-                onCancelEdit();
-              }
-            }}
-            autoFocus
-            aria-label="Edit todo text"
-          />
-        ) : (
-          <button type="button" className="todo-text-button" onClick={() => onBeginEdit(todo)}>
-            <span className="todo-text">{todo.text}</span>
-          </button>
-        )}
-      </div>
-
-      <div className="todo-actions">
-        <button type="button" className="ghost-button" onClick={() => onDuplicate(todo.id)} aria-label="Duplicate todo">
-          <Copy size={15} />
-        </button>
-        <button type="button" className="ghost-button danger" onClick={() => onDelete(todo.id)} aria-label="Delete todo">
-          <Trash2 size={15} />
-        </button>
-      </div>
-    </motion.li>
-  );
 }
 
 export default function Demo() {
@@ -755,204 +595,57 @@ export default function Demo() {
 
       <ToastShelf toasts={toasts} onDismiss={dismissToast} />
 
-      <header className="workspace-header">
-        <div className="headline-wrap">
-          <p className="kicker">Tier 1 Delivery</p>
-          <h1 className="headline">Local-First Todo Atelier</h1>
-          <p className="subhead">
-            Fast single-workspace todos with versioned storage, drag-drop ordering, file export/import, and undo-safe editing.
-          </p>
-        </div>
-
-        <div className="header-controls">
-          <button type="button" className="icon-button" onClick={handleThemeToggle} aria-label="Toggle theme">
-            {workspace.preferences.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-          <button type="button" className="icon-button" onClick={handleUndo} aria-label="Undo">
-            <Undo2 size={18} />
-            <span>{pastRef.current.length}</span>
-          </button>
-          <button type="button" className="icon-button" onClick={handleRedo} aria-label="Redo">
-            <Redo2 size={18} />
-            <span>{futureRef.current.length}</span>
-          </button>
-        </div>
-      </header>
+      <WorkspaceHeader
+        theme={workspace.preferences.theme}
+        undoCount={pastRef.current.length}
+        redoCount={futureRef.current.length}
+        onThemeToggle={handleThemeToggle}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+      />
 
       <div className="workspace-grid">
-        <aside className="workspace-aside">
-          <div className="panel">
-            <h2>Workspace</h2>
-            <p className="panel-copy">{workspace.meta.title}</p>
-            <p className="meta-line">Updated {formatRelativeDate(workspace.meta.updatedAt)}</p>
-          </div>
+        <WorkspaceSidebar
+          title={workspace.meta.title}
+          updatedAtLabel={formatRelativeDate(workspace.meta.updatedAt)}
+          busyAction={busyAction}
+          autosaveMinutes={workspace.preferences.autosaveMinutes}
+          backupsCount={backups.length}
+          recentFiles={recentFiles}
+          formatRelativeDate={formatRelativeDate}
+          onOpen={handleOpenWorkspace}
+          onSave={handleSaveWorkspace}
+          onSaveAs={handleSaveWorkspaceAs}
+          onAutosaveChange={handleAutosaveIntervalChange}
+          onClearLocalData={handleClearLocalData}
+        />
 
-          <div className="panel">
-            <h2>Persistence</h2>
-            <div className="button-stack">
-              <button type="button" className="secondary-button" onClick={() => void handleOpenWorkspace()}>
-                {busyAction === 'open' ? <LoaderCircle size={16} className="spin" /> : <FileUp size={16} />} Open
-              </button>
-              <button type="button" className="secondary-button" onClick={() => void handleSaveWorkspace()}>
-                {busyAction === 'save' ? <LoaderCircle size={16} className="spin" /> : <Save size={16} />} Save
-              </button>
-              <button type="button" className="secondary-button" onClick={() => void handleSaveWorkspaceAs()}>
-                {busyAction === 'saveAs' ? <LoaderCircle size={16} className="spin" /> : <FileDown size={16} />} Save As
-              </button>
-            </div>
-          </div>
-
-          <div className="panel">
-            <h2>Auto-Backup</h2>
-            <label htmlFor="autosave-select" className="setting-label">
-              Snapshot interval
-            </label>
-            <select
-              id="autosave-select"
-              value={workspace.preferences.autosaveMinutes}
-              onChange={(event) => handleAutosaveIntervalChange(Number(event.target.value))}
-            >
-              <option value={1}>1 minute</option>
-              <option value={5}>5 minutes</option>
-              <option value={10}>10 minutes</option>
-            </select>
-            <p className="meta-line">{backups.length} local snapshots retained</p>
-          </div>
-
-          <div className="panel">
-            <h2>Recent Files</h2>
-            {recentFiles.length === 0 ? (
-              <p className="meta-line">No recent files yet.</p>
-            ) : (
-              <ul className="recent-list">
-                {recentFiles.slice(0, 5).map((entry) => (
-                  <li key={entry.id}>
-                    <span>{entry.name}</span>
-                    <small>{formatRelativeDate(entry.timestamp)}</small>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="panel danger-panel">
-            <h2>Danger Zone</h2>
-            <button type="button" className="danger-button" onClick={handleClearLocalData}>
-              <Eraser size={16} /> Clear local data
-            </button>
-          </div>
-        </aside>
-
-        <main className="workspace-main">
-          {quotaStatus.warning && (
-            <div className="warning-banner" role="status">
-              <AlertTriangle size={17} />
-              <span>
-                Storage warning: {formatBytes(quotaStatus.usedBytes)} used of about {formatBytes(quotaStatus.quotaBytes)}.
-              </span>
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="error-banner" role="alert">
-              <AlertTriangle size={17} />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          <div className="composer-row">
-            <label htmlFor="todo-input" className="sr-only">
-              New todo
-            </label>
-            <input
-              id="todo-input"
-              ref={addInputRef}
-              value={newTodoText}
-              onChange={(event) => setNewTodoText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  handleAddTodo();
-                }
-              }}
-              placeholder="Add a focused task, then press Enter"
-            />
-            <button type="button" className="primary-button" onClick={handleAddTodo}>
-              <Sparkles size={16} /> Add
-            </button>
-          </div>
-
-          <div className="stats-row" aria-label="Todo counters">
-            <div>
-              <strong>{todos.length}</strong>
-              <span>Total</span>
-            </div>
-            <div>
-              <strong>{completedCount}</strong>
-              <span>Completed</span>
-            </div>
-            <div>
-              <strong>{pendingCount}</strong>
-              <span>Open</span>
-            </div>
-            <div>
-              <strong>{formatBytes(quotaStatus.usedBytes)}</strong>
-              <span>Storage used</span>
-            </div>
-          </div>
-
-          <div className="action-row">
-            <button type="button" className="secondary-button" onClick={handleClearCompleted}>
-              <Check size={15} /> Clear completed
-            </button>
-            <button type="button" className="secondary-button" onClick={handleClearAll}>
-              <Trash2 size={15} /> Clear all
-            </button>
-          </div>
-
-          {todos.length === 0 ? (
-            <motion.div className="empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <CloudUpload size={24} />
-              <h3>Your runway is clear</h3>
-              <p>
-                Add your first todo, or load an existing workspace from local JSON or .todo files.
-              </p>
-            </motion.div>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={todos.map((todo) => todo.id)} strategy={verticalListSortingStrategy}>
-                <motion.ul className="todo-list" layout>
-                  <AnimatePresence>
-                    {todos.map((todo) => (
-                      <SortableTodoItem
-                        key={todo.id}
-                        todo={todo}
-                        isEditing={editingId === todo.id}
-                        editDraft={editingDraft}
-                        onDraftChange={setEditingDraft}
-                        onBeginEdit={handleBeginEdit}
-                        onCommitEdit={handleCommitEdit}
-                        onCancelEdit={handleCancelEdit}
-                        onToggle={handleToggleTodo}
-                        onDuplicate={handleDuplicateTodo}
-                        onDelete={handleDeleteTodo}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </motion.ul>
-              </SortableContext>
-            </DndContext>
-          )}
-
-          <footer className="shortcut-strip">
-            <span>Shortcuts:</span>
-            <kbd>Cmd/Ctrl + N</kbd>
-            <kbd>Cmd/Ctrl + S</kbd>
-            <kbd>Cmd/Ctrl + Shift + S</kbd>
-            <kbd>Cmd/Ctrl + O</kbd>
-            <kbd>Cmd/Ctrl + Z</kbd>
-            <kbd>Cmd/Ctrl + Shift + Z</kbd>
-          </footer>
-        </main>
+        <WorkspaceMain
+          composerInputRef={addInputRef}
+          quotaStatus={quotaStatus}
+          formatBytes={formatBytes}
+          errorMessage={errorMessage}
+          newTodoText={newTodoText}
+          onNewTodoTextChange={setNewTodoText}
+          onComposerEnter={handleAddTodo}
+          onAddTodo={handleAddTodo}
+          todos={todos}
+          completedCount={completedCount}
+          pendingCount={pendingCount}
+          onClearCompleted={handleClearCompleted}
+          onClearAll={handleClearAll}
+          sensors={sensors}
+          onDragEnd={handleDragEnd}
+          editingId={editingId}
+          editingDraft={editingDraft}
+          onDraftChange={setEditingDraft}
+          onBeginEdit={handleBeginEdit}
+          onCommitEdit={handleCommitEdit}
+          onCancelEdit={handleCancelEdit}
+          onToggle={handleToggleTodo}
+          onDuplicate={handleDuplicateTodo}
+          onDelete={handleDeleteTodo}
+        />
       </div>
     </section>
   );
