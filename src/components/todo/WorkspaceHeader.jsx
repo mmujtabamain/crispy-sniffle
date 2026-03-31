@@ -4,9 +4,11 @@ export default function WorkspaceHeader({
   theme,
   undoCount,
   redoCount,
+  viewMode,
   onThemeToggle,
   onUndo,
   onRedo,
+  onViewModeChange,
   activeListName,
   visibleTodoCount,
   totalListTodos
@@ -25,6 +27,24 @@ export default function WorkspaceHeader({
       </div>
 
       <div className="header-controls">
+        <div className="view-switch" role="group" aria-label="Workspace view">
+          <button
+            type="button"
+            className={`view-toggle-button ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
+          >
+            List View
+          </button>
+          <button
+            type="button"
+            className={`view-toggle-button ${viewMode === 'graph' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('graph')}
+            aria-pressed={viewMode === 'graph'}
+          >
+            Graph View
+          </button>
+        </div>
         <button type="button" className="icon-button" onClick={onThemeToggle} aria-label="Toggle theme">
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>

@@ -7,7 +7,7 @@ export const STORAGE_KEYS = {
   settings: `${APP_PREFIX}.settings`
 };
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 const MAX_BACKUPS = 20;
 const MAX_RECENT_FILES = 10;
 const STORAGE_WARNING_RATIO = 0.8;
@@ -76,6 +76,23 @@ export function createNode(label = 'Node') {
   return {
     id: makeId('node'),
     label,
+    description: '',
+    tags: [],
+    priority: 'medium',
+    status: 'todo',
+    completed: false,
+    icon: '◉',
+    shape: 'square',
+    size: 'md',
+    color: '#b08968',
+    textColor: '#2e241f',
+    borderColor: '#8a6042',
+    shadow: true,
+    opacity: 1,
+    alias: '',
+    todoId: null,
+    owner: '',
+    collapsed: false,
     x: 0,
     y: 0,
     createdAt: timestamp,
@@ -89,6 +106,7 @@ export function createEdge(from, to) {
     id: makeId('edge'),
     from,
     to,
+    type: 'curved',
     createdAt: timestamp,
     updatedAt: timestamp
   };
@@ -190,6 +208,43 @@ function migrateV1ToV2(raw) {
   };
 }
 
+function migrateV2ToV3(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return createWorkspace();
+  }
+
+  const timestamp = nowIso();
+  const graph = raw.graph && typeof raw.graph === 'object' ? raw.graph : { nodes: [], edges: [] };
+
+  return {
+    ...raw,
+    schemaVersion: 3,
+    graph: {
+      nodes: Array.isArray(graph.nodes)
+        ? graph.nodes.map((node) => ({
+            ...createNode(typeof node?.label === 'string' ? node.label : 'Node'),
+            ...node,
+            x: Number.isFinite(node?.x) ? Number(node.x) : 0,
+            y: Number.isFinite(node?.y) ? Number(node.y) : 0,
+            updatedAt: typeof node?.updatedAt === 'string' ? node.updatedAt : timestamp,
+            createdAt: typeof node?.createdAt === 'string' ? node.createdAt : timestamp
+          }))
+        : [],
+      edges: Array.isArray(graph.edges)
+        ? graph.edges.map((edge) => ({
+            ...createEdge(edge?.from || edge?.source || '', edge?.to || edge?.target || ''),
+            ...edge,
+            from: typeof edge?.from === 'string' ? edge.from : edge?.source || '',
+            to: typeof edge?.to === 'string' ? edge.to : edge?.target || '',
+            type: typeof edge?.type === 'string' ? edge.type : 'curved',
+            updatedAt: typeof edge?.updatedAt === 'string' ? edge.updatedAt : timestamp,
+            createdAt: typeof edge?.createdAt === 'string' ? edge.createdAt : timestamp
+          }))
+        : []
+    }
+  };
+}
+
 export function migrateWorkspace(rawWorkspace) {
   if (!rawWorkspace || typeof rawWorkspace !== 'object') {
     return createWorkspace();
@@ -204,6 +259,10 @@ export function migrateWorkspace(rawWorkspace) {
 
   if (initialVersion < 2) {
     nextWorkspace = migrateV1ToV2(nextWorkspace);
+  }
+
+  if (initialVersion < 3) {
+    nextWorkspace = migrateV2ToV3(nextWorkspace);
   }
 
   return {
@@ -247,6 +306,21 @@ function normalizeAttachments(value) {
       size: Number.isFinite(entry.size) ? Number(entry.size) : 0,
       previewUrl: typeof entry.previewUrl === 'string' ? entry.previewUrl : null
     }));
+}
+
+function normalizeNodeShape(value) {
+  const allowed = new Set(['circle', 'square', 'diamond', 'pill']);
+  return allowed.has(value) ? value : 'square';
+}
+
+function normalizeNodeSize(value) {
+  const allowed = new Set(['sm', 'md', 'lg']);
+  return allowed.has(value) ? value : 'md';
+}
+
+function normalizeEdgeType(value) {
+  const allowed = new Set(['curved', 'straight', 'orthogonal']);
+  return allowed.has(value) ? value : 'curved';
 }
 
 export function validateWorkspace(workspace) {
@@ -353,6 +427,23 @@ export function validateWorkspace(workspace) {
     .map((node) => ({
       id: typeof node.id === 'string' ? node.id : makeId('node'),
       label: typeof node.label === 'string' ? node.label : 'Node',
+      description: typeof node.description === 'string' ? node.description : '',
+      tags: normalizeStringArray(node.tags),
+      priority: TODO_PRIORITIES.includes(node.priority) ? node.priority : 'medium',
+      status: TODO_STATUSES.includes(node.status) ? node.status : 'todo',
+      completed: Boolean(node.completed),
+      icon: typeof node.icon === 'string' && node.icon.trim() ? node.icon.trim().slice(0, 2) : '◉',
+      shape: normalizeNodeShape(node.shape),
+      size: normalizeNodeSize(node.size),
+      color: typeof node.color === 'string' && node.color.trim() ? node.color.trim() : '#b08968',
+      textColor: typeof node.textColor === 'string' && node.textColor.trim() ? node.textColor.trim() : '#2e241f',
+      borderColor: typeof node.borderColor === 'string' && node.borderColor.trim() ? node.borderColor.trim() : '#8a6042',
+      shadow: Boolean(node.shadow ?? true),
+      opacity: Number.isFinite(node.opacity) ? Math.max(0.15, Math.min(1, Number(node.opacity))) : 1,
+      alias: typeof node.alias === 'string' ? node.alias : '',
+      todoId: typeof node.todoId === 'string' && node.todoId.trim() ? node.todoId : null,
+      owner: typeof node.owner === 'string' ? node.owner : '',
+      collapsed: Boolean(node.collapsed),
       x: Number.isFinite(node.x) ? Number(node.x) : 0,
       y: Number.isFinite(node.y) ? Number(node.y) : 0,
       createdAt: typeof node.createdAt === 'string' ? node.createdAt : nowIso(),
@@ -365,8 +456,9 @@ export function validateWorkspace(workspace) {
     .filter((edge) => edge && typeof edge === 'object')
     .map((edge) => ({
       id: typeof edge.id === 'string' ? edge.id : makeId('edge'),
-      from: typeof edge.from === 'string' ? edge.from : '',
-      to: typeof edge.to === 'string' ? edge.to : '',
+      from: typeof edge.from === 'string' ? edge.from : typeof edge.source === 'string' ? edge.source : '',
+      to: typeof edge.to === 'string' ? edge.to : typeof edge.target === 'string' ? edge.target : '',
+      type: normalizeEdgeType(edge.type),
       createdAt: typeof edge.createdAt === 'string' ? edge.createdAt : nowIso(),
       updatedAt: typeof edge.updatedAt === 'string' ? edge.updatedAt : nowIso()
     }))

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import {
+  GraphWorkspace,
   ToastShelf,
   WorkspaceHeader,
   WorkspaceMain,
@@ -162,6 +163,7 @@ export default function Demo() {
   const [savedFilters, setSavedFilters] = useState(boot.savedFilters);
 
   const [showArchivedLists, setShowArchivedLists] = useState(false);
+  const [viewMode, setViewMode] = useState('list');
   const [importMode, setImportMode] = useState('merge');
   const [importPreviews, setImportPreviews] = useState([]);
 
@@ -1395,6 +1397,35 @@ export default function Demo() {
     setContextMenu({ todoId, x, y });
   }
 
+  function handleGraphChange(nextGraphOrUpdater, { recordHistory = true } = {}) {
+    commitWorkspace(
+      (prevWorkspace) => {
+        const currentGraph = prevWorkspace.graph || { nodes: [], edges: [] };
+        const nextGraph =
+          typeof nextGraphOrUpdater === 'function' ? nextGraphOrUpdater(currentGraph) : nextGraphOrUpdater;
+
+        return {
+          ...prevWorkspace,
+          graph: nextGraph
+        };
+      },
+      { recordHistory }
+    );
+  }
+
+  function handleJumpToTodo(todoId) {
+    const todo = workspace.todos.find((entry) => entry.id === todoId);
+    if (!todo) {
+      notify('warning', 'Linked todo could not be found.');
+      return;
+    }
+
+    setViewMode('list');
+    setActiveListId(todo.listId);
+    setFocusedTodoId(todo.id);
+    setSelectedTodoIds([todo.id]);
+  }
+
   function handleContextAction(action, todoId) {
     setContextMenu(null);
 
@@ -1617,9 +1648,11 @@ export default function Demo() {
         theme={workspace.preferences.theme}
         undoCount={pastRef.current.length}
         redoCount={futureRef.current.length}
+        viewMode={viewMode}
         onThemeToggle={handleThemeToggle}
         onUndo={handleUndo}
         onRedo={handleRedo}
+        onViewModeChange={setViewMode}
         activeListName={activeList?.name || 'Untitled list'}
         visibleTodoCount={filteredTodos.length}
         totalListTodos={listTodos.length}
@@ -1671,72 +1704,82 @@ export default function Demo() {
           onExportImages={handleExportImages}
         />
 
-        <WorkspaceMain
-          composerInputRef={addInputRef}
-          quotaStatus={quotaStatus}
-          formatBytes={formatBytes}
-          errorMessage={errorMessage}
-          activeListName={activeList?.name || 'Current list'}
-          newTodoText={newTodoText}
-          onNewTodoTextChange={setNewTodoText}
-          onComposerEnter={handleAddTodo}
-          onAddTodo={handleAddTodo}
-          quickPriority={quickPriority}
-          onQuickPriorityChange={setQuickPriority}
-          quickDueDate={quickDueDate}
-          onQuickDueDateChange={setQuickDueDate}
-          quickTags={quickTags}
-          onQuickTagsChange={setQuickTags}
-          todos={filteredTodos}
-          allListTodosCount={listTodos.length}
-          completedCount={completedCount}
-          pendingCount={pendingCount}
-          archivedCount={archivedCount}
-          selectedTodoIds={selectedTodoIds}
-          onToggleSelect={handleToggleSelect}
-          onSelectAllFiltered={handleSelectAllFiltered}
-          onClearSelection={handleClearSelection}
-          onClearCompleted={handleClearCompleted}
-          onArchiveCompleted={handleArchiveCompleted}
-          onClearAll={handleClearAll}
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          onClearFilters={handleClearFilters}
-          availableTags={availableTags}
-          savedFilters={savedFilters}
-          onSaveCurrentFilters={handleSaveCurrentFilters}
-          onApplySavedFilter={handleApplySavedFilter}
-          onDeleteSavedFilter={handleDeleteSavedFilter}
-          sensors={sensors}
-          onDragEnd={handleDragEnd}
-          dragDisabled={dragDisabled}
-          editingId={editingId}
-          editingDraft={editingDraft}
-          onDraftChange={setEditingDraft}
-          onBeginEdit={handleBeginEdit}
-          onCommitEdit={handleCommitEdit}
-          onCancelEdit={handleCancelEdit}
-          onToggle={handleToggleTodo}
-          onDuplicate={handleDuplicateTodo}
-          onArchive={handleArchiveTodo}
-          onRestore={handleRestoreTodo}
-          onDelete={handleDeleteTodo}
-          onOpenContextMenu={handleOpenContextMenu}
-          focusedTodo={focusedTodo}
-          timer={timer}
-          onPatchTodo={handlePatchTodo}
-          onAddSubtask={handleAddSubtask}
-          onToggleSubtask={handleToggleSubtask}
-          onDeleteSubtask={handleDeleteSubtask}
-          onAttachFiles={handleAttachFiles}
-          onStartTimer={handleStartTimer}
-          onStopTimer={handleStopTimer}
-          onResetTimer={handleResetTimer}
-          onBulkSetPriority={handleBulkSetPriority}
-          onBulkDelete={handleBulkDelete}
-          onBulkArchive={handleBulkArchive}
-          onFocusTodo={setFocusedTodoId}
-        />
+        {viewMode === 'graph' ? (
+          <GraphWorkspace
+            graph={workspace.graph}
+            todos={workspace.todos}
+            onGraphChange={handleGraphChange}
+            onNotify={notify}
+            onJumpToTodo={handleJumpToTodo}
+          />
+        ) : (
+          <WorkspaceMain
+            composerInputRef={addInputRef}
+            quotaStatus={quotaStatus}
+            formatBytes={formatBytes}
+            errorMessage={errorMessage}
+            activeListName={activeList?.name || 'Current list'}
+            newTodoText={newTodoText}
+            onNewTodoTextChange={setNewTodoText}
+            onComposerEnter={handleAddTodo}
+            onAddTodo={handleAddTodo}
+            quickPriority={quickPriority}
+            onQuickPriorityChange={setQuickPriority}
+            quickDueDate={quickDueDate}
+            onQuickDueDateChange={setQuickDueDate}
+            quickTags={quickTags}
+            onQuickTagsChange={setQuickTags}
+            todos={filteredTodos}
+            allListTodosCount={listTodos.length}
+            completedCount={completedCount}
+            pendingCount={pendingCount}
+            archivedCount={archivedCount}
+            selectedTodoIds={selectedTodoIds}
+            onToggleSelect={handleToggleSelect}
+            onSelectAllFiltered={handleSelectAllFiltered}
+            onClearSelection={handleClearSelection}
+            onClearCompleted={handleClearCompleted}
+            onArchiveCompleted={handleArchiveCompleted}
+            onClearAll={handleClearAll}
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            availableTags={availableTags}
+            savedFilters={savedFilters}
+            onSaveCurrentFilters={handleSaveCurrentFilters}
+            onApplySavedFilter={handleApplySavedFilter}
+            onDeleteSavedFilter={handleDeleteSavedFilter}
+            sensors={sensors}
+            onDragEnd={handleDragEnd}
+            dragDisabled={dragDisabled}
+            editingId={editingId}
+            editingDraft={editingDraft}
+            onDraftChange={setEditingDraft}
+            onBeginEdit={handleBeginEdit}
+            onCommitEdit={handleCommitEdit}
+            onCancelEdit={handleCancelEdit}
+            onToggle={handleToggleTodo}
+            onDuplicate={handleDuplicateTodo}
+            onArchive={handleArchiveTodo}
+            onRestore={handleRestoreTodo}
+            onDelete={handleDeleteTodo}
+            onOpenContextMenu={handleOpenContextMenu}
+            focusedTodo={focusedTodo}
+            timer={timer}
+            onPatchTodo={handlePatchTodo}
+            onAddSubtask={handleAddSubtask}
+            onToggleSubtask={handleToggleSubtask}
+            onDeleteSubtask={handleDeleteSubtask}
+            onAttachFiles={handleAttachFiles}
+            onStartTimer={handleStartTimer}
+            onStopTimer={handleStopTimer}
+            onResetTimer={handleResetTimer}
+            onBulkSetPriority={handleBulkSetPriority}
+            onBulkDelete={handleBulkDelete}
+            onBulkArchive={handleBulkArchive}
+            onFocusTodo={setFocusedTodoId}
+          />
+        )}
       </div>
 
       {contextMenu && (
