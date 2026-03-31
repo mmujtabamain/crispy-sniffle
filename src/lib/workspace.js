@@ -7,11 +7,14 @@ export const STORAGE_KEYS = {
   settings: `${APP_PREFIX}.settings`
 };
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 const MAX_BACKUPS = 20;
 const MAX_RECENT_FILES = 10;
 const STORAGE_WARNING_RATIO = 0.8;
 const DEFAULT_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024;
+const TODO_PRIORITIES = ['low', 'medium', 'high', 'critical'];
+const TODO_STATUSES = ['todo', 'doing', 'done', 'blocked'];
+const TODO_RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
 
 function nowIso() {
   return new Date().toISOString();
@@ -29,23 +32,42 @@ export function createList(name = 'Inbox') {
   return {
     id: makeId('list'),
     name,
-    icon: 'inbox',
+    icon: '📥',
+    color: '#b08968',
+    archived: false,
+    archivedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     order: 0
   };
 }
 
-export function createTodo(text, listId) {
+export function createTodo(text, listId, overrides = {}) {
   const timestamp = nowIso();
   return {
     id: makeId('todo'),
     listId,
     text: text.trim(),
     completed: false,
+    priority: 'medium',
+    tags: [],
+    dueDate: null,
+    recurrence: 'none',
+    description: '',
+    subtasks: [],
+    status: 'todo',
+    estimateMinutes: null,
+    actualMinutes: 0,
+    notes: '',
+    links: [],
+    attachments: [],
+    category: '',
+    archived: false,
+    archivedAt: null,
     createdAt: timestamp,
     updatedAt: timestamp,
-    order: 0
+    order: 0,
+    ...overrides
   };
 }
 
@@ -87,7 +109,8 @@ export function createWorkspace() {
     },
     preferences: {
       theme: 'light',
-      autosaveMinutes: 5
+      autosaveMinutes: 5,
+      activeListId: defaultList.id
     },
     lists: [{ ...defaultList, order: 0 }],
     todos: [],
@@ -123,6 +146,50 @@ function migrateV0ToV1(raw) {
   return base;
 }
 
+function migrateV1ToV2(raw) {
+  if (!raw || typeof raw !== 'object') {
+    return createWorkspace();
+  }
+
+  const timestamp = nowIso();
+  const lists = Array.isArray(raw.lists) ? raw.lists : [];
+  const fallbackListId = lists[0]?.id || createList('Inbox').id;
+
+  return {
+    ...raw,
+    schemaVersion: 2,
+    preferences: {
+      ...(raw.preferences || {}),
+      activeListId: raw.preferences?.activeListId || fallbackListId
+    },
+    lists: lists.map((list, index) => ({
+      icon: '📋',
+      color: '#b08968',
+      archived: false,
+      archivedAt: null,
+      order: index,
+      ...list,
+      updatedAt: list?.updatedAt || timestamp
+    })),
+    todos: Array.isArray(raw.todos)
+      ? raw.todos.map((todo, index) => ({
+          ...createTodo(todo?.text || 'Untitled task', todo?.listId || fallbackListId),
+          ...todo,
+          priority: TODO_PRIORITIES.includes(todo?.priority) ? todo.priority : 'medium',
+          status: TODO_STATUSES.includes(todo?.status) ? todo.status : 'todo',
+          recurrence: TODO_RECURRENCES.includes(todo?.recurrence) ? todo.recurrence : 'none',
+          tags: Array.isArray(todo?.tags) ? todo.tags : [],
+          links: Array.isArray(todo?.links) ? todo.links : [],
+          subtasks: Array.isArray(todo?.subtasks) ? todo.subtasks : [],
+          attachments: Array.isArray(todo?.attachments) ? todo.attachments : [],
+          order: Number.isFinite(todo?.order) ? Number(todo.order) : index,
+          archived: Boolean(todo?.archived),
+          archivedAt: typeof todo?.archivedAt === 'string' ? todo.archivedAt : null
+        }))
+      : []
+  };
+}
+
 export function migrateWorkspace(rawWorkspace) {
   if (!rawWorkspace || typeof rawWorkspace !== 'object') {
     return createWorkspace();
@@ -135,10 +202,51 @@ export function migrateWorkspace(rawWorkspace) {
     nextWorkspace = migrateV0ToV1(nextWorkspace);
   }
 
+  if (initialVersion < 2) {
+    nextWorkspace = migrateV1ToV2(nextWorkspace);
+  }
+
   return {
     ...nextWorkspace,
     schemaVersion: CURRENT_SCHEMA_VERSION
   };
+}
+
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter(Boolean);
+}
+
+function normalizeSubtasks(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      id: typeof entry.id === 'string' ? entry.id : makeId('subtask'),
+      text: typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : 'Untitled subtask',
+      completed: Boolean(entry.completed)
+    }));
+}
+
+function normalizeAttachments(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((entry) => entry && typeof entry === 'object')
+    .map((entry) => ({
+      id: typeof entry.id === 'string' ? entry.id : makeId('attachment'),
+      name: typeof entry.name === 'string' ? entry.name : 'attachment',
+      type: typeof entry.type === 'string' ? entry.type : 'application/octet-stream',
+      size: Number.isFinite(entry.size) ? Number(entry.size) : 0,
+      previewUrl: typeof entry.previewUrl === 'string' ? entry.previewUrl : null
+    }));
 }
 
 export function validateWorkspace(workspace) {
@@ -152,15 +260,18 @@ export function validateWorkspace(workspace) {
   }
 
   const migrated = migrateWorkspace(workspace);
+  const baselineWorkspace = createWorkspace();
+  const baselineMeta = baselineWorkspace.meta;
+  const baselinePreferences = baselineWorkspace.preferences;
   const safeWorkspace = {
-    ...createWorkspace(),
+    ...baselineWorkspace,
     ...migrated,
     meta: {
-      ...createWorkspace().meta,
+      ...baselineMeta,
       ...(migrated.meta || {})
     },
     preferences: {
-      ...createWorkspace().preferences,
+      ...baselinePreferences,
       ...(migrated.preferences || {})
     },
     graph: {
@@ -178,7 +289,10 @@ export function validateWorkspace(workspace) {
       .map((list, index) => ({
         id: typeof list.id === 'string' ? list.id : makeId('list'),
         name: list.name.trim() || `List ${index + 1}`,
-        icon: typeof list.icon === 'string' ? list.icon : 'list',
+        icon: typeof list.icon === 'string' && list.icon.trim() ? list.icon.trim() : '📋',
+        color: typeof list.color === 'string' && list.color.trim() ? list.color.trim() : '#b08968',
+        archived: Boolean(list.archived),
+        archivedAt: typeof list.archivedAt === 'string' ? list.archivedAt : null,
         createdAt: typeof list.createdAt === 'string' ? list.createdAt : nowIso(),
         updatedAt: typeof list.updatedAt === 'string' ? list.updatedAt : nowIso(),
         order: Number.isFinite(list.order) ? Number(list.order) : index
@@ -207,11 +321,31 @@ export function validateWorkspace(workspace) {
           listId: resolvedListId,
           text: todo.text.trim() || 'Untitled task',
           completed: Boolean(todo.completed),
+          priority: TODO_PRIORITIES.includes(todo.priority) ? todo.priority : 'medium',
+          tags: normalizeStringArray(todo.tags),
+          dueDate: typeof todo.dueDate === 'string' && todo.dueDate.trim() ? todo.dueDate : null,
+          recurrence: TODO_RECURRENCES.includes(todo.recurrence) ? todo.recurrence : 'none',
+          description: typeof todo.description === 'string' ? todo.description : '',
+          subtasks: normalizeSubtasks(todo.subtasks),
+          status: TODO_STATUSES.includes(todo.status) ? todo.status : 'todo',
+          estimateMinutes: Number.isFinite(todo.estimateMinutes) ? Number(todo.estimateMinutes) : null,
+          actualMinutes: Number.isFinite(todo.actualMinutes) ? Number(todo.actualMinutes) : 0,
+          notes: typeof todo.notes === 'string' ? todo.notes : '',
+          links: normalizeStringArray(todo.links),
+          attachments: normalizeAttachments(todo.attachments),
+          category: typeof todo.category === 'string' ? todo.category : '',
+          archived: Boolean(todo.archived),
+          archivedAt: typeof todo.archivedAt === 'string' ? todo.archivedAt : null,
           createdAt: typeof todo.createdAt === 'string' ? todo.createdAt : nowIso(),
           updatedAt: typeof todo.updatedAt === 'string' ? todo.updatedAt : nowIso(),
           order: Number.isFinite(todo.order) ? Number(todo.order) : index
         };
       });
+  }
+
+  const validListIdsAfterValidation = new Set(safeWorkspace.lists.map((list) => list.id));
+  if (!validListIdsAfterValidation.has(safeWorkspace.preferences.activeListId)) {
+    safeWorkspace.preferences.activeListId = safeWorkspace.lists[0].id;
   }
 
   safeWorkspace.graph.nodes = safeWorkspace.graph.nodes

@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
-import { Check, Copy, Trash2 } from 'lucide-react';
+import { Archive, Check, Copy, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 
 export default function SortableTodoItem({
   todo,
@@ -11,11 +11,21 @@ export default function SortableTodoItem({
   onBeginEdit,
   onCommitEdit,
   onCancelEdit,
+  isSelected,
+  onSelect,
   onToggle,
   onDuplicate,
-  onDelete
+  onArchive,
+  onRestore,
+  onDelete,
+  onFocus,
+  onOpenContextMenu,
+  dragDisabled
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: todo.id });
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: todo.id,
+    disabled: dragDisabled
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -31,13 +41,28 @@ export default function SortableTodoItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.96 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`todo-item ${todo.completed ? 'todo-complete' : ''}`}
+      className={`todo-item ${todo.completed ? 'todo-complete' : ''} ${todo.archived ? 'todo-archived' : ''} ${isSelected ? 'todo-selected' : ''}`}
+      onClick={() => onFocus(todo.id)}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onOpenContextMenu(todo.id, event.clientX, event.clientY);
+      }}
     >
+      <label className="select-wrap" title="Select todo">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onSelect(todo.id)}
+          aria-label={`Select ${todo.text}`}
+        />
+      </label>
+
       <button
         type="button"
         className="grab-handle"
         aria-label="Reorder todo"
-        title="Drag to reorder"
+        title={dragDisabled ? 'Enable manual sort with no active filters to reorder' : 'Drag to reorder'}
+        disabled={dragDisabled}
         {...attributes}
         {...listeners}
       >
@@ -79,14 +104,49 @@ export default function SortableTodoItem({
             <span className="todo-text">{todo.text}</span>
           </button>
         )}
+
+        <div className="todo-meta">
+          <span className={`pill priority-${todo.priority}`}>{todo.priority}</span>
+          <span className={`pill status-${todo.status}`}>{todo.status}</span>
+          {todo.dueDate && <span className="pill due-pill">Due {todo.dueDate}</span>}
+          {(todo.tags || []).slice(0, 3).map((tag) => (
+            <span key={`${todo.id}-${tag}`} className="pill tag-pill">
+              #{tag}
+            </span>
+          ))}
+          {todo.tags?.length > 3 && <span className="pill tag-pill">+{todo.tags.length - 3}</span>}
+        </div>
       </div>
 
       <div className="todo-actions">
         <button type="button" className="ghost-button" onClick={() => onDuplicate(todo.id)} aria-label="Duplicate todo">
           <Copy size={15} />
         </button>
+
+        {todo.archived ? (
+          <button type="button" className="ghost-button" onClick={() => onRestore(todo.id)} aria-label="Restore todo">
+            <RotateCcw size={15} />
+          </button>
+        ) : (
+          <button type="button" className="ghost-button" onClick={() => onArchive(todo.id)} aria-label="Archive todo">
+            <Archive size={15} />
+          </button>
+        )}
+
         <button type="button" className="ghost-button danger" onClick={() => onDelete(todo.id)} aria-label="Delete todo">
           <Trash2 size={15} />
+        </button>
+
+        <button
+          type="button"
+          className="ghost-button"
+          onClick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            onOpenContextMenu(todo.id, rect.left + rect.width / 2, rect.bottom + 8);
+          }}
+          aria-label="More actions"
+        >
+          <MoreHorizontal size={15} />
         </button>
       </div>
     </motion.li>
