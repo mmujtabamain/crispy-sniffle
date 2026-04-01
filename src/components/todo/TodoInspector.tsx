@@ -1,12 +1,32 @@
 import { Clock3, Link as LinkIcon, Pause, Play, Plus, TimerReset, Trash2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Attachment, Subtask, Todo } from '../../lib/workspace';
 
-function toTagString(tags) {
+interface TimerState {
+  todoId: string | null;
+  running: boolean;
+  remainingSec: number;
+}
+
+interface TodoInspectorProps {
+  todo: Todo | null;
+  timer: TimerState;
+  onPatch: (todoId: string, patch: Partial<Todo>) => void;
+  onAddSubtask: (todoId: string, text: string) => void;
+  onToggleSubtask: (todoId: string, subtaskId: string) => void;
+  onDeleteSubtask: (todoId: string, subtaskId: string) => void;
+  onAttachFiles: (todoId: string, files: File[]) => Promise<void>;
+  onStartTimer: (todoId: string) => void;
+  onStopTimer: () => void;
+  onResetTimer: () => void;
+}
+
+function toTagString(tags: string[]): string {
   return (tags || []).join(', ');
 }
 
-function toLinksString(links) {
+function toLinksString(links: string[]): string {
   return (links || []).join('\n');
 }
 
@@ -21,7 +41,7 @@ export default function TodoInspector({
   onStartTimer,
   onStopTimer,
   onResetTimer
-}) {
+}: TodoInspectorProps) {
   if (!todo) {
     return (
       <aside className="inspector-panel">
@@ -39,7 +59,7 @@ export default function TodoInspector({
         Title
         <input
           value={todo.text}
-          onChange={(event) => onPatch(todo.id, { text: event.target.value })}
+            onChange={(event) => onPatch(todo.id, { text: event.target.value })}
           placeholder="Task title"
         />
       </label>
@@ -49,7 +69,7 @@ export default function TodoInspector({
           Priority
           <select
             value={todo.priority}
-            onChange={(event) => onPatch(todo.id, { priority: event.target.value })}
+            onChange={(event) => onPatch(todo.id, { priority: event.target.value as Todo['priority'] })}
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -62,7 +82,7 @@ export default function TodoInspector({
           Status
           <select
             value={todo.status}
-            onChange={(event) => onPatch(todo.id, { status: event.target.value })}
+            onChange={(event) => onPatch(todo.id, { status: event.target.value as Todo['status'] })}
           >
             <option value="todo">Todo</option>
             <option value="doing">Doing</option>
@@ -86,7 +106,7 @@ export default function TodoInspector({
           Recurring
           <select
             value={todo.recurrence}
-            onChange={(event) => onPatch(todo.id, { recurrence: event.target.value })}
+            onChange={(event) => onPatch(todo.id, { recurrence: event.target.value as Todo['recurrence'] })}
           >
             <option value="none">None</option>
             <option value="daily">Daily</option>
@@ -114,7 +134,7 @@ export default function TodoInspector({
               onPatch(todo.id, {
                 tags: event.target.value
                   .split(',')
-                  .map((tag) => tag.trim())
+                  .map((tag: string) => tag.trim())
                   .filter(Boolean)
               })
             }
@@ -171,7 +191,7 @@ export default function TodoInspector({
             onPatch(todo.id, {
               links: event.target.value
                 .split(/\r?\n/)
-                .map((line) => line.trim())
+                .map((line: string) => line.trim())
                 .filter(Boolean)
             })
           }
@@ -180,7 +200,7 @@ export default function TodoInspector({
       </label>
 
       <div className="inspector-links">
-        {(todo.links || []).map((link) => (
+        {(todo.links || []).map((link: string) => (
           <a key={link} href={link} target="_blank" rel="noreferrer">
             <LinkIcon size={13} /> {link}
           </a>
@@ -221,7 +241,7 @@ export default function TodoInspector({
           </button>
         </div>
         <ul className="subtask-list">
-          {(todo.subtasks || []).map((subtask) => (
+          {(todo.subtasks || []).map((subtask: Subtask) => (
             <li key={subtask.id}>
               <label>
                 <input
@@ -260,7 +280,7 @@ export default function TodoInspector({
         </div>
 
         <ul className="attachment-list">
-          {(todo.attachments || []).map((attachment) => (
+          {(todo.attachments || []).map((attachment: Attachment) => (
             <li key={attachment.id}>
               <div>
                 <strong>{attachment.name}</strong>

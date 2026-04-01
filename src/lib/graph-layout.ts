@@ -1,51 +1,76 @@
 import dagre from 'dagre';
 import { createEdge, createNode, makeId } from './workspace';
+import type { Graph, GraphEdge, GraphNode } from './workspace';
 
-const NODE_SIZES = {
+interface NodeDimensions {
+  width: number;
+  height: number;
+}
+
+interface GraphSvgOptions {
+  title?: string;
+}
+
+const NODE_SIZES: Record<'sm' | 'md' | 'lg', NodeDimensions> = {
   sm: { width: 152, height: 74 },
   md: { width: 198, height: 96 },
   lg: { width: 246, height: 118 }
 };
 
-const EDGE_TYPES = new Set(['curved', 'straight', 'orthogonal']);
-
-function nowIso() {
+function nowIso(): string {
   return new Date().toISOString();
 }
 
-/**
- * @param {'sm'|'md'|'lg'} [size] - Graph node size token.
- * @returns {{width:number,height:number}} Pixel dimensions used by layout/rendering.
- */
-export function nodeSizeToDimensions(size = 'md') {
-  return NODE_SIZES[size] || NODE_SIZES.md;
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
-/**
- * @param {object} graph - Candidate graph payload with `nodes` and `edges` arrays.
- * @returns {{nodes:Array<object>, edges:Array<object>}} Sanitized graph structure.
- */
-export function normalizeGraph(graph) {
-  const base = graph && typeof graph === 'object' ? graph : { nodes: [], edges: [] };
+export function nodeSizeToDimensions(size: string = 'md'): NodeDimensions {
+  if (size === 'sm' || size === 'md' || size === 'lg') {
+    return NODE_SIZES[size];
+  }
+  return NODE_SIZES.md;
+}
 
-  const nodes = (Array.isArray(base.nodes) ? base.nodes : [])
-    .filter((node) => node && typeof node === 'object')
-    .map((node, index) => {
+export function normalizeGraph(graph: unknown): Graph {
+  const base = asRecord(graph);
+  const nodeRows = Array.isArray(base.nodes) ? base.nodes : [];
+  const edgeRows = Array.isArray(base.edges) ? base.edges : [];
+
+  const nodes: GraphNode[] = nodeRows
+    .filter((node) => typeof node === 'object' && node !== null)
+    .map((nodeValue, index) => {
+      const node = asRecord(nodeValue);
       const built = createNode(typeof node.label === 'string' ? node.label : `Node ${index + 1}`);
       return {
         ...built,
         ...node,
         id: typeof node.id === 'string' ? node.id : makeId('node'),
-        label: typeof node.label === 'string' && node.label.trim() ? node.label.trim() : `Node ${index + 1}`,
-        shape: ['circle', 'square', 'diamond', 'pill'].includes(node.shape) ? node.shape : 'square',
-        size: ['sm', 'md', 'lg'].includes(node.size) ? node.size : 'md',
+        label:
+          typeof node.label === 'string' && node.label.trim()
+            ? node.label.trim()
+            : `Node ${index + 1}`,
+        shape:
+          node.shape === 'circle' || node.shape === 'square' || node.shape === 'diamond' || node.shape === 'pill'
+            ? node.shape
+            : 'square',
+        size: node.size === 'sm' || node.size === 'md' || node.size === 'lg' ? node.size : 'md',
         color: typeof node.color === 'string' && node.color.trim() ? node.color : built.color,
-        textColor: typeof node.textColor === 'string' && node.textColor.trim() ? node.textColor : built.textColor,
-        borderColor: typeof node.borderColor === 'string' && node.borderColor.trim() ? node.borderColor : built.borderColor,
-        x: Number.isFinite(node.x) ? Number(node.x) : 0,
-        y: Number.isFinite(node.y) ? Number(node.y) : 0,
-        tags: Array.isArray(node.tags) ? node.tags.map((tag) => String(tag).trim()).filter(Boolean) : [],
-        opacity: Number.isFinite(node.opacity) ? Math.max(0.15, Math.min(1, Number(node.opacity))) : 1,
+        textColor:
+          typeof node.textColor === 'string' && node.textColor.trim() ? node.textColor : built.textColor,
+        borderColor:
+          typeof node.borderColor === 'string' && node.borderColor.trim()
+            ? node.borderColor
+            : built.borderColor,
+        x: typeof node.x === 'number' && Number.isFinite(node.x) ? node.x : 0,
+        y: typeof node.y === 'number' && Number.isFinite(node.y) ? node.y : 0,
+        tags: Array.isArray(node.tags)
+          ? node.tags.map((tag) => String(tag).trim()).filter(Boolean)
+          : [],
+        opacity:
+          typeof node.opacity === 'number' && Number.isFinite(node.opacity)
+            ? Math.max(0.15, Math.min(1, node.opacity))
+            : 1,
         collapsed: Boolean(node.collapsed),
         completed: Boolean(node.completed),
         createdAt: typeof node.createdAt === 'string' ? node.createdAt : nowIso(),
@@ -53,20 +78,36 @@ export function normalizeGraph(graph) {
       };
     });
 
-  const nodeIds = new Set(nodes.map((node) => node.id));
+  const nodeIds: Set<string> = new Set(nodes.map((node) => node.id));
 
-  const edges = (Array.isArray(base.edges) ? base.edges : [])
-    .filter((edge) => edge && typeof edge === 'object')
-    .map((edge) => {
-      const from = typeof edge.from === 'string' ? edge.from : typeof edge.source === 'string' ? edge.source : '';
-      const to = typeof edge.to === 'string' ? edge.to : typeof edge.target === 'string' ? edge.target : '';
+  const edges: GraphEdge[] = edgeRows
+    .filter((edge) => typeof edge === 'object' && edge !== null)
+    .map((edgeValue) => {
+      const edge = asRecord(edgeValue);
+      const from =
+        typeof edge.from === 'string'
+          ? edge.from
+          : typeof edge.source === 'string'
+            ? edge.source
+            : '';
+      const to =
+        typeof edge.to === 'string'
+          ? edge.to
+          : typeof edge.target === 'string'
+            ? edge.target
+            : '';
+
       return {
         ...createEdge(from, to),
         ...edge,
         id: typeof edge.id === 'string' ? edge.id : makeId('edge'),
         from,
         to,
-        type: EDGE_TYPES.has(edge.type) ? edge.type : 'curved',
+        type: (
+          edge.type === 'straight' || edge.type === 'orthogonal' || edge.type === 'curved'
+            ? edge.type
+            : 'curved'
+        ) as GraphEdge['type'],
         createdAt: typeof edge.createdAt === 'string' ? edge.createdAt : nowIso(),
         updatedAt: typeof edge.updatedAt === 'string' ? edge.updatedAt : nowIso()
       };
@@ -76,11 +117,7 @@ export function normalizeGraph(graph) {
   return { nodes, edges };
 }
 
-/**
- * @param {string} type - Internal graph edge type.
- * @returns {'smoothstep'|'straight'|'step'} React Flow edge type.
- */
-export function graphEdgeTypeToFlow(type) {
+export function graphEdgeTypeToFlow(type: string): 'smoothstep' | 'straight' | 'step' {
   if (type === 'straight') {
     return 'straight';
   }
@@ -90,11 +127,7 @@ export function graphEdgeTypeToFlow(type) {
   return 'smoothstep';
 }
 
-/**
- * @param {string} type - React Flow edge type.
- * @returns {'curved'|'straight'|'orthogonal'} Internal graph edge type.
- */
-export function flowEdgeTypeToGraph(type) {
+export function flowEdgeTypeToGraph(type: string): 'curved' | 'straight' | 'orthogonal' {
   if (type === 'straight') {
     return 'straight';
   }
@@ -104,13 +137,13 @@ export function flowEdgeTypeToGraph(type) {
   return 'curved';
 }
 
-function hasPath(adjacency, start, goal) {
+function hasPath(adjacency: Map<string, string[]>, start: string, goal: string): boolean {
   if (start === goal) {
     return true;
   }
 
-  const visited = new Set();
-  const queue = [start];
+  const visited: Set<string> = new Set();
+  const queue: string[] = [start];
 
   while (queue.length > 0) {
     const current = queue.shift();
@@ -134,13 +167,7 @@ function hasPath(adjacency, start, goal) {
   return false;
 }
 
-/**
- * @param {Array<object>} edges - Current edge collection containing `from` and `to` node ids.
- * @param {string} from - Source node id for the candidate edge.
- * @param {string} to - Target node id for the candidate edge.
- * @returns {boolean} True when adding the edge would create a cycle.
- */
-export function wouldCreateCycle(edges, from, to) {
+export function wouldCreateCycle(edges: GraphEdge[], from: string, to: string): boolean {
   if (!from || !to) {
     return false;
   }
@@ -148,7 +175,7 @@ export function wouldCreateCycle(edges, from, to) {
     return true;
   }
 
-  const adjacency = new Map();
+  const adjacency: Map<string, string[]> = new Map();
   edges.forEach((edge) => {
     const list = adjacency.get(edge.from) || [];
     list.push(edge.to);
@@ -161,13 +188,8 @@ export function wouldCreateCycle(edges, from, to) {
   return hasPath(adjacency, to, from);
 }
 
-/**
- * @param {Array<object>} nodes - Graph nodes.
- * @param {number} [columns] - Grid columns count.
- * @returns {Array<object>} Nodes with recalculated x/y positions.
- */
-export function arrangeNodesGrid(nodes, columns = 4) {
-  const safeColumns = Math.max(1, Number(columns) || 4);
+export function arrangeNodesGrid(nodes: GraphNode[], columns: number = 4): GraphNode[] {
+  const safeColumns = Math.max(1, Math.floor(columns || 4));
   return nodes.map((node, index) => {
     const size = nodeSizeToDimensions(node.size);
     return {
@@ -179,12 +201,7 @@ export function arrangeNodesGrid(nodes, columns = 4) {
   });
 }
 
-/**
- * @param {Array<object>} nodes - Graph nodes.
- * @param {Array<object>} edges - Graph edges.
- * @returns {Array<object>} Node list with dagre hierarchical positions.
- */
-export function autoLayoutHierarchical(nodes, edges) {
+export function autoLayoutHierarchical(nodes: GraphNode[], edges: GraphEdge[]): GraphNode[] {
   if (nodes.length === 0) {
     return [];
   }
@@ -207,7 +224,7 @@ export function autoLayoutHierarchical(nodes, edges) {
   dagre.layout(graph);
 
   return nodes.map((node) => {
-    const positioned = graph.node(node.id);
+    const positioned = graph.node(node.id) as { x: number; y: number } | undefined;
     const size = nodeSizeToDimensions(node.size);
     if (!positioned) {
       return node;
@@ -222,19 +239,24 @@ export function autoLayoutHierarchical(nodes, edges) {
   });
 }
 
-/**
- * @param {Array<object>} nodes - Graph nodes.
- * @param {Array<object>} edges - Graph edges.
- * @param {number} [iterations] - Force simulation iterations.
- * @returns {Array<object>} Node list with force-directed positions.
- */
-export function autoLayoutForce(nodes, edges, iterations = 260) {
+export function autoLayoutForce(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  iterations: number = 260
+): GraphNode[] {
   if (nodes.length === 0) {
     return [];
   }
 
-  const positions = new Map(nodes.map((node, index) => [node.id, { x: node.x || index * 24, y: node.y || index * 18 }]));
-  const velocity = new Map(nodes.map((node) => [node.id, { x: 0, y: 0 }]));
+  const positions: Map<string, { x: number; y: number }> = new Map(
+    nodes.map((node, index) => [
+      node.id,
+      { x: node.x || index * 24, y: node.y || index * 18 }
+    ])
+  );
+  const velocity: Map<string, { x: number; y: number }> = new Map(
+    nodes.map((node) => [node.id, { x: 0, y: 0 }])
+  );
 
   const repulsion = 7200;
   const spring = 0.01;
@@ -319,12 +341,16 @@ export function autoLayoutForce(nodes, edges, iterations = 260) {
   });
 }
 
-function walkForward(sourceId, edges) {
-  const out = new Set();
-  const queue = [sourceId];
+function walkForward(sourceId: string, edges: GraphEdge[]): Set<string> {
+  const out: Set<string> = new Set();
+  const queue: string[] = [sourceId];
 
-  while (queue.length) {
+  while (queue.length > 0) {
     const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
     edges.forEach((edge) => {
       if (edge.from !== current || out.has(edge.to)) {
         return;
@@ -338,12 +364,16 @@ function walkForward(sourceId, edges) {
   return out;
 }
 
-function walkBackward(sourceId, edges) {
-  const out = new Set();
-  const queue = [sourceId];
+function walkBackward(sourceId: string, edges: GraphEdge[]): Set<string> {
+  const out: Set<string> = new Set();
+  const queue: string[] = [sourceId];
 
-  while (queue.length) {
+  while (queue.length > 0) {
     const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
     edges.forEach((edge) => {
       if (edge.to !== current || out.has(edge.from)) {
         return;
@@ -357,33 +387,27 @@ function walkBackward(sourceId, edges) {
   return out;
 }
 
-export function getRelatedNodeSet(nodeId, edges) {
+export function getRelatedNodeSet(nodeId: string, edges: GraphEdge[]): Set<string> {
   if (!nodeId) {
     return new Set();
   }
+
   const forward = walkForward(nodeId, edges);
   const backward = walkBackward(nodeId, edges);
   return new Set([nodeId, ...forward, ...backward]);
 }
 
-/**
- * @param {string} nodeId - Root node id.
- * @param {Array<object>} edges - Graph edges.
- * @returns {Set<string>} All descendant node ids reachable from root.
- */
-export function getDescendantNodeIds(nodeId, edges) {
+export function getDescendantNodeIds(nodeId: string, edges: GraphEdge[]): Set<string> {
   return walkForward(nodeId, edges);
 }
 
-/**
- * @param {Array<object>} nodes - Graph nodes.
- * @param {Array<object>} edges - Graph edges.
- * @returns {{nodeIds:string[], edgeIds:string[]}} Longest estimated path in DAG form.
- */
-export function computeCriticalPath(nodes, edges) {
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const incoming = new Map(nodes.map((node) => [node.id, 0]));
-  const outgoing = new Map(nodes.map((node) => [node.id, []]));
+export function computeCriticalPath(
+  nodes: GraphNode[],
+  edges: GraphEdge[]
+): { nodeIds: string[]; edgeIds: string[] } {
+  const nodeById: Map<string, GraphNode> = new Map(nodes.map((node) => [node.id, node]));
+  const incoming: Map<string, number> = new Map(nodes.map((node) => [node.id, 0]));
+  const outgoing: Map<string, string[]> = new Map(nodes.map((node) => [node.id, []]));
 
   edges.forEach((edge) => {
     if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) {
@@ -393,16 +417,20 @@ export function computeCriticalPath(nodes, edges) {
     outgoing.set(edge.from, [...(outgoing.get(edge.from) || []), edge.to]);
   });
 
-  const queue = [];
+  const queue: string[] = [];
   incoming.forEach((count, nodeId) => {
     if (count === 0) {
       queue.push(nodeId);
     }
   });
 
-  const topo = [];
-  while (queue.length) {
+  const topo: string[] = [];
+  while (queue.length > 0) {
     const current = queue.shift();
+    if (!current) {
+      continue;
+    }
+
     topo.push(current);
     (outgoing.get(current) || []).forEach((next) => {
       const nextCount = (incoming.get(next) || 0) - 1;
@@ -417,8 +445,10 @@ export function computeCriticalPath(nodes, edges) {
     return { nodeIds: [], edgeIds: [] };
   }
 
-  const distances = new Map(nodes.map((node) => [node.id, Number.NEGATIVE_INFINITY]));
-  const previous = new Map();
+  const distances: Map<string, number> = new Map(
+    nodes.map((node) => [node.id, Number.NEGATIVE_INFINITY])
+  );
+  const previous: Map<string, string> = new Map();
 
   topo.forEach((nodeId) => {
     if ((incoming.get(nodeId) || 0) === 0) {
@@ -432,7 +462,7 @@ export function computeCriticalPath(nodes, edges) {
 
     (outgoing.get(nodeId) || []).forEach((next) => {
       const weight = Math.max(1, Number(nodeById.get(next)?.estimateMinutes || 1));
-      const candidate = base + weight;
+      const candidate = (base as number) + weight;
       if (candidate > (distances.get(next) || Number.NEGATIVE_INFINITY)) {
         distances.set(next, candidate);
         previous.set(next, nodeId);
@@ -440,7 +470,7 @@ export function computeCriticalPath(nodes, edges) {
     });
   });
 
-  let endNodeId = null;
+  let endNodeId: string | null = null;
   let maxDistance = Number.NEGATIVE_INFINITY;
 
   distances.forEach((distance, nodeId) => {
@@ -454,15 +484,15 @@ export function computeCriticalPath(nodes, edges) {
     return { nodeIds: [], edgeIds: [] };
   }
 
-  const pathNodes = [];
-  let cursor = endNodeId;
+  const pathNodes: string[] = [];
+  let cursor: string | undefined = endNodeId;
   while (cursor) {
     pathNodes.push(cursor);
     cursor = previous.get(cursor);
   }
   pathNodes.reverse();
 
-  const pathEdges = [];
+  const pathEdges: string[] = [];
   for (let index = 0; index < pathNodes.length - 1; index += 1) {
     const from = pathNodes[index];
     const to = pathNodes[index + 1];
@@ -478,21 +508,19 @@ export function computeCriticalPath(nodes, edges) {
   };
 }
 
-/**
- * @param {Array<object>} nodes - Graph nodes.
- * @param {Array<object>} edges - Graph edges.
- * @param {string} rootNodeId - Root node id for the subtree copy.
- * @returns {{nodes:Array<object>, edges:Array<object>, rootId:string|null}} Updated graph and copied root id.
- */
-export function duplicateSubtree(nodes, edges, rootNodeId) {
+export function duplicateSubtree(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  rootNodeId: string
+): { nodes: GraphNode[]; edges: GraphEdge[]; rootId: string | null } {
   const root = nodes.find((node) => node.id === rootNodeId);
   if (!root) {
     return { nodes, edges, rootId: null };
   }
 
   const descendants = getDescendantNodeIds(rootNodeId, edges);
-  const scope = new Set([rootNodeId, ...descendants]);
-  const map = new Map();
+  const scope: Set<string> = new Set([rootNodeId, ...descendants]);
+  const map: Map<string, string> = new Map();
 
   const clones = nodes
     .filter((node) => scope.has(node.id))
@@ -516,8 +544,8 @@ export function duplicateSubtree(nodes, edges, rootNodeId) {
     .map((edge) => ({
       ...edge,
       id: makeId('edge'),
-      from: map.get(edge.from),
-      to: map.get(edge.to),
+      from: map.get(edge.from) || edge.from,
+      to: map.get(edge.to) || edge.to,
       createdAt: nowIso(),
       updatedAt: nowIso()
     }));
@@ -529,8 +557,8 @@ export function duplicateSubtree(nodes, edges, rootNodeId) {
   };
 }
 
-function escapeXml(text) {
-  return String(text)
+function escapeXml(text: string): string {
+  return text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
@@ -538,14 +566,11 @@ function escapeXml(text) {
     .replaceAll("'", '&apos;');
 }
 
-  /**
-   * @param {Array<object>} graphNodes - Graph nodes with x/y and size fields.
-   * @param {Array<object>} graphEdges - Graph edges with `from` and `to` node ids.
-   * @param {object} [options] - Export options.
-   * @param {string} [options.title] - SVG title text.
-   * @returns {string} SVG XML markup.
-   */
-export function graphToSvg(graphNodes, graphEdges, { title = 'Graph Export' } = {}) {
+export function graphToSvg(
+  graphNodes: GraphNode[],
+  graphEdges: GraphEdge[],
+  { title = 'Graph Export' }: GraphSvgOptions = {}
+): string {
   const nodes = graphNodes.map((node) => {
     const size = nodeSizeToDimensions(node.size);
     return {

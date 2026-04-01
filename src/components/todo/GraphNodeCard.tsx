@@ -1,8 +1,50 @@
+import type { CSSProperties, ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Check, Link2, Plus } from 'lucide-react';
 
-export default function GraphNodeCard({ data, selected }) {
-  const progress = Number.isFinite(data.branchProgress) ? Math.max(0, Math.min(100, data.branchProgress)) : null;
+interface GraphNodeData {
+  id: string;
+  label: string;
+  icon?: string;
+  description?: string;
+  color?: string;
+  textColor?: string;
+  borderColor?: string;
+  opacity?: number;
+  branchProgress?: number;
+  completed?: boolean;
+  dimmed?: boolean;
+  related?: boolean;
+  critical?: boolean;
+  searchMatch?: boolean;
+  collapsed?: boolean;
+  priority?: string;
+  status?: string;
+  connectionCount?: number;
+  shape?: string;
+  size?: string;
+  onToggleCompleted?: (id: string) => void;
+  onRename?: (id: string) => void;
+  onAddChild?: (id: string) => void;
+}
+
+interface GraphNodeCardProps {
+  data: GraphNodeData;
+  selected?: boolean;
+}
+
+export default function GraphNodeCard({ data, selected }: GraphNodeCardProps): ReactNode {
+  const nodeStyle: CSSProperties = {
+    '--node-bg': data.color || '#b08968',
+    '--node-fg': data.textColor || '#2e241f',
+    '--node-border': data.borderColor || '#8a6042',
+    '--node-opacity': data.opacity || 1
+  } as CSSProperties;
+
+  const progress =
+    typeof data.branchProgress === 'number' && Number.isFinite(data.branchProgress)
+      ? Math.max(0, Math.min(100, data.branchProgress))
+      : null;
   const shapeClass = `shape-${data.shape || 'square'}`;
   const sizeClass = `size-${data.size || 'md'}`;
   const stateClass = data.completed ? 'node-complete' : '';
@@ -14,12 +56,7 @@ export default function GraphNodeCard({ data, selected }) {
   return (
     <div
       className={`graph-node-card ${shapeClass} ${sizeClass} ${stateClass} ${focusClass} ${criticalClass} ${searchClass} ${collapsedClass} ${selected ? 'selected' : ''}`}
-      style={{
-        '--node-bg': data.color || '#b08968',
-        '--node-fg': data.textColor || '#2e241f',
-        '--node-border': data.borderColor || '#8a6042',
-        '--node-opacity': data.opacity || 1
-      }}
+      style={nodeStyle}
       title={data.description || data.label}
     >
       <Handle type="target" position={Position.Left} className="graph-handle" />
@@ -28,7 +65,7 @@ export default function GraphNodeCard({ data, selected }) {
         <button
           type="button"
           className={`graph-complete-toggle ${data.completed ? 'checked' : ''}`}
-          onClick={(event) => {
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onToggleCompleted?.(data.id);
           }}
@@ -40,7 +77,7 @@ export default function GraphNodeCard({ data, selected }) {
         <button
           type="button"
           className="graph-node-label"
-          onDoubleClick={(event) => {
+          onDoubleClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onRename?.(data.id);
           }}
@@ -71,7 +108,7 @@ export default function GraphNodeCard({ data, selected }) {
         <button
           type="button"
           className="graph-mini-action"
-          onClick={(event) => {
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onAddChild?.(data.id);
           }}

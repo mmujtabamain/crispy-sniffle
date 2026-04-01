@@ -1,28 +1,54 @@
-const PRIORITY_RANK = {
+import type { Todo } from './workspace';
+
+type CompletionFilter = 'active' | 'completed' | 'pending' | 'archived' | 'all';
+type PriorityFilter = 'all' | 'low' | 'medium' | 'high' | 'critical';
+type StatusFilter = 'all' | 'todo' | 'doing' | 'done' | 'blocked';
+type SmartFilter = 'none' | 'today' | 'thisWeek' | 'overdue';
+type SortFilter = 'manual' | 'created-desc' | 'created-asc' | 'due-asc' | 'priority-desc' | 'alpha-asc';
+
+export interface TodoFilters {
+  completion: CompletionFilter;
+  priority: PriorityFilter;
+  status: StatusFilter;
+  startDate: string;
+  endDate: string;
+  tags: string[];
+  searchText: string;
+  searchTag: string;
+  smartFilter: SmartFilter;
+  sortBy: SortFilter;
+}
+
+const PRIORITY_RANK: Record<'low' | 'medium' | 'high' | 'critical', number> = {
   low: 1,
   medium: 2,
   high: 3,
   critical: 4
 };
 
-function startOfDay(date) {
+function startOfDay(date: Date): Date {
   const next = new Date(date);
   next.setHours(0, 0, 0, 0);
   return next;
 }
 
-function parseDateOnly(value) {
-  if (!value || typeof value !== 'string') {
+function parseDateOnly(value: string): Date | null {
+  if (!value) {
     return null;
   }
+
   const candidate = new Date(`${value}T00:00:00`);
   if (Number.isNaN(candidate.getTime())) {
     return null;
   }
+
   return candidate;
 }
 
-function resolveSmartRange(smartFilter) {
+function resolveSmartRange(smartFilter: SmartFilter):
+  | { start: Date; end: Date }
+  | { overdueBefore: Date }
+  | null {
   const now = new Date();
   const today = startOfDay(now);
 
@@ -47,12 +73,9 @@ function resolveSmartRange(smartFilter) {
   return null;
 }
 
-/**
- * @param {Array<object>} todos - Todo items where each item may contain a `tags` array.
- * @returns {string[]} Alphabetically sorted unique tag names.
- */
-export function collectTags(todos) {
-  const tags = new Set();
+export function collectTags(todos: Todo[]): string[] {
+  const tags: Set<string> = new Set();
+
   todos.forEach((todo) => {
     (todo.tags || []).forEach((tag) => {
       if (typeof tag === 'string' && tag.trim()) {
@@ -60,42 +83,23 @@ export function collectTags(todos) {
       }
     });
   });
+
   return [...tags].sort((a, b) => a.localeCompare(b));
 }
 
-/**
- * @param {Array<object>} todos - Todo items to filter and sort.
- * @param {object} filters - Filter options.
- * @param {string} [filters.completion] - Completion mode (`active`, `completed`, `pending`, `archived`).
- * @param {string} [filters.priority] - Priority filter (`all`, `low`, `medium`, `high`, `critical`).
- * @param {string} [filters.status] - Status filter (`all`, `todo`, `doing`, `done`, `blocked`).
- * @param {string} [filters.startDate] - Inclusive due-date start in `YYYY-MM-DD` format.
- * @param {string} [filters.endDate] - Inclusive due-date end in `YYYY-MM-DD` format.
- * @param {string[]} [filters.tags] - Required tags (all must match).
- * @param {string} [filters.searchText] - Full-text query.
- * @param {string} [filters.searchTag] - Tag substring query.
- * @param {string} [filters.smartFilter] - Smart date filter (`none`, `today`, `thisWeek`, `overdue`).
- * @param {string} [filters.sortBy] - Sort mode (`manual`, `created-desc`, `created-asc`, `due-asc`, `priority-desc`, `alpha-asc`).
- * @returns {Array<object>} Filtered and sorted todos.
- */
-export function applyFiltersAndSort(todos, filters) {
-  const safeFilters = {
-    completion: 'active',
-    priority: 'all',
-    status: 'all',
-    startDate: '',
-    endDate: '',
-    tags: [],
-    searchText: '',
-    searchTag: '',
-    smartFilter: 'none',
-    sortBy: 'manual',
-    ...filters
+export function applyFiltersAndSort(
+  todos: Todo[],
+  filters: Partial<TodoFilters>
+): Todo[] {
+  const safeFilters: TodoFilters = {
+    ...createDefaultFilters(),
+    ...filters,
+    tags: Array.isArray(filters.tags) ? filters.tags : []
   };
 
-  const selectedTags = Array.isArray(safeFilters.tags)
-    ? safeFilters.tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)
-    : [];
+  const selectedTags = safeFilters.tags
+    .map((tag) => String(tag).trim().toLowerCase())
+    .filter(Boolean);
   const searchText = String(safeFilters.searchText || '').trim().toLowerCase();
   const searchTag = String(safeFilters.searchTag || '').trim().toLowerCase();
 
@@ -158,7 +162,7 @@ export function applyFiltersAndSort(todos, filters) {
       }
     }
 
-    const due = parseDateOnly(todo.dueDate);
+    const due = parseDateOnly(todo.dueDate || '');
 
     if (startDate && (!due || due < startDate)) {
       return false;
@@ -168,13 +172,13 @@ export function applyFiltersAndSort(todos, filters) {
       return false;
     }
 
-    if (smartRange?.overdueBefore) {
+    if (smartRange && 'overdueBefore' in smartRange) {
       if (!due || due >= smartRange.overdueBefore || todo.completed) {
         return false;
       }
     }
 
-    if (smartRange?.start && smartRange?.end) {
+    if (smartRange && 'start' in smartRange) {
       if (!due || due < smartRange.start || due > smartRange.end) {
         return false;
       }
@@ -184,6 +188,7 @@ export function applyFiltersAndSort(todos, filters) {
   });
 
   const sorted = [...filtered];
+
   if (safeFilters.sortBy === 'manual') {
     return sorted.sort((a, b) => a.order - b.order);
   }
@@ -234,10 +239,7 @@ export function applyFiltersAndSort(todos, filters) {
   return sorted;
 }
 
-/**
- * @returns {object} Default filter state object expected by `applyFiltersAndSort`.
- */
-export function createDefaultFilters() {
+export function createDefaultFilters(): TodoFilters {
   return {
     completion: 'active',
     priority: 'all',

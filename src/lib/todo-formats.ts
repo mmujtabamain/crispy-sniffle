@@ -1,22 +1,36 @@
-import { createTodo, createWorkspace, makeId } from './workspace';
+import { createEdge, createNode, createTodo, createWorkspace, makeId } from './workspace';
+import type { GraphEdge, GraphNode, Todo, Workspace } from './workspace';
 
-/**
- * @param {unknown} value - Raw cell value.
- * @returns {string} CSV-safe field value.
- */
-function escapeCsv(value) {
+export type ImportPreview =
+  | {
+      kind: 'workspace';
+      fileName: string;
+      payload: Workspace;
+      previewCount: number;
+    }
+  | {
+      kind: 'todos';
+      fileName: string;
+      format: 'json' | 'csv' | 'markdown' | 'text';
+      todos: Todo[];
+      previewCount: number;
+    }
+  | {
+      kind: 'graph';
+      fileName: string;
+      payload: { nodes: GraphNode[]; edges: GraphEdge[] };
+      previewCount: number;
+    };
+
+function escapeCsv(value: unknown): string {
   const text = value == null ? '' : String(value);
   const needsQuotes = text.includes(',') || text.includes('"') || text.includes('\n');
   const escaped = text.replaceAll('"', '""');
   return needsQuotes ? `"${escaped}"` : escaped;
 }
 
-/**
- * @param {string} line - One CSV line.
- * @returns {string[]} Parsed cell values.
- */
-function parseCsvLine(line) {
-  const result = [];
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
   let current = '';
   let inQuotes = false;
 
@@ -51,14 +65,10 @@ function parseCsvLine(line) {
   return result;
 }
 
-/**
- * @param {string} text - Full CSV document text.
- * @returns {Array<object>} Parsed row objects keyed by CSV header names.
- */
-function parseCsv(text) {
+function parseCsv(text: string): Array<Record<string, string>> {
   const lines = text
     .split(/\r?\n/)
-    .map((line) => line.trim())
+    .map((line: string) => line.trim())
     .filter(Boolean);
 
   if (lines.length === 0) {
@@ -68,7 +78,7 @@ function parseCsv(text) {
   const headers = parseCsvLine(lines[0]).map((entry) => entry.trim());
   return lines.slice(1).map((line) => {
     const values = parseCsvLine(line);
-    const row = {};
+    const row: Record<string, string> = {};
     headers.forEach((header, index) => {
       row[header] = values[index] ?? '';
     });
@@ -76,11 +86,7 @@ function parseCsv(text) {
   });
 }
 
-/**
- * @param {unknown} value - Raw tag source value (string or array).
- * @returns {string[]} Normalized tags.
- */
-function normalizeTags(value) {
+function normalizeTags(value: unknown): string[] {
   if (!value) {
     return [];
   }
@@ -89,15 +95,11 @@ function normalizeTags(value) {
   }
   return String(value)
     .split(/[;,|]/)
-    .map((entry) => entry.trim())
+    .map((entry: string) => entry.trim())
     .filter(Boolean);
 }
 
-/**
- * @param {unknown} value - Raw link source value (string or array).
- * @returns {string[]} Normalized links.
- */
-function normalizeLinks(value) {
+function normalizeLinks(value: unknown): string[] {
   if (!value) {
     return [];
   }
@@ -106,24 +108,30 @@ function normalizeLinks(value) {
   }
   return String(value)
     .split(/\s+/)
-    .map((entry) => entry.trim())
+    .map((entry: string) => entry.trim())
     .filter(Boolean);
 }
 
-/**
- * @param {Array<object>} todos - Todos to stringify as JSON.
- * @returns {string} Pretty-printed JSON.
- */
-export function todosToJson(todos) {
+function toPriority(value: unknown): Todo['priority'] {
+  if (value === 'low' || value === 'medium' || value === 'high' || value === 'critical') {
+    return value;
+  }
+  return 'medium';
+}
+
+function toStatus(value: unknown): Todo['status'] {
+  if (value === 'todo' || value === 'doing' || value === 'done' || value === 'blocked') {
+    return value;
+  }
+  return 'todo';
+}
+
+export function todosToJson(todos: Todo[]): string {
   return JSON.stringify(todos, null, 2);
 }
 
-/**
- * @param {Array<object>} todos - Todos to serialize as CSV.
- * @returns {string} CSV content including header row.
- */
-export function todosToCsv(todos) {
-  const headers = [
+export function todosToCsv(todos: Todo[]): string {
+  const headers: string[] = [
     'id',
     'text',
     'completed',
@@ -149,13 +157,13 @@ export function todosToCsv(todos) {
       todo.priority,
       todo.status,
       todo.dueDate || '',
-      (todo.tags || []).join('|'),
-      todo.description || '',
-      todo.category || '',
+      todo.tags.join('|'),
+      todo.description,
+      todo.category,
       todo.estimateMinutes ?? '',
-      todo.actualMinutes ?? '',
-      todo.notes || '',
-      (todo.links || []).join('|'),
+      todo.actualMinutes,
+      todo.notes,
+      todo.links.join('|'),
       todo.createdAt,
       todo.updatedAt
     ]
@@ -166,13 +174,8 @@ export function todosToCsv(todos) {
   return [headers.join(','), ...rows].join('\n');
 }
 
-/**
- * @param {Array<object>} todos - Todos to serialize as Markdown.
- * @param {string} [title] - Document title.
- * @returns {string} Markdown document.
- */
-export function todosToMarkdown(todos, title = 'Todo Export') {
-  const lines = [`# ${title}`, '', `Generated: ${new Date().toISOString()}`, ''];
+export function todosToMarkdown(todos: Todo[], title: string = 'Todo Export'): string {
+  const lines: string[] = [`# ${title}`, '', `Generated: ${new Date().toISOString()}`, ''];
 
   todos.forEach((todo) => {
     const mark = todo.completed ? 'x' : ' ';
@@ -184,7 +187,7 @@ export function todosToMarkdown(todos, title = 'Todo Export') {
     if (meta) {
       lines.push(`  - ${meta}`);
     }
-    if (todo.tags?.length) {
+    if (todo.tags.length > 0) {
       lines.push(`  - tags: ${todo.tags.join(', ')}`);
     }
     if (todo.description) {
@@ -201,13 +204,8 @@ export function todosToMarkdown(todos, title = 'Todo Export') {
   return lines.join('\n');
 }
 
-/**
- * @param {Array<object>} todos - Todos to serialize as plain text.
- * @param {string} [title] - Document title.
- * @returns {string} Text export.
- */
-export function todosToText(todos, title = 'Todo Export') {
-  const lines = [title, '='.repeat(title.length), ''];
+export function todosToText(todos: Todo[], title: string = 'Todo Export'): string {
+  const lines: string[] = [title, '='.repeat(title.length), ''];
 
   todos.forEach((todo, index) => {
     const status = todo.completed ? '[x]' : '[ ]';
@@ -215,7 +213,7 @@ export function todosToText(todos, title = 'Todo Export') {
     if (todo.priority || todo.status || todo.dueDate) {
       lines.push(`   priority=${todo.priority} status=${todo.status} due=${todo.dueDate || 'none'}`);
     }
-    if (todo.tags?.length) {
+    if (todo.tags.length > 0) {
       lines.push(`   tags=${todo.tags.join(', ')}`);
     }
     if (todo.description) {
@@ -226,80 +224,78 @@ export function todosToText(todos, title = 'Todo Export') {
   return lines.join('\n');
 }
 
-/**
- * @param {object} row - Imported row object.
- * @param {string} listId - Target list id.
- * @param {number} index - Row index used for fallback labels and ordering.
- * @returns {object} Normalized todo object.
- */
-function rowToTodo(row, listId, index) {
-  const text = row.text || row.title || row.task || row.name || `Imported todo ${index + 1}`;
+function rowToTodo(row: Record<string, unknown>, listId: string, index: number): Todo {
+  const text =
+    (typeof row.text === 'string' && row.text) ||
+    (typeof row.title === 'string' && row.title) ||
+    (typeof row.task === 'string' && row.task) ||
+    (typeof row.name === 'string' && row.name) ||
+    `Imported todo ${index + 1}`;
+
   return createTodo(text, listId, {
-    completed: String(row.completed || '').toLowerCase() === 'true' || String(row.completed || '').toLowerCase() === 'x',
-    priority: row.priority || 'medium',
-    status: row.status || 'todo',
-    dueDate: row.dueDate || row.due || null,
+    completed:
+      String(row.completed || '').toLowerCase() === 'true' ||
+      String(row.completed || '').toLowerCase() === 'x',
+    priority: toPriority(row.priority),
+    status: toStatus(row.status),
+    dueDate:
+      typeof row.dueDate === 'string'
+        ? row.dueDate
+        : typeof row.due === 'string'
+          ? row.due
+          : null,
     tags: normalizeTags(row.tags),
-    description: row.description || '',
-    category: row.category || '',
-    estimateMinutes: Number.isFinite(Number(row.estimateMinutes)) ? Number(row.estimateMinutes) : null,
+    description: typeof row.description === 'string' ? row.description : '',
+    category: typeof row.category === 'string' ? row.category : '',
+    estimateMinutes: Number.isFinite(Number(row.estimateMinutes))
+      ? Number(row.estimateMinutes)
+      : null,
     actualMinutes: Number.isFinite(Number(row.actualMinutes)) ? Number(row.actualMinutes) : 0,
-    notes: row.notes || '',
-    links: normalizeLinks(row.links)
+    notes: typeof row.notes === 'string' ? row.notes : '',
+    links: normalizeLinks(row.links),
+    order: index
   });
 }
 
-/**
- * @param {string} text - JSON import payload.
- * @param {string} listId - Target list id.
- * @returns {Array<object>} Normalized todos.
- */
-export function importTodosFromJson(text, listId) {
-  const parsed = JSON.parse(text);
+export function importTodosFromJson(text: string, listId: string): Todo[] {
+  const parsed = JSON.parse(text) as unknown;
 
   if (Array.isArray(parsed)) {
     return parsed.map((row, index) => {
       if (typeof row === 'string') {
         return createTodo(row, listId, { order: index });
       }
-      return rowToTodo(row || {}, listId, index);
+      const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+      return rowToTodo(record, listId, index);
     });
   }
 
-  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.todos)) {
-    return parsed.todos.map((row, index) => rowToTodo(row || {}, listId, index));
+  if (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).todos)) {
+    const rows = (parsed as Record<string, unknown>).todos as unknown[];
+    return rows.map((row, index) => {
+      const record = typeof row === 'object' && row !== null ? (row as Record<string, unknown>) : {};
+      return rowToTodo(record, listId, index);
+    });
   }
 
   throw new Error('JSON import expects an array of todos or an object with a todos array.');
 }
 
-/**
- * @param {string} text - CSV import payload.
- * @param {string} listId - Target list id.
- * @returns {Array<object>} Normalized todos.
- */
-export function importTodosFromCsv(text, listId) {
+export function importTodosFromCsv(text: string, listId: string): Todo[] {
   const rows = parseCsv(text);
-  if (rows.length === 0) {
-    return [];
-  }
   return rows.map((row, index) => rowToTodo(row, listId, index));
 }
 
-/**
- * @param {string} text - Markdown import payload.
- * @param {string} listId - Target list id.
- * @returns {Array<object>} Normalized todos.
- */
-export function importTodosFromMarkdown(text, listId) {
+export function importTodosFromMarkdown(text: string, listId: string): Todo[] {
   const lines = text.split(/\r?\n/);
-  const todos = [];
+  const todos: Todo[] = [];
 
   lines.forEach((line) => {
     const match = line.match(/^\s*-\s*\[( |x|X)\]\s+(.+)$/);
     if (!match) {
       return;
     }
+
     todos.push(
       createTodo(match[2], listId, {
         completed: match[1].toLowerCase() === 'x'
@@ -311,20 +307,13 @@ export function importTodosFromMarkdown(text, listId) {
     return todos.map((todo, index) => ({ ...todo, order: index }));
   }
 
-  const fallback = lines
+  return lines
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
     .map((line, index) => createTodo(line, listId, { order: index }));
-
-  return fallback;
 }
 
-/**
- * @param {string} text - Plain text import payload.
- * @param {string} listId - Target list id.
- * @returns {Array<object>} Normalized todos.
- */
-export function importTodosFromText(text, listId) {
+export function importTodosFromText(text: string, listId: string): Todo[] {
   return text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -338,11 +327,7 @@ export function importTodosFromText(text, listId) {
     });
 }
 
-  /**
-   * @param {string} text - OPML document text.
-   * @returns {{nodes: Array<object>, edges: Array<object>}} Parsed graph payload.
-   */
-export function importOpmlToGraph(text) {
+export function importOpmlToGraph(text: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const parser = new DOMParser();
   const xml = parser.parseFromString(text, 'text/xml');
   const parserError = xml.querySelector('parsererror');
@@ -350,34 +335,28 @@ export function importOpmlToGraph(text) {
     throw new Error('Could not parse OPML file.');
   }
 
-  const nodes = [];
-  const edges = [];
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
 
-  function walkOutline(element, parentId = null) {
+  function walkOutline(element: Element, parentId: string | null = null): void {
     const label = element.getAttribute('text') || element.getAttribute('title') || 'Node';
-    const nodeId = makeId('node');
-    nodes.push({
-      id: nodeId,
-      label,
-      x: 0,
-      y: nodes.length * 40,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
+    const node = createNode(label);
+    node.x = 0;
+    node.y = nodes.length * 40;
+    node.updatedAt = new Date().toISOString();
+    node.createdAt = new Date().toISOString();
+    nodes.push(node);
 
     if (parentId) {
-      edges.push({
-        id: makeId('edge'),
-        from: parentId,
-        to: nodeId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
+      const edge = createEdge(parentId, node.id);
+      edge.updatedAt = new Date().toISOString();
+      edge.createdAt = new Date().toISOString();
+      edges.push(edge);
     }
 
     [...element.children]
       .filter((child) => child.tagName.toLowerCase() === 'outline')
-      .forEach((child) => walkOutline(child, nodeId));
+      .forEach((child) => walkOutline(child, node.id));
   }
 
   const body = xml.querySelector('body');
@@ -392,28 +371,31 @@ export function importOpmlToGraph(text) {
   return { nodes, edges };
 }
 
-/**
- * @param {File} file - User-selected import file.
- * @param {string} listId - Active list id for todo imports.
- * @returns {Promise<object>} Import preview payload with `kind` metadata.
- */
-export async function parseImportFile(file, listId) {
+export async function parseImportFile(file: File, listId: string): Promise<ImportPreview> {
   const text = await file.text();
   const ext = file.name.toLowerCase().split('.').pop() || '';
 
   if (ext === 'json' || ext === 'todo') {
-    let parsed;
+    let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch {
       throw new Error(`Could not parse JSON in ${file.name}.`);
     }
-    if (parsed && typeof parsed === 'object' && Number(parsed.schemaVersion) >= 1 && Array.isArray(parsed.lists)) {
+
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      Number((parsed as Record<string, unknown>).schemaVersion) >= 1 &&
+      Array.isArray((parsed as Record<string, unknown>).lists)
+    ) {
       return {
         kind: 'workspace',
         fileName: file.name,
-        payload: parsed,
-        previewCount: Array.isArray(parsed.todos) ? parsed.todos.length : 0
+        payload: parsed as Workspace,
+        previewCount: Array.isArray((parsed as Record<string, unknown>).todos)
+          ? ((parsed as Record<string, unknown>).todos as unknown[]).length
+          : 0
       };
     }
 
@@ -473,13 +455,9 @@ export async function parseImportFile(file, listId) {
   throw new Error(`Unsupported import format for ${file.name}`);
 }
 
-/**
- * @param {object} payload - Candidate workspace-like value.
- * @returns {object} Workspace object fallback when payload is invalid.
- */
-export function ensureWorkspaceShape(payload) {
+export function ensureWorkspaceShape(payload: unknown): Workspace {
   if (!payload || typeof payload !== 'object') {
     return createWorkspace();
   }
-  return payload;
+  return payload as Workspace;
 }

@@ -2,8 +2,97 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Archive, Check, CloudUpload, Filter, Sparkles, Trash2, X } from 'lucide-react';
+import type { ChangeEvent, ComponentProps, KeyboardEvent, MutableRefObject } from 'react';
+import type { DragEndEvent } from '@dnd-kit/core';
 import SortableTodoItem from './SortableTodoItem';
 import TodoInspector from './TodoInspector';
+import type { Todo } from '../../lib/workspace';
+import type { TodoFilters } from '../../lib/todo-filters';
+
+interface QuotaStatus {
+  usedBytes: number;
+  quotaBytes: number;
+  warning: boolean;
+}
+
+interface SavedFilter {
+  id: string;
+  name: string;
+  filters: TodoFilters;
+}
+
+interface TimerState {
+  todoId: string | null;
+  running: boolean;
+  remainingSec: number;
+}
+
+interface WorkspaceMainProps {
+  composerInputRef: MutableRefObject<HTMLInputElement | null>;
+  quotaStatus: QuotaStatus;
+  formatBytes: (bytes: number) => string;
+  errorMessage: string;
+  activeListName: string;
+  newTodoText: string;
+  onNewTodoTextChange: (value: string) => void;
+  onComposerEnter: () => void;
+  onAddTodo: () => void;
+  quickPriority: Todo['priority'];
+  onQuickPriorityChange: (value: Todo['priority']) => void;
+  quickDueDate: string;
+  onQuickDueDateChange: (value: string) => void;
+  quickTags: string;
+  onQuickTagsChange: (value: string) => void;
+  todos: Todo[];
+  allListTodosCount: number;
+  completedCount: number;
+  pendingCount: number;
+  archivedCount: number;
+  selectedTodoIds: string[];
+  onToggleSelect: (todoId: string) => void;
+  onSelectAllFiltered: () => void;
+  onClearSelection: () => void;
+  onClearCompleted: () => void;
+  onArchiveCompleted: () => void;
+  onClearAll: () => void;
+  filters: TodoFilters;
+  onFilterChange: (key: keyof TodoFilters, value: string | string[]) => void;
+  onClearFilters: () => void;
+  availableTags: string[];
+  savedFilters: SavedFilter[];
+  onSaveCurrentFilters: () => void;
+  onApplySavedFilter: (presetId: string) => void;
+  onDeleteSavedFilter: (presetId: string) => void;
+  sensors: ComponentProps<typeof DndContext>['sensors'];
+  onDragEnd: (event: DragEndEvent) => void;
+  dragDisabled: boolean;
+  editingId: string | null;
+  editingDraft: string;
+  onDraftChange: (value: string) => void;
+  onBeginEdit: (todo: Todo) => void;
+  onCommitEdit: () => void;
+  onCancelEdit: () => void;
+  onToggle: (todoId: string) => void;
+  onDuplicate: (todoId: string) => void;
+  onArchive: (todoId: string) => void;
+  onRestore: (todoId: string) => void;
+  onDelete: (todoId: string) => void;
+  onOpenContextMenu: (todoId: string, x: number, y: number) => void;
+  focusedTodo: Todo | null;
+  timer: TimerState;
+  onPatchTodo: (todoId: string, patch: Partial<Todo>) => void;
+  onAddSubtask: (todoId: string, text: string) => void;
+  onToggleSubtask: (todoId: string, subtaskId: string) => void;
+  onDeleteSubtask: (todoId: string, subtaskId: string) => void;
+  onAttachFiles: (todoId: string, files: File[]) => Promise<void>;
+  onStartTimer: (todoId: string) => void;
+  onStopTimer: () => void;
+  onResetTimer: () => void;
+  onBulkSetPriority: (priority: Todo['priority']) => void;
+  onBulkDelete: () => void;
+  onBulkArchive: () => void;
+  onFocusTodo: (todoId: string | null) => void;
+}
 
 export default function WorkspaceMain({
   composerInputRef,
@@ -70,7 +159,7 @@ export default function WorkspaceMain({
   onBulkDelete,
   onBulkArchive,
   onFocusTodo
-}) {
+}: WorkspaceMainProps) {
   const isAnyFilterActive =
     filters.completion !== 'active' ||
     filters.priority !== 'all' ||
@@ -110,8 +199,8 @@ export default function WorkspaceMain({
             id="todo-input"
             ref={composerInputRef}
             value={newTodoText}
-            onChange={(event) => onNewTodoTextChange(event.target.value)}
-            onKeyDown={(event) => {
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onNewTodoTextChange(event.target.value)}
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === 'Enter') {
                 onComposerEnter();
               }
@@ -119,7 +208,10 @@ export default function WorkspaceMain({
             placeholder="Add a focused task, then press Enter"
           />
 
-          <select value={quickPriority} onChange={(event) => onQuickPriorityChange(event.target.value)}>
+          <select
+            value={quickPriority}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) => onQuickPriorityChange(event.target.value as Todo['priority'])}
+          >
             <option value="low">Low priority</option>
             <option value="medium">Medium priority</option>
             <option value="high">High priority</option>
@@ -129,13 +221,13 @@ export default function WorkspaceMain({
           <input
             type="date"
             value={quickDueDate}
-            onChange={(event) => onQuickDueDateChange(event.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onQuickDueDateChange(event.target.value)}
             aria-label="Due date"
           />
 
           <input
             value={quickTags}
-            onChange={(event) => onQuickTagsChange(event.target.value)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) => onQuickTagsChange(event.target.value)}
             placeholder="tags: launch, inbox"
             aria-label="Quick tags"
           />
@@ -163,7 +255,10 @@ export default function WorkspaceMain({
         <div className="filter-grid">
           <label>
             Completion
-            <select value={filters.completion} onChange={(event) => onFilterChange('completion', event.target.value)}>
+            <select
+              value={filters.completion}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('completion', event.target.value)}
+            >
               <option value="active">Active only</option>
               <option value="completed">Completed only</option>
               <option value="pending">Pending only</option>
@@ -174,7 +269,10 @@ export default function WorkspaceMain({
 
           <label>
             Priority
-            <select value={filters.priority} onChange={(event) => onFilterChange('priority', event.target.value)}>
+            <select
+              value={filters.priority}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('priority', event.target.value)}
+            >
               <option value="all">All priorities</option>
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -185,7 +283,10 @@ export default function WorkspaceMain({
 
           <label>
             Status
-            <select value={filters.status} onChange={(event) => onFilterChange('status', event.target.value)}>
+            <select
+              value={filters.status}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('status', event.target.value)}
+            >
               <option value="all">All statuses</option>
               <option value="todo">Todo</option>
               <option value="doing">Doing</option>
@@ -196,7 +297,10 @@ export default function WorkspaceMain({
 
           <label>
             Smart filter
-            <select value={filters.smartFilter} onChange={(event) => onFilterChange('smartFilter', event.target.value)}>
+            <select
+              value={filters.smartFilter}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('smartFilter', event.target.value)}
+            >
               <option value="none">None</option>
               <option value="today">Today</option>
               <option value="overdue">Overdue</option>
@@ -208,7 +312,7 @@ export default function WorkspaceMain({
             Search text
             <input
               value={filters.searchText}
-              onChange={(event) => onFilterChange('searchText', event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('searchText', event.target.value)}
               placeholder="Search todos and notes"
             />
           </label>
@@ -217,24 +321,35 @@ export default function WorkspaceMain({
             Search tag
             <input
               value={filters.searchTag}
-              onChange={(event) => onFilterChange('searchTag', event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('searchTag', event.target.value)}
               placeholder="tag name"
             />
           </label>
 
           <label>
             Date start
-            <input type="date" value={filters.startDate} onChange={(event) => onFilterChange('startDate', event.target.value)} />
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('startDate', event.target.value)}
+            />
           </label>
 
           <label>
             Date end
-            <input type="date" value={filters.endDate} onChange={(event) => onFilterChange('endDate', event.target.value)} />
+            <input
+              type="date"
+              value={filters.endDate}
+              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('endDate', event.target.value)}
+            />
           </label>
 
           <label>
             Sort
-            <select value={filters.sortBy} onChange={(event) => onFilterChange('sortBy', event.target.value)}>
+            <select
+              value={filters.sortBy}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('sortBy', event.target.value)}
+            >
               <option value="manual">Manual order</option>
               <option value="created-desc">Created newest</option>
               <option value="created-asc">Created oldest</option>
@@ -248,7 +363,7 @@ export default function WorkspaceMain({
             Saved presets
             <select
               value=""
-              onChange={(event) => {
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => {
                 if (!event.target.value) {
                   return;
                 }
@@ -256,7 +371,7 @@ export default function WorkspaceMain({
               }}
             >
               <option value="">Apply preset…</option>
-              {savedFilters.map((preset) => (
+              {savedFilters.map((preset: SavedFilter) => (
                 <option key={preset.id} value={preset.id}>
                   {preset.name}
                 </option>
@@ -266,7 +381,7 @@ export default function WorkspaceMain({
         </div>
 
         <div className="tag-toggle-row">
-          {availableTags.map((tag) => {
+          {availableTags.map((tag: string) => {
             const isActive = filters.tags.includes(tag);
             return (
               <button
@@ -274,7 +389,7 @@ export default function WorkspaceMain({
                 type="button"
                 className={`chip-button ${isActive ? 'active' : ''}`}
                 onClick={() => {
-                  const next = isActive ? filters.tags.filter((entry) => entry !== tag) : [...filters.tags, tag];
+                  const next = isActive ? filters.tags.filter((entry: string) => entry !== tag) : [...filters.tags, tag];
                   onFilterChange('tags', next);
                 }}
               >
@@ -286,7 +401,7 @@ export default function WorkspaceMain({
 
         {savedFilters.length > 0 && (
           <div className="saved-filter-row">
-            {savedFilters.map((preset) => (
+            {savedFilters.map((preset: SavedFilter) => (
               <button key={preset.id} type="button" className="chip-button" onClick={() => onDeleteSavedFilter(preset.id)}>
                 Delete {preset.name}
               </button>
@@ -367,10 +482,10 @@ export default function WorkspaceMain({
         </motion.div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={todos.map((todo) => todo.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={todos.map((todo: Todo) => todo.id)} strategy={verticalListSortingStrategy}>
             <motion.ul className="todo-list" layout>
               <AnimatePresence>
-                {todos.map((todo) => (
+                {todos.map((todo: Todo) => (
                   <SortableTodoItem
                     key={todo.id}
                     todo={todo}

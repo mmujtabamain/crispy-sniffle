@@ -2,6 +2,28 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { Archive, Check, Copy, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
+import type { Todo } from '../../lib/workspace';
+
+interface SortableTodoItemProps {
+  todo: Todo;
+  isEditing: boolean;
+  editDraft: string;
+  onDraftChange: (value: string) => void;
+  onBeginEdit: (todo: Todo) => void;
+  onCommitEdit: () => void;
+  onCancelEdit: () => void;
+  isSelected: boolean;
+  onSelect: (todoId: string) => void;
+  onToggle: (todoId: string) => void;
+  onDuplicate: (todoId: string) => void;
+  onArchive: (todoId: string) => void;
+  onRestore: (todoId: string) => void;
+  onDelete: (todoId: string) => void;
+  onFocus: (todoId: string) => void;
+  onOpenContextMenu: (todoId: string, x: number, y: number) => void;
+  dragDisabled: boolean;
+}
 
 export default function SortableTodoItem({
   todo,
@@ -21,13 +43,13 @@ export default function SortableTodoItem({
   onFocus,
   onOpenContextMenu,
   dragDisabled
-}) {
+}: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: todo.id,
     disabled: dragDisabled
   });
 
-  const style = {
+  const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition
   };
@@ -43,7 +65,7 @@ export default function SortableTodoItem({
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       className={`todo-item ${todo.completed ? 'todo-complete' : ''} ${todo.archived ? 'todo-archived' : ''} ${isSelected ? 'todo-selected' : ''}`}
       onClick={() => onFocus(todo.id)}
-      onContextMenu={(event) => {
+      onContextMenu={(event: MouseEvent<HTMLLIElement>) => {
         event.preventDefault();
         onOpenContextMenu(todo.id, event.clientX, event.clientY);
       }}
@@ -88,7 +110,7 @@ export default function SortableTodoItem({
             value={editDraft}
             onChange={(event) => onDraftChange(event.target.value)}
             onBlur={onCommitEdit}
-            onKeyDown={(event) => {
+            onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
               if (event.key === 'Enter') {
                 onCommitEdit();
               }
@@ -109,7 +131,7 @@ export default function SortableTodoItem({
           <span className={`pill priority-${todo.priority}`}>{todo.priority}</span>
           <span className={`pill status-${todo.status}`}>{todo.status}</span>
           {todo.dueDate && <span className="pill due-pill">Due {todo.dueDate}</span>}
-          {(todo.tags || []).slice(0, 3).map((tag) => (
+          {todo.tags.slice(0, 3).map((tag: string) => (
             <span key={`${todo.id}-${tag}`} className="pill tag-pill">
               #{tag}
             </span>
@@ -140,7 +162,7 @@ export default function SortableTodoItem({
         <button
           type="button"
           className="ghost-button"
-          onClick={(event) => {
+          onClick={(event: MouseEvent<HTMLButtonElement>) => {
             const rect = event.currentTarget.getBoundingClientRect();
             onOpenContextMenu(todo.id, rect.left + rect.width / 2, rect.bottom + 8);
           }}

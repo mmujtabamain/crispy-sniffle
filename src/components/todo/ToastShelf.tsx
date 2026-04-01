@@ -1,10 +1,21 @@
 import { AnimatePresence, motion } from 'framer-motion';
 
-export default function ToastShelf({ toasts, onDismiss }) {
+interface ToastItem {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info' | string;
+  message: string;
+}
+
+interface ToastShelfProps {
+  toasts: ToastItem[];
+  onDismiss: (toastId: string) => void;
+}
+
+export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
   return (
     <div className="toast-shelf" aria-live="polite" aria-atomic="true">
       <AnimatePresence>
-        {toasts.map((toast) => (
+        {toasts.map((toast: ToastItem) => (
           <motion.div
             key={toast.id}
             className={`toast toast-${toast.type}`}

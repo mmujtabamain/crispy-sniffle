@@ -1,6 +1,168 @@
+type Priority = 'low' | 'medium' | 'high' | 'critical';
+type Status = 'todo' | 'doing' | 'done' | 'blocked';
+type Recurrence = 'none' | 'daily' | 'weekly' | 'monthly';
+type NodeShape = 'circle' | 'square' | 'diamond' | 'pill';
+type NodeSize = 'sm' | 'md' | 'lg';
+type EdgeType = 'curved' | 'straight' | 'orthogonal';
+type Theme = 'light' | 'dark';
+type ImportMode = 'merge' | 'replace';
+type FileSource =
+  | 'local'
+  | 'import'
+  | 'export'
+  | 'picker-open'
+  | 'picker-save'
+  | 'save'
+  | 'export-json'
+  | 'export-csv'
+  | 'export-md'
+  | 'export-txt';
+
+export interface Subtask {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+export interface Attachment {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  previewUrl: string | null;
+}
+
+export interface List {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  archived: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order: number;
+}
+
+export interface Todo {
+  id: string;
+  listId: string;
+  text: string;
+  completed: boolean;
+  priority: Priority;
+  tags: string[];
+  dueDate: string | null;
+  recurrence: Recurrence;
+  description: string;
+  subtasks: Subtask[];
+  status: Status;
+  estimateMinutes: number | null;
+  actualMinutes: number;
+  notes: string;
+  links: string[];
+  attachments: Attachment[];
+  category: string;
+  archived: boolean;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order: number;
+}
+
+export interface GraphNode {
+  id: string;
+  label: string;
+  description: string;
+  tags: string[];
+  priority: Priority;
+  status: Status;
+  completed: boolean;
+  icon: string;
+  shape: NodeShape;
+  size: NodeSize;
+  color: string;
+  textColor: string;
+  borderColor: string;
+  shadow: boolean;
+  opacity: number;
+  alias: string;
+  todoId: string | null;
+  owner: string;
+  collapsed: boolean;
+  estimateMinutes: number | null;
+  x: number;
+  y: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GraphEdge {
+  id: string;
+  from: string;
+  to: string;
+  type: EdgeType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Graph {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface WorkspaceMeta {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  lastOpenedAt: string;
+}
+
+export interface WorkspacePreferences {
+  theme: Theme;
+  autosaveMinutes: number;
+  activeListId: string;
+}
+
+export interface Workspace {
+  schemaVersion: number;
+  meta: WorkspaceMeta;
+  preferences: WorkspacePreferences;
+  lists: List[];
+  todos: Todo[];
+  graph: Graph;
+}
+
+interface BackupSnapshot {
+  id: string;
+  createdAt: string;
+  sizeBytes: number;
+  workspace: Workspace;
+}
+
+interface RecentFile {
+  id: string;
+  name: string;
+  source: FileSource;
+  timestamp: string;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+  workspace: Workspace;
+}
+
+interface LoadResult {
+  source: 'default' | 'storage' | 'repaired' | 'fallback';
+  valid: boolean;
+  errors: string[];
+  workspace: Workspace;
+}
+
 const APP_PREFIX = 'crispySniffle';
 
-export const STORAGE_KEYS = {
+export const STORAGE_KEYS: Record<string, string> = {
   workspace: `${APP_PREFIX}.workspace`,
   backups: `${APP_PREFIX}.backups`,
   recentFiles: `${APP_PREFIX}.recentFiles`,
@@ -12,22 +174,44 @@ const MAX_BACKUPS = 20;
 const MAX_RECENT_FILES = 10;
 const STORAGE_WARNING_RATIO = 0.8;
 const DEFAULT_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024;
-const TODO_PRIORITIES = ['low', 'medium', 'high', 'critical'];
-const TODO_STATUSES = ['todo', 'doing', 'done', 'blocked'];
-const TODO_RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
+const TODO_PRIORITIES: Priority[] = ['low', 'medium', 'high', 'critical'];
+const TODO_STATUSES: Status[] = ['todo', 'doing', 'done', 'blocked'];
+const TODO_RECURRENCES: Recurrence[] = ['none', 'daily', 'weekly', 'monthly'];
+
+type UnknownRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is UnknownRecord {
+  return typeof value === 'object' && value !== null;
+}
+
+function asRecord(value: unknown): UnknownRecord {
+  return isRecord(value) ? value : {};
+}
+
+function isPriority(value: unknown): value is Priority {
+  return TODO_PRIORITIES.includes(value as Priority);
+}
+
+function isStatus(value: unknown): value is Status {
+  return TODO_STATUSES.includes(value as Status);
+}
+
+function isRecurrence(value: unknown): value is Recurrence {
+  return TODO_RECURRENCES.includes(value as Recurrence);
+}
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-export function makeId(prefix = 'id') {
+export function makeId(prefix: string = 'id'): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}_${crypto.randomUUID()}`;
   }
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function createList(name = 'Inbox') {
+export function createList(name: string = 'Inbox'): List {
   const timestamp = nowIso();
   return {
     id: makeId('list'),
@@ -42,7 +226,7 @@ export function createList(name = 'Inbox') {
   };
 }
 
-export function createTodo(text, listId, overrides = {}) {
+export function createTodo(text: string, listId: string, overrides: Partial<Todo> = {}): Todo {
   const timestamp = nowIso();
   return {
     id: makeId('todo'),
@@ -71,7 +255,7 @@ export function createTodo(text, listId, overrides = {}) {
   };
 }
 
-export function createNode(label = 'Node') {
+export function createNode(label: string = 'Node'): GraphNode {
   const timestamp = nowIso();
   return {
     id: makeId('node'),
@@ -93,6 +277,7 @@ export function createNode(label = 'Node') {
     todoId: null,
     owner: '',
     collapsed: false,
+    estimateMinutes: null,
     x: 0,
     y: 0,
     createdAt: timestamp,
@@ -100,7 +285,7 @@ export function createNode(label = 'Node') {
   };
 }
 
-export function createEdge(from, to) {
+export function createEdge(from: string, to: string): GraphEdge {
   const timestamp = nowIso();
   return {
     id: makeId('edge'),
@@ -112,7 +297,7 @@ export function createEdge(from, to) {
   };
 }
 
-export function createWorkspace() {
+export function createWorkspace(): Workspace {
   const timestamp = nowIso();
   const defaultList = createList('Inbox');
 
@@ -139,11 +324,11 @@ export function createWorkspace() {
   };
 }
 
-function migrateV0ToV1(raw) {
+function migrateV0ToV1(raw: unknown): Workspace {
   if (Array.isArray(raw)) {
     const workspace = createWorkspace();
     workspace.todos = raw
-      .map((todoText, index) => {
+      .map((todoText: unknown, index: number) => {
         if (typeof todoText !== 'string') {
           return null;
         }
@@ -151,119 +336,157 @@ function migrateV0ToV1(raw) {
         todo.order = index;
         return todo;
       })
-      .filter(Boolean);
+      .filter((todo): todo is Todo => todo !== null);
     workspace.meta.updatedAt = nowIso();
     return workspace;
   }
 
-  const base = {
-    ...createWorkspace(),
-    ...raw,
-    schemaVersion: 1
-  };
-  return base;
-}
-
-function migrateV1ToV2(raw) {
-  if (!raw || typeof raw !== 'object') {
-    return createWorkspace();
-  }
-
-  const timestamp = nowIso();
-  const lists = Array.isArray(raw.lists) ? raw.lists : [];
-  const fallbackListId = lists[0]?.id || createList('Inbox').id;
+  const source = asRecord(raw);
+  const seeded = createWorkspace();
+  const sourceGraph = asRecord(source.graph);
 
   return {
-    ...raw,
-    schemaVersion: 2,
-    preferences: {
-      ...(raw.preferences || {}),
-      activeListId: raw.preferences?.activeListId || fallbackListId
+    ...seeded,
+    schemaVersion: 1,
+    meta: {
+      ...seeded.meta,
+      ...asRecord(source.meta)
     },
-    lists: lists.map((list, index) => ({
-      icon: '📋',
-      color: '#b08968',
-      archived: false,
-      archivedAt: null,
-      order: index,
-      ...list,
-      updatedAt: list?.updatedAt || timestamp
-    })),
-    todos: Array.isArray(raw.todos)
-      ? raw.todos.map((todo, index) => ({
-          ...createTodo(todo?.text || 'Untitled task', todo?.listId || fallbackListId),
-          ...todo,
-          priority: TODO_PRIORITIES.includes(todo?.priority) ? todo.priority : 'medium',
-          status: TODO_STATUSES.includes(todo?.status) ? todo.status : 'todo',
-          recurrence: TODO_RECURRENCES.includes(todo?.recurrence) ? todo.recurrence : 'none',
-          tags: Array.isArray(todo?.tags) ? todo.tags : [],
-          links: Array.isArray(todo?.links) ? todo.links : [],
-          subtasks: Array.isArray(todo?.subtasks) ? todo.subtasks : [],
-          attachments: Array.isArray(todo?.attachments) ? todo.attachments : [],
-          order: Number.isFinite(todo?.order) ? Number(todo.order) : index,
-          archived: Boolean(todo?.archived),
-          archivedAt: typeof todo?.archivedAt === 'string' ? todo.archivedAt : null
-        }))
-      : []
-  };
-}
-
-function migrateV2ToV3(raw) {
-  if (!raw || typeof raw !== 'object') {
-    return createWorkspace();
-  }
-
-  const timestamp = nowIso();
-  const graph = raw.graph && typeof raw.graph === 'object' ? raw.graph : { nodes: [], edges: [] };
-
-  return {
-    ...raw,
-    schemaVersion: 3,
+    preferences: {
+      ...seeded.preferences,
+      ...asRecord(source.preferences)
+    },
+    lists: Array.isArray(source.lists) ? (source.lists as List[]) : seeded.lists,
+    todos: Array.isArray(source.todos) ? (source.todos as Todo[]) : seeded.todos,
     graph: {
-      nodes: Array.isArray(graph.nodes)
-        ? graph.nodes.map((node) => ({
-            ...createNode(typeof node?.label === 'string' ? node.label : 'Node'),
-            ...node,
-            x: Number.isFinite(node?.x) ? Number(node.x) : 0,
-            y: Number.isFinite(node?.y) ? Number(node.y) : 0,
-            updatedAt: typeof node?.updatedAt === 'string' ? node.updatedAt : timestamp,
-            createdAt: typeof node?.createdAt === 'string' ? node.createdAt : timestamp
-          }))
-        : [],
-      edges: Array.isArray(graph.edges)
-        ? graph.edges.map((edge) => ({
-            ...createEdge(edge?.from || edge?.source || '', edge?.to || edge?.target || ''),
-            ...edge,
-            from: typeof edge?.from === 'string' ? edge.from : edge?.source || '',
-            to: typeof edge?.to === 'string' ? edge.to : edge?.target || '',
-            type: typeof edge?.type === 'string' ? edge.type : 'curved',
-            updatedAt: typeof edge?.updatedAt === 'string' ? edge.updatedAt : timestamp,
-            createdAt: typeof edge?.createdAt === 'string' ? edge.createdAt : timestamp
-          }))
-        : []
+      nodes: Array.isArray(sourceGraph.nodes) ? (sourceGraph.nodes as GraphNode[]) : [],
+      edges: Array.isArray(sourceGraph.edges) ? (sourceGraph.edges as GraphEdge[]) : []
     }
   };
 }
 
-export function migrateWorkspace(rawWorkspace) {
-  if (!rawWorkspace || typeof rawWorkspace !== 'object') {
+function migrateV1ToV2(raw: unknown): Workspace {
+  const source = asRecord(raw);
+  const seeded = migrateV0ToV1(raw);
+  const timestamp = nowIso();
+  const lists = Array.isArray(source.lists) ? source.lists : [];
+  const fallbackListId =
+    typeof (lists[0] as UnknownRecord | undefined)?.id === 'string'
+      ? String((lists[0] as UnknownRecord).id)
+      : createList('Inbox').id;
+  const sourcePreferences = asRecord(source.preferences);
+  const todoRows = Array.isArray(source.todos) ? source.todos : [];
+
+  return {
+    ...seeded,
+    schemaVersion: 2,
+    preferences: {
+      ...seeded.preferences,
+      ...sourcePreferences,
+      activeListId:
+        typeof sourcePreferences.activeListId === 'string' && sourcePreferences.activeListId
+          ? sourcePreferences.activeListId
+          : fallbackListId
+    },
+    lists: lists.map((listValue: unknown, index: number) => {
+      const list = asRecord(listValue);
+      const baseList = createList(
+        typeof list.name === 'string' && list.name.trim() ? list.name : `List ${index + 1}`
+      );
+      return {
+        ...baseList,
+        icon: '📋',
+        color: '#b08968',
+        archived: false,
+        archivedAt: null,
+        order: index,
+        ...list,
+        updatedAt: typeof list.updatedAt === 'string' ? list.updatedAt : timestamp
+      };
+    }),
+    todos: todoRows.map((todoValue: unknown, index: number) => {
+      const todo = asRecord(todoValue);
+      return {
+        ...createTodo(
+          typeof todo.text === 'string' ? todo.text : 'Untitled task',
+          typeof todo.listId === 'string' ? todo.listId : fallbackListId
+        ),
+        ...todo,
+        priority: isPriority(todo.priority) ? todo.priority : 'medium',
+        status: isStatus(todo.status) ? todo.status : 'todo',
+        recurrence: isRecurrence(todo.recurrence) ? todo.recurrence : 'none',
+        tags: normalizeStringArray(todo.tags),
+        links: normalizeStringArray(todo.links),
+        subtasks: normalizeSubtasks(todo.subtasks),
+        attachments: normalizeAttachments(todo.attachments),
+        order: typeof todo.order === 'number' && Number.isFinite(todo.order) ? todo.order : index,
+        archived: Boolean(todo.archived),
+        archivedAt: typeof todo.archivedAt === 'string' ? todo.archivedAt : null
+      };
+    })
+  };
+}
+
+function migrateV2ToV3(raw: unknown): Workspace {
+  const source = asRecord(raw);
+  const timestamp = nowIso();
+  const graph = asRecord(source.graph);
+  const graphNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const graphEdges = Array.isArray(graph.edges) ? graph.edges : [];
+  const seeded = migrateV1ToV2(raw);
+
+  return {
+    ...seeded,
+    schemaVersion: 3,
+    graph: {
+      nodes: graphNodes.map((nodeValue: unknown) => {
+        const node = asRecord(nodeValue);
+        return {
+          ...createNode(typeof node.label === 'string' ? node.label : 'Node'),
+          ...node,
+          x: typeof node.x === 'number' && Number.isFinite(node.x) ? node.x : 0,
+          y: typeof node.y === 'number' && Number.isFinite(node.y) ? node.y : 0,
+          updatedAt: typeof node.updatedAt === 'string' ? node.updatedAt : timestamp,
+          createdAt: typeof node.createdAt === 'string' ? node.createdAt : timestamp
+        };
+      }),
+      edges: graphEdges.map((edgeValue: unknown) => {
+        const edge = asRecord(edgeValue);
+        const from =
+          typeof edge.from === 'string'
+            ? edge.from
+            : typeof edge.source === 'string'
+              ? edge.source
+              : '';
+        const to =
+          typeof edge.to === 'string'
+            ? edge.to
+            : typeof edge.target === 'string'
+              ? edge.target
+              : '';
+
+        return {
+          ...createEdge(from, to),
+          ...edge,
+          from,
+          to,
+          type: normalizeEdgeType(edge.type),
+          updatedAt: typeof edge.updatedAt === 'string' ? edge.updatedAt : timestamp,
+          createdAt: typeof edge.createdAt === 'string' ? edge.createdAt : timestamp
+        };
+      })
+    }
+  };
+}
+
+export function migrateWorkspace(rawWorkspace: unknown): Workspace {
+  if (!isRecord(rawWorkspace)) {
     return createWorkspace();
   }
 
-  const initialVersion = Number(rawWorkspace.schemaVersion) || 0;
-  let nextWorkspace = rawWorkspace;
-
-  if (initialVersion < 1) {
-    nextWorkspace = migrateV0ToV1(nextWorkspace);
-  }
-
-  if (initialVersion < 2) {
-    nextWorkspace = migrateV1ToV2(nextWorkspace);
-  }
-
-  if (initialVersion < 3) {
-    nextWorkspace = migrateV2ToV3(nextWorkspace);
-  }
+  let nextWorkspace = migrateV0ToV1(rawWorkspace);
+  nextWorkspace = migrateV1ToV2(nextWorkspace);
+  nextWorkspace = migrateV2ToV3(nextWorkspace);
 
   return {
     ...nextWorkspace,
@@ -271,60 +494,75 @@ export function migrateWorkspace(rawWorkspace) {
   };
 }
 
-function normalizeStringArray(value) {
+function normalizeStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
   return value
-    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .map((entry: unknown) => (typeof entry === 'string' ? entry.trim() : ''))
     .filter(Boolean);
 }
 
-function normalizeSubtasks(value) {
+function normalizeSubtasks(value: unknown): Subtask[] {
   if (!Array.isArray(value)) {
     return [];
   }
   return value
-    .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => ({
-      id: typeof entry.id === 'string' ? entry.id : makeId('subtask'),
-      text: typeof entry.text === 'string' && entry.text.trim() ? entry.text.trim() : 'Untitled subtask',
-      completed: Boolean(entry.completed)
-    }));
+    .filter((entry: unknown) => isRecord(entry))
+    .map((entry: unknown) => {
+      const record = asRecord(entry);
+      return {
+        id: typeof record.id === 'string' ? record.id : makeId('subtask'),
+        text:
+          typeof record.text === 'string' && record.text.trim()
+            ? record.text.trim()
+            : 'Untitled subtask',
+        completed: Boolean(record.completed)
+      };
+    });
 }
 
-function normalizeAttachments(value) {
+function normalizeAttachments(value: unknown): Attachment[] {
   if (!Array.isArray(value)) {
     return [];
   }
   return value
-    .filter((entry) => entry && typeof entry === 'object')
-    .map((entry) => ({
-      id: typeof entry.id === 'string' ? entry.id : makeId('attachment'),
-      name: typeof entry.name === 'string' ? entry.name : 'attachment',
-      type: typeof entry.type === 'string' ? entry.type : 'application/octet-stream',
-      size: Number.isFinite(entry.size) ? Number(entry.size) : 0,
-      previewUrl: typeof entry.previewUrl === 'string' ? entry.previewUrl : null
-    }));
+    .filter((entry: unknown) => isRecord(entry))
+    .map((entry: unknown) => {
+      const record = asRecord(entry);
+      return {
+        id: typeof record.id === 'string' ? record.id : makeId('attachment'),
+        name: typeof record.name === 'string' ? record.name : 'attachment',
+        type: typeof record.type === 'string' ? record.type : 'application/octet-stream',
+        size: typeof record.size === 'number' && Number.isFinite(record.size) ? record.size : 0,
+        previewUrl: typeof record.previewUrl === 'string' ? record.previewUrl : null
+      };
+    });
 }
 
-function normalizeNodeShape(value) {
-  const allowed = new Set(['circle', 'square', 'diamond', 'pill']);
-  return allowed.has(value) ? value : 'square';
+function normalizeNodeShape(value: unknown): NodeShape {
+  if (value === 'circle' || value === 'square' || value === 'diamond' || value === 'pill') {
+    return value;
+  }
+  return 'square';
 }
 
-function normalizeNodeSize(value) {
-  const allowed = new Set(['sm', 'md', 'lg']);
-  return allowed.has(value) ? value : 'md';
+function normalizeNodeSize(value: unknown): NodeSize {
+  if (value === 'sm' || value === 'md' || value === 'lg') {
+    return value;
+  }
+  return 'md';
 }
 
-function normalizeEdgeType(value) {
-  const allowed = new Set(['curved', 'straight', 'orthogonal']);
-  return allowed.has(value) ? value : 'curved';
+function normalizeEdgeType(value: unknown): EdgeType {
+  if (value === 'curved' || value === 'straight' || value === 'orthogonal') {
+    return value;
+  }
+  return 'curved';
 }
 
-export function validateWorkspace(workspace) {
-  const errors = [];
+export function validateWorkspace(workspace: unknown): ValidationResult {
+  const errors: string[] = [];
   if (!workspace || typeof workspace !== 'object') {
     return {
       valid: false,
@@ -337,7 +575,7 @@ export function validateWorkspace(workspace) {
   const baselineWorkspace = createWorkspace();
   const baselineMeta = baselineWorkspace.meta;
   const baselinePreferences = baselineWorkspace.preferences;
-  const safeWorkspace = {
+  const safeWorkspace: Workspace = {
     ...baselineWorkspace,
     ...migrated,
     meta: {
@@ -359,8 +597,8 @@ export function validateWorkspace(workspace) {
     safeWorkspace.lists = [createList('Inbox')];
   } else {
     safeWorkspace.lists = migrated.lists
-      .filter((list) => list && typeof list === 'object' && typeof list.name === 'string')
-      .map((list, index) => ({
+      .filter((list: List) => typeof list.name === 'string')
+      .map((list: List, index: number) => ({
         id: typeof list.id === 'string' ? list.id : makeId('list'),
         name: list.name.trim() || `List ${index + 1}`,
         icon: typeof list.icon === 'string' && list.icon.trim() ? list.icon.trim() : '📋',
@@ -377,15 +615,15 @@ export function validateWorkspace(workspace) {
     }
   }
 
-  const validListIds = new Set(safeWorkspace.lists.map((list) => list.id));
+  const validListIds: Set<string> = new Set(safeWorkspace.lists.map((list: List) => list.id));
 
   if (!Array.isArray(migrated.todos)) {
     errors.push('Todos must be an array.');
     safeWorkspace.todos = [];
   } else {
     safeWorkspace.todos = migrated.todos
-      .filter((todo) => todo && typeof todo === 'object' && typeof todo.text === 'string')
-      .map((todo, index) => {
+      .filter((todo: Todo) => typeof todo.text === 'string')
+      .map((todo: Todo, index: number) => {
         const resolvedListId = validListIds.has(todo.listId)
           ? todo.listId
           : safeWorkspace.lists[0].id;
@@ -395,13 +633,13 @@ export function validateWorkspace(workspace) {
           listId: resolvedListId,
           text: todo.text.trim() || 'Untitled task',
           completed: Boolean(todo.completed),
-          priority: TODO_PRIORITIES.includes(todo.priority) ? todo.priority : 'medium',
+          priority: isPriority(todo.priority) ? todo.priority : 'medium',
           tags: normalizeStringArray(todo.tags),
           dueDate: typeof todo.dueDate === 'string' && todo.dueDate.trim() ? todo.dueDate : null,
-          recurrence: TODO_RECURRENCES.includes(todo.recurrence) ? todo.recurrence : 'none',
+          recurrence: isRecurrence(todo.recurrence) ? todo.recurrence : 'none',
           description: typeof todo.description === 'string' ? todo.description : '',
           subtasks: normalizeSubtasks(todo.subtasks),
-          status: TODO_STATUSES.includes(todo.status) ? todo.status : 'todo',
+          status: isStatus(todo.status) ? todo.status : 'todo',
           estimateMinutes: Number.isFinite(todo.estimateMinutes) ? Number(todo.estimateMinutes) : null,
           actualMinutes: Number.isFinite(todo.actualMinutes) ? Number(todo.actualMinutes) : 0,
           notes: typeof todo.notes === 'string' ? todo.notes : '',
@@ -417,20 +655,20 @@ export function validateWorkspace(workspace) {
       });
   }
 
-  const validListIdsAfterValidation = new Set(safeWorkspace.lists.map((list) => list.id));
+  const validListIdsAfterValidation: Set<string> = new Set(safeWorkspace.lists.map((list: List) => list.id));
   if (!validListIdsAfterValidation.has(safeWorkspace.preferences.activeListId)) {
     safeWorkspace.preferences.activeListId = safeWorkspace.lists[0].id;
   }
 
   safeWorkspace.graph.nodes = safeWorkspace.graph.nodes
-    .filter((node) => node && typeof node === 'object')
-    .map((node) => ({
+    .filter((node: GraphNode) => Boolean(node))
+    .map((node: GraphNode) => ({
       id: typeof node.id === 'string' ? node.id : makeId('node'),
       label: typeof node.label === 'string' ? node.label : 'Node',
       description: typeof node.description === 'string' ? node.description : '',
       tags: normalizeStringArray(node.tags),
-      priority: TODO_PRIORITIES.includes(node.priority) ? node.priority : 'medium',
-      status: TODO_STATUSES.includes(node.status) ? node.status : 'todo',
+      priority: isPriority(node.priority) ? node.priority : 'medium',
+      status: isStatus(node.status) ? node.status : 'todo',
       completed: Boolean(node.completed),
       icon: typeof node.icon === 'string' && node.icon.trim() ? node.icon.trim().slice(0, 2) : '◉',
       shape: normalizeNodeShape(node.shape),
@@ -444,27 +682,31 @@ export function validateWorkspace(workspace) {
       todoId: typeof node.todoId === 'string' && node.todoId.trim() ? node.todoId : null,
       owner: typeof node.owner === 'string' ? node.owner : '',
       collapsed: Boolean(node.collapsed),
+      estimateMinutes:
+        typeof node.estimateMinutes === 'number' && Number.isFinite(node.estimateMinutes)
+          ? node.estimateMinutes
+          : null,
       x: Number.isFinite(node.x) ? Number(node.x) : 0,
       y: Number.isFinite(node.y) ? Number(node.y) : 0,
       createdAt: typeof node.createdAt === 'string' ? node.createdAt : nowIso(),
       updatedAt: typeof node.updatedAt === 'string' ? node.updatedAt : nowIso()
     }));
 
-  const validNodeIds = new Set(safeWorkspace.graph.nodes.map((node) => node.id));
+  const validNodeIds: Set<string> = new Set(safeWorkspace.graph.nodes.map((node: GraphNode) => node.id));
 
   safeWorkspace.graph.edges = safeWorkspace.graph.edges
-    .filter((edge) => edge && typeof edge === 'object')
-    .map((edge) => ({
+    .filter((edge: GraphEdge) => Boolean(edge))
+    .map((edge: GraphEdge) => ({
       id: typeof edge.id === 'string' ? edge.id : makeId('edge'),
-      from: typeof edge.from === 'string' ? edge.from : typeof edge.source === 'string' ? edge.source : '',
-      to: typeof edge.to === 'string' ? edge.to : typeof edge.target === 'string' ? edge.target : '',
+      from: typeof edge.from === 'string' ? edge.from : '',
+      to: typeof edge.to === 'string' ? edge.to : '',
       type: normalizeEdgeType(edge.type),
       createdAt: typeof edge.createdAt === 'string' ? edge.createdAt : nowIso(),
       updatedAt: typeof edge.updatedAt === 'string' ? edge.updatedAt : nowIso()
     }))
-    .filter((edge) => validNodeIds.has(edge.from) && validNodeIds.has(edge.to));
+    .filter((edge: GraphEdge) => validNodeIds.has(edge.from) && validNodeIds.has(edge.to));
 
-  if (safeWorkspace.todos.length > 0 && safeWorkspace.todos.some((todo) => todo.text.length === 0)) {
+  if (safeWorkspace.todos.length > 0 && safeWorkspace.todos.some((todo: Todo) => todo.text.length === 0)) {
     errors.push('One or more todos had empty text and were repaired.');
   }
 
@@ -476,9 +718,9 @@ export function validateWorkspace(workspace) {
   };
 }
 
-function safeParseJson(rawText) {
+function safeParseJson(rawText: unknown): unknown {
   try {
-    return JSON.parse(rawText);
+    return JSON.parse(typeof rawText === 'string' ? rawText : '');
   } catch {
     return null;
   }
@@ -491,7 +733,7 @@ function getStorage() {
   return window.localStorage;
 }
 
-export function loadWorkspaceFromStorage() {
+export function loadWorkspaceFromStorage(): LoadResult {
   const storage = getStorage();
   if (!storage) {
     return {
@@ -531,7 +773,7 @@ export function loadWorkspaceFromStorage() {
   };
 }
 
-export function saveWorkspaceToStorage(workspace) {
+export function saveWorkspaceToStorage(workspace: Workspace): void {
   const storage = getStorage();
   if (!storage) {
     return;
@@ -547,16 +789,16 @@ export function clearAllLocalData() {
     return;
   }
 
-  Object.values(STORAGE_KEYS).forEach((key) => {
+  Object.values(STORAGE_KEYS).forEach((key: string) => {
     storage.removeItem(key);
   });
 }
 
-export function serializeWorkspace(workspace) {
+export function serializeWorkspace(workspace: Workspace): string {
   return JSON.stringify(workspace, null, 2);
 }
 
-export function deserializeWorkspace(rawText) {
+export function deserializeWorkspace(rawText: string): { workspace: Workspace; warnings: string[] } {
   const parsed = safeParseJson(rawText);
   if (!parsed) {
     throw new Error('Could not parse workspace JSON file.');
@@ -589,13 +831,13 @@ export function listBackups() {
   return parsed;
 }
 
-export function createBackupSnapshot(workspace) {
+export function createBackupSnapshot(workspace: Workspace): BackupSnapshot | null {
   const storage = getStorage();
   if (!storage) {
     return null;
   }
 
-  const backup = {
+  const backup: BackupSnapshot = {
     id: makeId('backup'),
     createdAt: nowIso(),
     sizeBytes: new Blob([JSON.stringify(workspace)]).size,
@@ -608,17 +850,17 @@ export function createBackupSnapshot(workspace) {
   return backup;
 }
 
-export function readSettings() {
+export function readSettings(): Record<string, unknown> {
   const storage = getStorage();
   if (!storage) {
     return {};
   }
   const raw = storage.getItem(STORAGE_KEYS.settings);
   const parsed = raw ? safeParseJson(raw) : {};
-  return parsed && typeof parsed === 'object' ? parsed : {};
+  return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
 }
 
-export function writeSettings(nextSettings) {
+export function writeSettings(nextSettings: Record<string, unknown>): void {
   const storage = getStorage();
   if (!storage) {
     return;
@@ -626,17 +868,17 @@ export function writeSettings(nextSettings) {
   storage.setItem(STORAGE_KEYS.settings, JSON.stringify(nextSettings));
 }
 
-export function getRecentFiles() {
+export function getRecentFiles(): RecentFile[] {
   const storage = getStorage();
   if (!storage) {
     return [];
   }
   const raw = storage.getItem(STORAGE_KEYS.recentFiles);
   const parsed = raw ? safeParseJson(raw) : [];
-  return Array.isArray(parsed) ? parsed : [];
+  return Array.isArray(parsed) ? (parsed as RecentFile[]) : [];
 }
 
-export function registerRecentFile(fileMeta) {
+export function registerRecentFile(fileMeta: { name?: string; source?: FileSource }): void {
   const storage = getStorage();
   if (!storage) {
     return;
@@ -644,14 +886,14 @@ export function registerRecentFile(fileMeta) {
 
   const now = nowIso();
   const current = getRecentFiles();
-  const nextItem = {
+  const nextItem: RecentFile = {
     id: makeId('recent'),
     name: fileMeta?.name || 'Untitled workspace',
     source: fileMeta?.source || 'local',
     timestamp: now
   };
 
-  const deduped = current.filter((entry) => entry.name !== nextItem.name);
+  const deduped = current.filter((entry: RecentFile) => entry.name !== nextItem.name);
   const next = [nextItem, ...deduped].slice(0, MAX_RECENT_FILES);
   storage.setItem(STORAGE_KEYS.recentFiles, JSON.stringify(next));
 }
@@ -663,7 +905,7 @@ export function estimateStorageUsageBytes() {
   }
 
   let total = 0;
-  Object.values(STORAGE_KEYS).forEach((key) => {
+  Object.values(STORAGE_KEYS).forEach((key: string) => {
     const value = storage.getItem(key);
     if (typeof value === 'string') {
       total += new Blob([value]).size;
@@ -685,14 +927,14 @@ export function getStorageQuotaStatus() {
   };
 }
 
-export async function openWorkspaceFromFile(file) {
+export async function openWorkspaceFromFile(file: File): Promise<{ workspace: Workspace; warnings: string[] }> {
   const content = await file.text();
   const { workspace, warnings } = deserializeWorkspace(content);
   registerRecentFile({ name: file.name, source: 'import' });
   return { workspace, warnings };
 }
 
-export function downloadWorkspaceFile(workspace, fileName = 'workspace.todo.json') {
+export function downloadWorkspaceFile(workspace: Workspace, fileName: string = 'workspace.todo.json'): void {
   const payload = serializeWorkspace(workspace);
   const blob = new Blob([payload], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -706,7 +948,7 @@ export function downloadWorkspaceFile(workspace, fileName = 'workspace.todo.json
   registerRecentFile({ name: fileName, source: 'export' });
 }
 
-const pickerTypes = [
+const pickerTypes: Array<{ description: string; accept: Record<string, string[]> }> = [
   {
     description: 'Todo workspace files',
     accept: {
@@ -719,12 +961,16 @@ export function supportsFileSystemAccessApi() {
   return typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 }
 
-export async function openWorkspaceViaPicker() {
+export async function openWorkspaceViaPicker(): Promise<{ workspace: Workspace; warnings: string[]; fileHandle: FileSystemFileHandle; fileName: string }> {
   if (!supportsFileSystemAccessApi()) {
     throw new Error('File System Access API is unavailable in this browser.');
   }
 
-  const [fileHandle] = await window.showOpenFilePicker({
+  const openPickerWindow = window as unknown as Window & {
+    showOpenFilePicker: (options: unknown) => Promise<FileSystemFileHandle[]>;
+  };
+
+  const [fileHandle] = await openPickerWindow.showOpenFilePicker({
     multiple: false,
     types: pickerTypes
   });
@@ -743,7 +989,7 @@ export async function openWorkspaceViaPicker() {
   };
 }
 
-export async function saveWorkspaceWithHandle(workspace, fileHandle) {
+export async function saveWorkspaceWithHandle(workspace: Workspace, fileHandle: FileSystemFileHandle): Promise<void> {
   if (!fileHandle) {
     throw new Error('Missing file handle for save operation.');
   }
@@ -753,12 +999,12 @@ export async function saveWorkspaceWithHandle(workspace, fileHandle) {
   await writable.close();
 }
 
-export async function saveWorkspaceAsViaPicker(workspace, suggestedName = 'workspace.todo.json') {
+export async function saveWorkspaceAsViaPicker(workspace: Workspace, suggestedName: string = 'workspace.todo.json'): Promise<{ fileHandle: FileSystemFileHandle; fileName: string }> {
   if (!supportsFileSystemAccessApi() || !('showSaveFilePicker' in window)) {
     throw new Error('File System Access API is unavailable in this browser.');
   }
 
-  const fileHandle = await window.showSaveFilePicker({
+  const fileHandle = await (window as Window & { showSaveFilePicker: (options: unknown) => Promise<FileSystemFileHandle> }).showSaveFilePicker({
     suggestedName,
     types: pickerTypes
   });

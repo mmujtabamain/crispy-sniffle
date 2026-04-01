@@ -1,5 +1,19 @@
 import { Moon, Redo2, Sun, Undo2 } from 'lucide-react';
 
+interface WorkspaceHeaderProps {
+  theme: 'light' | 'dark';
+  undoCount: number;
+  redoCount: number;
+  viewMode: 'list' | 'graph';
+  onThemeToggle: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  onViewModeChange: (mode: 'list' | 'graph') => void;
+  activeListName: string;
+  visibleTodoCount: number;
+  totalListTodos: number;
+}
+
 export default function WorkspaceHeader({
   theme,
   undoCount,
@@ -12,7 +26,7 @@ export default function WorkspaceHeader({
   activeListName,
   visibleTodoCount,
   totalListTodos
-}) {
+}: WorkspaceHeaderProps) {
   return (
     <header className="workspace-header">
       <div className="headline-wrap">

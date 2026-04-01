@@ -1,11 +1,39 @@
 import { jsPDF } from 'jspdf';
+import type { Todo } from './workspace';
+
+interface TodoExportOptions {
+  fileName?: string;
+  title?: string;
+  headerText?: string;
+  footerText?: string;
+  includeCompletion?: boolean;
+  includePriority?: boolean;
+  includeDue?: boolean;
+  includeTags?: boolean;
+  includeCheckbox?: boolean;
+}
+
+interface CanvasExportOptions extends TodoExportOptions {
+  width?: number;
+  height?: number;
+  backgroundColor?: string;
+  fontSize?: number;
+}
+
+interface ImageExportOptions extends CanvasExportOptions {
+  fileNameBase?: string;
+  mode?: 'single' | 'gallery';
+  todosPerImage?: number;
+  formats?: string[];
+}
 
 /**
+ * Downloads a blob to the user's device.
  * @param {Blob} blob - Binary payload to download.
  * @param {string} fileName - Filename for the browser download prompt.
  * @returns {void}
  */
-function downloadBlob(blob, fileName) {
+function downloadBlob(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -16,7 +44,12 @@ function downloadBlob(blob, fileName) {
   URL.revokeObjectURL(url);
 }
 
-function escapeHtml(text) {
+/**
+ * Escapes HTML special characters in a string.
+ * @param {string | number} text - Text to escape.
+ * @returns {string} Escaped text safe for HTML.
+ */
+function escapeHtml(text: string | number): string {
   return String(text)
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -26,23 +59,19 @@ function escapeHtml(text) {
 }
 
 /**
- * @param {object} todo - Todo data.
- * @param {string} todo.text - Main todo label.
- * @param {boolean} [todo.completed] - Completion flag.
- * @param {string} [todo.priority] - Priority value.
- * @param {string} [todo.dueDate] - Due date string.
- * @param {string[]} [todo.tags] - Todo tags.
- * @param {object} options - Line formatting options.
+ * Formats a todo item as a single line for export/print output.
+ * @param {Todo} todo - Todo data to format.
+ * @param {TodoExportOptions} options - Line formatting options.
  * @returns {string} Rendered line for export/print output.
  */
-function formatTodoLine(todo, options) {
+function formatTodoLine(todo: Todo, options: TodoExportOptions): string {
   const includeCompletion = options.includeCompletion ?? true;
   const includePriority = options.includePriority ?? true;
   const includeDue = options.includeDue ?? true;
   const includeTags = options.includeTags ?? true;
   const includeCheckbox = options.includeCheckbox ?? true;
 
-  const parts = [];
+  const parts: string[] = [];
   if (includeCheckbox) {
     parts.push(todo.completed ? '[x]' : '[ ]');
   }
@@ -65,17 +94,18 @@ function formatTodoLine(todo, options) {
 }
 
 /**
- * @param {CanvasRenderingContext2D} ctx - Canvas context used for measuring text width.
+ * Wraps text to fit within a maximum width using canvas text measurement.
+ * @param {CanvasRenderingContext2D} ctx - Canvas context for measuring text width.
  * @param {string} text - Text to wrap.
  * @param {number} maxWidth - Maximum width per line in pixels.
  * @returns {string[]} Wrapped lines.
  */
-function wrapCanvasText(ctx, text, maxWidth) {
+function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
   const words = text.split(/\s+/);
-  const lines = [];
+  const lines: string[] = [];
   let current = '';
 
-  words.forEach((word) => {
+  words.forEach((word: string) => {
     const test = current ? `${current} ${word}` : word;
     if (ctx.measureText(test).width <= maxWidth) {
       current = test;
@@ -96,17 +126,24 @@ function wrapCanvasText(ctx, text, maxWidth) {
 }
 
 /**
- * @param {Array<object>} todos - Todos to export to PDF.
- * @param {object} [options] - PDF export options.
- * @param {string} [options.fileName] - Output file name.
- * @param {string} [options.title] - Report title.
- * @param {string} [options.headerText] - Optional header text.
- * @param {string} [options.footerText] - Optional footer text.
+ * Exports todos to a PDF file.
+ * @param {Todo[]} todos - Todos to export to PDF.
+ * @param {TodoExportOptions} [options] - PDF export options.
  * @returns {void}
  */
-export function exportTodosToPdf(todos, options = {}) {
+export function exportTodosToPdf(todos: Todo[], options: TodoExportOptions = {}): void {
   const todoItems = Array.isArray(todos) ? todos : [];
-  const safeOptions = {
+  const safeOptions: TodoExportOptions & {
+    fileName: string;
+    title: string;
+    headerText: string;
+    footerText: string;
+    includeCompletion: boolean;
+    includePriority: boolean;
+    includeDue: boolean;
+    includeTags: boolean;
+    includeCheckbox: boolean;
+  } = {
     fileName: 'todos.pdf',
     title: 'Todo Export',
     headerText: '',
@@ -142,7 +179,7 @@ export function exportTodosToPdf(todos, options = {}) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
 
-  todoItems.forEach((todo, index) => {
+  todoItems.forEach((todo: Todo, index: number) => {
     const line = `${index + 1}. ${formatTodoLine(todo, safeOptions)}`;
     const wrapped = doc.splitTextToSize(line, maxWidth);
 
@@ -175,14 +212,21 @@ export function exportTodosToPdf(todos, options = {}) {
 }
 
 /**
- * @param {Array<object>} todos - Todos to print.
- * @param {object} [options] - Print options.
- * @param {string} [options.title] - Browser print document title.
+ * Prints todos in a browser print window.
+ * @param {Todo[]} todos - Todos to print.
+ * @param {TodoExportOptions} [options] - Print options.
  * @returns {void}
  */
-export function printTodos(todos, options = {}) {
+export function printTodos(todos: Todo[], options: TodoExportOptions = {}): void {
   const todoItems = Array.isArray(todos) ? todos : [];
-  const safeOptions = {
+  const safeOptions: TodoExportOptions & {
+    title: string;
+    includeCompletion: boolean;
+    includePriority: boolean;
+    includeDue: boolean;
+    includeTags: boolean;
+    includeCheckbox: boolean;
+  } = {
     title: 'Todo Print View',
     includeCompletion: true,
     includePriority: true,
@@ -208,7 +252,7 @@ export function printTodos(todos, options = {}) {
     <h1>${safeOptions.title}</h1>
     <ol>
       ${todoItems
-        .map((todo) => `<li>${escapeHtml(formatTodoLine(todo, safeOptions))}</li>`)
+        .map((todo: Todo) => `<li>${escapeHtml(formatTodoLine(todo, safeOptions))}</li>`)
         .join('')}
     </ol>
   </body>
@@ -226,16 +270,12 @@ export function printTodos(todos, options = {}) {
 }
 
 /**
- * @param {Array<object>} todos - Todos rendered on a single image page.
- * @param {object} options - Rendering options.
- * @param {number} [options.width] - Canvas width.
- * @param {number} [options.height] - Canvas height.
- * @param {string} [options.backgroundColor] - Canvas background color.
- * @param {number} [options.fontSize] - Base font size.
- * @param {string} [options.title] - Page title text.
+ * Renders todos onto an HTML canvas element.
+ * @param {Todo[]} todos - Todos to render on a single image page.
+ * @param {CanvasExportOptions} options - Rendering options.
  * @returns {HTMLCanvasElement} Canvas containing the rendered todo page.
  */
-function renderTodosPageToCanvas(todos, options) {
+function renderTodosPageToCanvas(todos: Todo[], options: CanvasExportOptions): HTMLCanvasElement {
   const width = Number(options.width) || 1400;
   const height = Number(options.height) || 1800;
   const bgColor = options.backgroundColor || '#f6efe9';
@@ -261,14 +301,14 @@ function renderTodosPageToCanvas(todos, options) {
   const lineHeight = fontSize + 16;
   const maxWidth = width - 144;
 
-  todos.forEach((todo, index) => {
+  todos.forEach((todo: Todo, index: number) => {
     const base = `${index + 1}. ${todo.completed ? '[x]' : '[ ]'} ${todo.text}`;
     const detail = [todo.priority, todo.status, todo.dueDate ? `due ${todo.dueDate}` : null]
       .filter(Boolean)
       .join(' · ');
 
     const lines = wrapCanvasText(ctx, `${base}${detail ? ` (${detail})` : ''}`, maxWidth);
-    lines.forEach((line) => {
+    lines.forEach((line: string) => {
       ctx.fillText(line, 72, y);
       y += lineHeight;
     });
@@ -276,7 +316,7 @@ function renderTodosPageToCanvas(todos, options) {
     if (todo.tags?.length) {
       const tagLine = `tags: ${todo.tags.join(', ')}`;
       const tagLines = wrapCanvasText(ctx, tagLine, maxWidth - 24);
-      tagLines.forEach((line) => {
+      tagLines.forEach((line: string) => {
         ctx.fillStyle = '#5b4a41';
         ctx.fillText(line, 96, y);
         y += lineHeight;
@@ -291,21 +331,28 @@ function renderTodosPageToCanvas(todos, options) {
 }
 
 /**
- * @param {Array<object>} todos - Todos to export as images.
- * @param {object} [options] - Image export options.
- * @param {string} [options.fileNameBase] - Base file name without extension.
- * @param {'single'|'gallery'} [options.mode] - Single image or paged gallery mode.
- * @param {number} [options.todosPerImage] - Gallery page size.
- * @param {string[]} [options.formats] - One or more formats (`png`, `jpg`).
+ * Exports todos as image files (PNG or JPEG).
+ * @param {Todo[]} todos - Todos to export as images.
+ * @param {ImageExportOptions} [options] - Image export options.
  * @returns {void}
  */
-export function exportTodosToImages(todos, options = {}) {
+export function exportTodosToImages(todos: Todo[], options: ImageExportOptions = {}): void {
   const todoItems = Array.isArray(todos) ? todos : [];
   if (todoItems.length === 0) {
     return;
   }
 
-  const safeOptions = {
+  const safeOptions: ImageExportOptions & {
+    fileNameBase: string;
+    mode: 'single' | 'gallery';
+    width: number;
+    height: number;
+    backgroundColor: string;
+    fontSize: number;
+    todosPerImage: number;
+    formats: string[];
+    title: string;
+  } = {
     fileNameBase: 'todos',
     mode: 'single',
     width: 1400,
@@ -320,7 +367,7 @@ export function exportTodosToImages(todos, options = {}) {
 
   const pageSize = Math.max(1, Number(safeOptions.todosPerImage) || 12);
   const chunks = safeOptions.mode === 'gallery'
-    ? Array.from({ length: Math.ceil(todoItems.length / pageSize) }, (_, idx) =>
+    ? Array.from({ length: Math.ceil(todoItems.length / pageSize) }, (_: unknown, idx: number) =>
         todoItems.slice(idx * pageSize, idx * pageSize + pageSize)
       )
     : [todoItems];
@@ -329,10 +376,10 @@ export function exportTodosToImages(todos, options = {}) {
     ? safeOptions.formats
     : ['png'];
 
-  chunks.forEach((chunk, pageIndex) => {
+  chunks.forEach((chunk: Todo[], pageIndex: number) => {
     const canvas = renderTodosPageToCanvas(chunk, safeOptions);
 
-    safeFormats.forEach((format) => {
+    safeFormats.forEach((format: string) => {
       const normalized = format === 'jpg' ? 'jpeg' : format;
       const mime = normalized === 'jpeg' ? 'image/jpeg' : 'image/png';
       const extension = normalized === 'jpeg' ? 'jpg' : 'png';

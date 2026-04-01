@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import type { DragEndEvent } from '@dnd-kit/core';
+import type { TodoFilters } from '../lib/todo-filters.js';
 import {
   GraphWorkspace,
   ToastShelf,
@@ -18,7 +21,7 @@ import {
   parseTagInput,
   stampWorkspace
 } from '../lib/workspace-page-helpers';
-import { applyFiltersAndSort, collectTags, createDefaultFilters } from '../lib/todo-filters';
+import { applyFiltersAndSort, collectTags, createDefaultFilters } from '../lib/todo-filters.js';
 import {
   importTodosFromCsv,
   parseImportFile,
@@ -26,7 +29,8 @@ import {
   todosToJson,
   todosToMarkdown,
   todosToText
-} from '../lib/todo-formats';
+} from '../lib/todo-formats.js';
+import type { ImportPreview } from '../lib/todo-formats.js';
 import { exportTodosToImages, exportTodosToPdf, printTodos } from '../lib/todo-export';
 import {
   clearAllLocalData,
@@ -50,26 +54,92 @@ import {
   validateWorkspace,
   writeSettings
 } from '../lib/workspace';
+import type { Graph, List, Todo, Workspace } from '../lib/workspace';
 
 const HISTORY_LIMIT = 150;
 const TOAST_LIFETIME_MS = 3400;
 const DEFAULT_FILE_NAME = 'workspace.todo.json';
+
+type ViewMode = 'list' | 'graph';
+type ImportMode = 'merge' | 'replace';
+type ContextAction = 'select' | 'duplicate' | 'archive' | 'restore' | 'delete';
+
+interface QuotaStatus {
+  usedBytes: number;
+  quotaBytes: number;
+  warning: boolean;
+}
+
+interface SavedFilterPreset {
+  id: string;
+  name: string;
+  filters: TodoFilters;
+}
+
+interface ToastItem {
+  id: string;
+  type: string;
+  message: string;
+}
+
+interface ContextMenuState {
+  todoId: string;
+  x: number;
+  y: number;
+}
+
+interface ExportConfig {
+  scope: 'list' | 'all' | 'selected';
+  fileName: string;
+  pdfHeader: string;
+  pdfFooter: string;
+  imageMode: 'single' | 'gallery';
+  imageFormat: 'png' | 'jpg' | 'both';
+  imageWidth: number;
+  imageHeight: number;
+  imageFontSize: number;
+  todosPerImage: number;
+  imageBackground: string;
+}
+
+interface TimerState {
+  todoId: string | null;
+  running: boolean;
+  remainingSec: number;
+}
+
+interface CommitOptions {
+  recordHistory?: boolean;
+}
+
+type GraphUpdater = Graph | ((currentGraph: Graph) => Graph);
+type ImportPreviewItem = ImportPreview & { id: string };
 
 export default function WorkspacePage() {
   const boot = useMemo(() => {
     const loaded = loadWorkspaceFromStorage();
     const settings = readSettings();
 
-    const patchedWorkspace = {
+    const nextTheme =
+      settings.theme === 'light' || settings.theme === 'dark'
+        ? settings.theme
+        : loaded.workspace.preferences.theme;
+    const nextAutosaveMinutes =
+      typeof settings.autosaveMinutes === 'number' && Number.isFinite(settings.autosaveMinutes)
+        ? settings.autosaveMinutes
+        : loaded.workspace.preferences.autosaveMinutes;
+    const nextActiveListId =
+      typeof settings.activeListId === 'string' && settings.activeListId
+        ? settings.activeListId
+        : loaded.workspace.preferences.activeListId || loaded.workspace.lists[0]?.id;
+
+    const patchedWorkspace: Workspace = {
       ...loaded.workspace,
       preferences: {
         ...loaded.workspace.preferences,
-        theme: settings.theme || loaded.workspace.preferences.theme,
-        autosaveMinutes: settings.autosaveMinutes || loaded.workspace.preferences.autosaveMinutes,
-        activeListId:
-          settings.activeListId ||
-          loaded.workspace.preferences.activeListId ||
-          loaded.workspace.lists[0]?.id
+        theme: nextTheme,
+        autosaveMinutes: nextAutosaveMinutes,
+        activeListId: nextActiveListId
       }
     };
 
@@ -78,10 +148,12 @@ export default function WorkspacePage() {
     return {
       ...loaded,
       workspace: validated,
-      savedFilters: Array.isArray(settings.savedFilters) ? settings.savedFilters : [],
+      savedFilters: Array.isArray(settings.savedFilters)
+        ? (settings.savedFilters as SavedFilterPreset[])
+        : [],
       recentFiles: getRecentFiles(),
       backups: listBackups(),
-      quotaStatus: getStorageQuotaStatus()
+      quotaStatus: getStorageQuotaStatus() as QuotaStatus
     };
   }, []);
 
@@ -94,31 +166,31 @@ export default function WorkspacePage() {
   const [quotaStatus, setQuotaStatus] = useState(boot.quotaStatus);
 
   const [newTodoText, setNewTodoText] = useState('');
-  const [quickPriority, setQuickPriority] = useState('medium');
+  const [quickPriority, setQuickPriority] = useState<Todo['priority']>('medium');
   const [quickDueDate, setQuickDueDate] = useState('');
   const [quickTags, setQuickTags] = useState('');
 
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState('');
-  const [selectedTodoIds, setSelectedTodoIds] = useState([]);
-  const [focusedTodoId, setFocusedTodoId] = useState(null);
+  const [selectedTodoIds, setSelectedTodoIds] = useState<string[]>([]);
+  const [focusedTodoId, setFocusedTodoId] = useState<string | null>(null);
 
-  const [filters, setFilters] = useState(createDefaultFilters());
-  const [savedFilters, setSavedFilters] = useState(boot.savedFilters);
+  const [filters, setFilters] = useState<TodoFilters>(createDefaultFilters());
+  const [savedFilters, setSavedFilters] = useState<SavedFilterPreset[]>(boot.savedFilters);
 
   const [showArchivedLists, setShowArchivedLists] = useState(false);
-  const [viewMode, setViewMode] = useState('list');
-  const [importMode, setImportMode] = useState('merge');
-  const [importPreviews, setImportPreviews] = useState([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [importMode, setImportMode] = useState<ImportMode>('merge');
+  const [importPreviews, setImportPreviews] = useState<ImportPreviewItem[]>([]);
 
   const [busyAction, setBusyAction] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [fileName, setFileName] = useState(DEFAULT_FILE_NAME);
-  const [fileHandle, setFileHandle] = useState(null);
-  const [toasts, setToasts] = useState([]);
-  const [contextMenu, setContextMenu] = useState(null);
+  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
-  const [exportConfig, setExportConfig] = useState({
+  const [exportConfig, setExportConfig] = useState<ExportConfig>({
     scope: 'list',
     fileName: DEFAULT_EXPORT_FILE_STEM,
     pdfHeader: '',
@@ -132,17 +204,17 @@ export default function WorkspacePage() {
     imageBackground: '#f6efe9'
   });
 
-  const [timer, setTimer] = useState({
+  const [timer, setTimer] = useState<TimerState>({
     todoId: null,
     running: false,
     remainingSec: DEFAULT_TIMER_SECONDS
   });
 
-  const pastRef = useRef([]);
-  const futureRef = useRef([]);
-  const openInputRef = useRef(null);
-  const importInputRef = useRef(null);
-  const addInputRef = useRef(null);
+  const pastRef = useRef<Workspace[]>([]);
+  const futureRef = useRef<Workspace[]>([]);
+  const openInputRef = useRef<HTMLInputElement | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const addInputRef = useRef<HTMLInputElement | null>(null);
   const workspaceRef = useRef(workspace);
   const previousQuotaWarningRef = useRef(boot.quotaStatus.warning);
 
@@ -157,7 +229,7 @@ export default function WorkspacePage() {
     [workspace.todos, activeList?.id]
   );
 
-  const filteredTodos = useMemo(() => applyFiltersAndSort(listTodos, filters), [listTodos, filters]);
+  const filteredTodos : Todo[] = useMemo(() => applyFiltersAndSort(listTodos, filters), [listTodos, filters]);
   const availableTags = useMemo(() => collectTags(listTodos), [listTodos]);
 
   const completedCount = filteredTodos.filter((todo) => todo.completed).length;
@@ -166,7 +238,7 @@ export default function WorkspacePage() {
 
   const focusedTodo = workspace.todos.find((todo) => todo.id === focusedTodoId) || null;
 
-  const dragDisabled =
+  const dragDisabled = Boolean(
     filters.sortBy !== 'manual' ||
     filters.completion !== 'active' ||
     filters.priority !== 'all' ||
@@ -176,7 +248,8 @@ export default function WorkspacePage() {
     filters.tags.length > 0 ||
     filters.searchText ||
     filters.searchTag ||
-    filters.smartFilter !== 'none';
+    filters.smartFilter !== 'none'
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -187,7 +260,7 @@ export default function WorkspacePage() {
     })
   );
 
-  function notify(type, message) {
+  function notify(type: string, message: string): void {
     const id = makeId('toast');
     setToasts((prev) => [...prev, { id, type, message }]);
     window.setTimeout(() => {
@@ -195,7 +268,7 @@ export default function WorkspacePage() {
     }, TOAST_LIFETIME_MS);
   }
 
-  function dismissToast(toastId) {
+  function dismissToast(toastId: string): void {
     setToasts((prev) => prev.filter((toast) => toast.id !== toastId));
   }
 
@@ -204,7 +277,10 @@ export default function WorkspacePage() {
    * @param {object} [options] - Commit behavior options.
    * @param {boolean} [options.recordHistory=true] - Whether to push current state to undo history.
    */
-  function commitWorkspace(nextWorkspaceOrUpdater, { recordHistory = true } = {}) {
+  function commitWorkspace(
+    nextWorkspaceOrUpdater: Workspace | ((prev: Workspace) => Workspace),
+    { recordHistory = true }: CommitOptions = {}
+  ): void {
     setWorkspace((prevWorkspace) => {
       const nextWorkspace =
         typeof nextWorkspaceOrUpdater === 'function'
@@ -220,7 +296,7 @@ export default function WorkspacePage() {
     });
   }
 
-  function replaceActiveListTodos(nextListTodos, options) {
+  function replaceActiveListTodos(nextListTodos: Todo[], options?: CommitOptions): void {
     if (!activeList?.id) {
       return;
     }
@@ -260,13 +336,13 @@ export default function WorkspacePage() {
     notify('success', 'Todo added.');
   }
 
-  function handleToggleTodo(todoId) {
+  function handleToggleTodo(todoId: string): void {
     const updatedTodos = listTodos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
             completed: !todo.completed,
-            status: !todo.completed ? 'done' : 'todo',
+            status: (!todo.completed ? 'done' : 'todo') as Todo['status'],
             updatedAt: new Date().toISOString()
           }
         : todo
@@ -274,7 +350,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleDeleteTodo(todoId) {
+  function handleDeleteTodo(todoId: string): void {
     const updatedTodos = listTodos.filter((todo) => todo.id !== todoId);
     replaceActiveListTodos(updatedTodos);
     setSelectedTodoIds((prev) => prev.filter((id) => id !== todoId));
@@ -284,14 +360,14 @@ export default function WorkspacePage() {
     notify('success', 'Todo removed.');
   }
 
-  function handleDuplicateTodo(todoId) {
+  function handleDuplicateTodo(todoId: string): void {
     const index = listTodos.findIndex((todo) => todo.id === todoId);
     if (index < 0) {
       return;
     }
 
     const original = listTodos[index];
-    const duplicate = {
+    const duplicate: Todo = {
       ...original,
       id: makeId('todo'),
       text: `${original.text} (copy)`,
@@ -301,12 +377,12 @@ export default function WorkspacePage() {
       updatedAt: new Date().toISOString()
     };
 
-    const updatedTodos = [...listTodos.slice(0, index + 1), duplicate, ...listTodos.slice(index + 1)];
+    const updatedTodos: Todo[] = [...listTodos.slice(0, index + 1), duplicate, ...listTodos.slice(index + 1)];
     replaceActiveListTodos(updatedTodos);
     notify('success', 'Todo duplicated.');
   }
 
-  function handleArchiveTodo(todoId) {
+  function handleArchiveTodo(todoId: string): void {
     const updatedTodos = listTodos.map((todo) =>
       todo.id === todoId
         ? {
@@ -320,7 +396,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleRestoreTodo(todoId) {
+  function handleRestoreTodo(todoId: string): void {
     const updatedTodos = listTodos.map((todo) =>
       todo.id === todoId
         ? {
@@ -334,7 +410,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleBeginEdit(todo) {
+  function handleBeginEdit(todo: Todo): void {
     setEditingId(todo.id);
     setEditingDraft(todo.text);
     setFocusedTodoId(todo.id);
@@ -368,10 +444,11 @@ export default function WorkspacePage() {
   }
 
   /**
+   * Applies a partial update to a todo item.
    * @param {string} todoId - Todo id to patch.
-   * @param {object} patch - Partial todo fields to merge.
+   * @param {Partial<Todo>} patch - Partial todo fields to merge.
    */
-  function handlePatchTodo(todoId, patch) {
+  function handlePatchTodo(todoId: string, patch: Partial<Todo>): void {
     const updatedTodos = listTodos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
@@ -389,7 +466,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleAddSubtask(todoId, text) {
+  function handleAddSubtask(todoId: string, text: string): void {
     const trimmed = text.trim();
     if (!trimmed) {
       return;
@@ -408,7 +485,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleToggleSubtask(todoId, subtaskId) {
+  function handleToggleSubtask(todoId: string, subtaskId: string): void {
     const updatedTodos = listTodos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
@@ -426,7 +503,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  function handleDeleteSubtask(todoId, subtaskId) {
+  function handleDeleteSubtask(todoId: string, subtaskId: string): void {
     const updatedTodos = listTodos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
@@ -442,9 +519,9 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos);
   }
 
-  async function handleAttachFiles(todoId, files) {
+  async function handleAttachFiles(todoId: string, files: File[]): Promise<void> {
     try {
-      const attachments = await Promise.all(files.map((file) => fileToAttachment(file)));
+      const attachments = await Promise.all(files.map((file: File) => fileToAttachment(file)));
       const updatedTodos = listTodos.map((todo) =>
         todo.id === todoId
           ? {
@@ -461,7 +538,7 @@ export default function WorkspacePage() {
     }
   }
 
-  function applyTrackedMinutes(todoId, minutes) {
+  function applyTrackedMinutes(todoId: string | null, minutes: number) {
     if (!todoId || !Number.isFinite(minutes) || minutes <= 0) {
       return;
     }
@@ -479,7 +556,7 @@ export default function WorkspacePage() {
     replaceActiveListTodos(updatedTodos, { recordHistory: false });
   }
 
-  function handleStartTimer(todoId) {
+  function handleStartTimer(todoId: string) {
     setTimer({
       todoId,
       running: true,
@@ -511,7 +588,7 @@ export default function WorkspacePage() {
     });
   }
 
-  function handleToggleSelect(todoId) {
+  function handleToggleSelect(todoId: string) {
     setSelectedTodoIds((prev) => (prev.includes(todoId) ? prev.filter((id) => id !== todoId) : [...prev, todoId]));
   }
 
@@ -523,8 +600,8 @@ export default function WorkspacePage() {
     setSelectedTodoIds([]);
   }
 
-  function handleBulkSetPriority(priority) {
-    const ids = new Set(selectedTodoIds);
+  function handleBulkSetPriority(priority: Todo['priority']) {
+    const ids: Set<string> = new Set(selectedTodoIds);
     const updatedTodos = listTodos.map((todo) =>
       ids.has(todo.id)
         ? {
@@ -539,7 +616,7 @@ export default function WorkspacePage() {
   }
 
   function handleBulkArchive() {
-    const ids = new Set(selectedTodoIds);
+    const ids: Set<string> = new Set(selectedTodoIds);
     const updatedTodos = listTodos.map((todo) =>
       ids.has(todo.id)
         ? {
@@ -555,7 +632,7 @@ export default function WorkspacePage() {
   }
 
   function handleBulkDelete() {
-    const ids = new Set(selectedTodoIds);
+    const ids: Set<string> = new Set(selectedTodoIds);
     const updatedTodos = listTodos.filter((todo) => !ids.has(todo.id));
     replaceActiveListTodos(updatedTodos);
     setSelectedTodoIds([]);
@@ -636,7 +713,7 @@ export default function WorkspacePage() {
     notify('success', 'All list todos cleared.');
   }
 
-  function handleDragEnd(event) {
+  function handleDragEnd(event: DragEndEvent) {
     if (dragDisabled) {
       return;
     }
@@ -661,7 +738,7 @@ export default function WorkspacePage() {
    * @param {string} [payload.icon] - Emoji or icon glyph.
    * @param {string} [payload.color] - CSS color string.
    */
-  function handleCreateList(payload) {
+  function handleCreateList(payload: { name: string; icon?: string; color?: string }) {
     const name = payload.name.trim();
     if (!name) {
       return;
@@ -680,7 +757,7 @@ export default function WorkspacePage() {
     notify('success', `List "${name}" created.`);
   }
 
-  function handleRenameList(listId) {
+  function handleRenameList(listId: string) {
     const list = lists.find((entry) => entry.id === listId);
     if (!list) {
       return;
@@ -710,7 +787,7 @@ export default function WorkspacePage() {
     }));
   }
 
-  function handleDeleteList(listId) {
+  function handleDeleteList(listId: string) {
     if (lists.length <= 1) {
       notify('warning', 'At least one list must remain.');
       return;
@@ -747,8 +824,8 @@ export default function WorkspacePage() {
     notify('success', 'List deleted.');
   }
 
-  function handleMoveList(listId, direction) {
-    const ordered = [...lists];
+  function handleMoveList(listId: string, direction: number) {
+    const ordered: List[] = [...lists];
     const fromIndex = ordered.findIndex((entry) => entry.id === listId);
     const toIndex = fromIndex + direction;
 
@@ -768,7 +845,7 @@ export default function WorkspacePage() {
     }));
   }
 
-  function handleArchiveList(listId) {
+  function handleArchiveList(listId: string) {
     commitWorkspace((prevWorkspace) => ({
       ...prevWorkspace,
       lists: prevWorkspace.lists.map((entry) =>
@@ -791,7 +868,7 @@ export default function WorkspacePage() {
     }
   }
 
-  function handleRestoreList(listId) {
+  function handleRestoreList(listId: string) {
     commitWorkspace((prevWorkspace) => ({
       ...prevWorkspace,
       lists: prevWorkspace.lists.map((entry) =>
@@ -807,8 +884,8 @@ export default function WorkspacePage() {
     }));
   }
 
-  function handleFilterChange(key, value) {
-    setFilters((prev) => ({
+  function handleFilterChange(key: keyof TodoFilters, value: TodoFilters[keyof TodoFilters]) {
+    setFilters((prev: TodoFilters) => ({
       ...prev,
       [key]: value
     }));
@@ -825,7 +902,7 @@ export default function WorkspacePage() {
       return;
     }
 
-    const nextPreset = {
+    const nextPreset: SavedFilterPreset = {
       id: makeId('preset'),
       name,
       filters
@@ -835,7 +912,7 @@ export default function WorkspacePage() {
     notify('success', `Saved preset "${name}".`);
   }
 
-  function handleApplySavedFilter(presetId) {
+  function handleApplySavedFilter(presetId: string) {
     const preset = savedFilters.find((entry) => entry.id === presetId);
     if (!preset) {
       return;
@@ -844,7 +921,7 @@ export default function WorkspacePage() {
     notify('success', `Applied preset "${preset.name}".`);
   }
 
-  function handleDeleteSavedFilter(presetId) {
+  function handleDeleteSavedFilter(presetId: string) {
     const preset = savedFilters.find((entry) => entry.id === presetId);
     setSavedFilters((prev) => prev.filter((entry) => entry.id !== presetId));
     if (preset) {
@@ -852,9 +929,9 @@ export default function WorkspacePage() {
     }
   }
 
-  function getScopedTodos(scope) {
+  function getScopedTodos(scope: ExportConfig['scope']): Todo[] {
     if (scope === 'selected') {
-      const selected = new Set(selectedTodoIds);
+      const selected: Set<string> = new Set(selectedTodoIds);
       return workspace.todos.filter((todo) => selected.has(todo.id));
     }
 
@@ -969,7 +1046,7 @@ export default function WorkspacePage() {
     notify('success', `Exported ${todos.length} todos as image assets.`);
   }
 
-  async function handleImportFiles(files) {
+  async function handleImportFiles(files: File[]) {
     if (!activeList?.id || files.length === 0) {
       return;
     }
@@ -977,7 +1054,7 @@ export default function WorkspacePage() {
     try {
       setBusyAction('import');
       setErrorMessage('');
-      const parsed = await Promise.all(files.map((file) => parseImportFile(file, activeList.id)));
+      const parsed : ImportPreview[] = await Promise.all(files.map((file) => parseImportFile(file, activeList.id)));
       setImportPreviews(parsed.map((entry) => ({ ...entry, id: makeId('import') })));
       notify('success', `${parsed.length} file(s) prepared for import preview.`);
     } catch (error) {
@@ -997,8 +1074,8 @@ export default function WorkspacePage() {
     const scopeListId = activeList.id;
 
     commitWorkspace((prevWorkspace) => {
-      let nextWorkspace = { ...prevWorkspace };
-      let nextTodos = [...prevWorkspace.todos];
+      let nextWorkspace: Workspace = { ...prevWorkspace };
+      let nextTodos: Todo[] = [...prevWorkspace.todos];
 
       importPreviews.forEach((preview) => {
         if (preview.kind === 'workspace') {
@@ -1034,7 +1111,7 @@ export default function WorkspacePage() {
         }
 
         if (preview.kind === 'todos') {
-          const importedTodos = (preview.todos || []).map((todo) => ({
+          const importedTodos : Todo[] = (preview.todos || []).map((todo: Todo) => ({
             ...todo,
             id: makeId('todo'),
             listId: scopeListId,
@@ -1072,14 +1149,14 @@ export default function WorkspacePage() {
         return nextWorkspace;
       }
 
-      const listBuckets = new Map();
+      const listBuckets: Map<string, Todo[]> = new Map();
       nextTodos.forEach((todo) => {
         const bucket = listBuckets.get(todo.listId) || [];
         bucket.push(todo);
         listBuckets.set(todo.listId, bucket);
       });
 
-      const normalizedTodos = [];
+      const normalizedTodos: Todo[] = [];
       listBuckets.forEach((bucketTodos) => {
         bucketTodos
           .sort((a, b) => a.order - b.order)
@@ -1154,7 +1231,7 @@ export default function WorkspacePage() {
     }
   }
 
-  async function handleOpenFromInput(event) {
+  async function handleOpenFromInput(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !activeList?.id) {
       return;
@@ -1168,7 +1245,7 @@ export default function WorkspacePage() {
 
       if (lowerName.endsWith('.csv')) {
         const text = await file.text();
-        const importedTodos = importTodosFromCsv(text, activeList.id).map((todo, index) => ({
+        const importedTodos : Todo[] = importTodosFromCsv(text, activeList.id).map((todo: Todo, index: number) => ({
           ...todo,
           id: makeId('todo'),
           listId: activeList.id,
@@ -1220,7 +1297,7 @@ export default function WorkspacePage() {
     setErrorMessage('');
 
     try {
-      const workspaceWithPrefs = {
+      const workspaceWithPrefs: Workspace = {
         ...workspace,
         preferences: {
           ...workspace.preferences,
@@ -1256,7 +1333,7 @@ export default function WorkspacePage() {
     setErrorMessage('');
 
     try {
-      const workspaceWithPrefs = {
+      const workspaceWithPrefs: Workspace = {
         ...workspace,
         preferences: {
           ...workspace.preferences,
@@ -1331,7 +1408,7 @@ export default function WorkspacePage() {
     );
   }
 
-  function handleAutosaveIntervalChange(nextMinutes) {
+  function handleAutosaveIntervalChange(nextMinutes: number) {
     commitWorkspace(
       (prevWorkspace) => ({
         ...prevWorkspace,
@@ -1345,18 +1422,22 @@ export default function WorkspacePage() {
     notify('success', `Backup interval set to ${nextMinutes} minute${nextMinutes === 1 ? '' : 's'}.`);
   }
 
-  function handleExportConfigChange(key, value) {
+  function handleExportConfigChange(key: string, value: unknown) {
+    if (!(key in exportConfig)) {
+      return;
+    }
+
     setExportConfig((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value as ExportConfig[keyof ExportConfig]
     }));
   }
 
-  function handleOpenContextMenu(todoId, x, y) {
+  function handleOpenContextMenu(todoId: string, x: number, y: number) {
     setContextMenu({ todoId, x, y });
   }
 
-  function handleGraphChange(nextGraphOrUpdater, { recordHistory = true } = {}) {
+  function handleGraphChange(nextGraphOrUpdater: GraphUpdater, { recordHistory = true }: CommitOptions = {}) {
     commitWorkspace(
       (prevWorkspace) => {
         const currentGraph = prevWorkspace.graph || { nodes: [], edges: [] };
@@ -1372,7 +1453,7 @@ export default function WorkspacePage() {
     );
   }
 
-  function handleJumpToTodo(todoId) {
+  function handleJumpToTodo(todoId: string) {
     const todo = workspace.todos.find((entry) => entry.id === todoId);
     if (!todo) {
       notify('warning', 'Linked todo could not be found.');
@@ -1385,7 +1466,7 @@ export default function WorkspacePage() {
     setSelectedTodoIds([todo.id]);
   }
 
-  function handleContextAction(action, todoId) {
+  function handleContextAction(action: ContextAction, todoId: string) {
     setContextMenu(null);
 
     if (action === 'duplicate') {
@@ -1411,7 +1492,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     workspaceRef.current = workspace;
-    const workspaceWithPrefs = {
+    const workspaceWithPrefs: Workspace = {
       ...workspace,
       preferences: {
         ...workspace.preferences,
@@ -1449,7 +1530,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     if (!workspace.lists.some((list) => list.id === activeListId)) {
-      setActiveListId(workspace.lists[0]?.id || null);
+      setActiveListId(workspace.lists[0]?.id || '');
     }
   }, [workspace.lists, activeListId]);
 
@@ -1499,7 +1580,7 @@ export default function WorkspacePage() {
   }, [timer.running]);
 
   useEffect(() => {
-    function onKeyDown(event) {
+    function onKeyDown(event: KeyboardEvent) {
       const isMod = event.metaKey || event.ctrlKey;
       if (!isMod) {
         return;
@@ -1549,7 +1630,7 @@ export default function WorkspacePage() {
       setContextMenu(null);
     }
 
-    function onEscape(event) {
+    function onEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setContextMenu(null);
       }
@@ -1647,7 +1728,7 @@ export default function WorkspacePage() {
           onAutosaveChange={handleAutosaveIntervalChange}
           onClearLocalData={handleClearLocalData}
           importMode={importMode}
-          onImportModeChange={setImportMode}
+          onImportModeChange={(mode) => setImportMode(mode as ImportMode)}
           onPickImportFiles={() => importInputRef.current?.click()}
           importPreviews={importPreviews}
           onApplyImports={handleApplyImports}

@@ -1,4 +1,4 @@
-export function formatBytes(bytes) {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} B`;
   }
@@ -8,7 +8,7 @@ export function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-export function formatRelativeDate(isoString) {
+export function formatRelativeDate(isoString: string): string {
   try {
     return new Intl.DateTimeFormat(undefined, {
       month: 'short',

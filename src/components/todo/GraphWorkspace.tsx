@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -50,38 +51,92 @@ import {
   wouldCreateCycle
 } from '../../lib/graph-layout';
 import { createEdge, createNode } from '../../lib/workspace';
+import type { Graph, GraphEdge, GraphNode, Todo } from '../../lib/workspace';
+
+type NotifyKind = 'success' | 'warning' | 'error';
+type AlignMode = 'left' | 'right' | 'hcenter' | 'top' | 'bottom' | 'vcenter';
+type LayoutKind = 'hierarchical' | 'force';
+type ExportImageFormat = 'png' | 'jpg';
+
+interface GraphChangeOptions {
+  recordHistory?: boolean;
+}
+
+type GraphUpdater = Graph | ((currentGraph: Graph) => Graph);
+
+interface GraphWorkspaceProps {
+  graph: Graph | unknown;
+  todos: Todo[];
+  onGraphChange?: (nextGraphOrUpdater: GraphUpdater, options?: GraphChangeOptions) => void;
+  onNotify?: (type: NotifyKind, message: string) => void;
+  onJumpToTodo?: (todoId: string) => void;
+}
+
+interface EdgeTypeOption {
+  value: GraphEdge['type'];
+  label: string;
+}
+
+interface NodePosition {
+  x: number;
+  y: number;
+}
+
+interface NodeChangeLike {
+  id?: string;
+  type: string;
+  position?: NodePosition;
+}
+
+interface SelectionChangeLike {
+  nodes: Array<{ id: string }>;
+  edges: Array<{ id: string }>;
+}
+
+interface ConnectParams {
+  source: string | null;
+  target: string | null;
+}
+
+interface FlowNodeLike {
+  id: string;
+  position: NodePosition;
+  data?: {
+    color?: string;
+  };
+}
 
 const NODE_TYPES = {
   graphNode: GraphNodeCard
 };
 
-const EDGE_TYPES = [
+const EDGE_TYPES: EdgeTypeOption[] = [
   { value: 'curved', label: 'Curved' },
   { value: 'straight', label: 'Straight' },
   { value: 'orthogonal', label: 'Orthogonal' }
 ];
 
-const SHAPES = ['square', 'circle', 'diamond', 'pill'];
-const SIZES = ['sm', 'md', 'lg'];
-const PRIORITIES = ['low', 'medium', 'high', 'critical'];
-const STATUSES = ['todo', 'doing', 'done', 'blocked'];
+const SHAPES: GraphNode['shape'][] = ['square', 'circle', 'diamond', 'pill'];
+const SIZES: GraphNode['size'][] = ['sm', 'md', 'lg'];
+const PRIORITIES: Todo['priority'][] = ['low', 'medium', 'high', 'critical'];
+const STATUSES: Todo['status'][] = ['todo', 'doing', 'done', 'blocked'];
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function parseTags(raw) {
+function parseTags(raw: string): string[] {
   return raw
     .split(',')
     .map((tag) => tag.trim())
     .filter(Boolean);
 }
 
-function createDownload(fileName, content, mimeType) {
+function createDownload(fileName: string, content: string, mimeType: string): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -93,7 +148,7 @@ function createDownload(fileName, content, mimeType) {
   URL.revokeObjectURL(url);
 }
 
-function downloadFromDataUrl(fileName, dataUrl) {
+function downloadFromDataUrl(fileName: string, dataUrl: string): void {
   const anchor = document.createElement('a');
   anchor.href = dataUrl;
   anchor.download = fileName;
@@ -102,7 +157,7 @@ function downloadFromDataUrl(fileName, dataUrl) {
   anchor.remove();
 }
 
-function isInputLikeTarget(target) {
+function isInputLikeTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
@@ -115,8 +170,8 @@ function isInputLikeTarget(target) {
   return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
 }
 
-function collectHiddenNodeIds(nodes, edges) {
-  const hidden = new Set();
+function collectHiddenNodeIds(nodes: GraphNode[], edges: GraphEdge[]): Set<string> {
+  const hidden: Set<string> = new Set();
   nodes
     .filter((node) => node.collapsed)
     .forEach((node) => {
@@ -127,9 +182,9 @@ function collectHiddenNodeIds(nodes, edges) {
   return hidden;
 }
 
-function buildBranchProgress(nodes, edges) {
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const progress = new Map();
+function buildBranchProgress(nodes: GraphNode[], edges: GraphEdge[]): Map<string, number | null> {
+  const nodeById: Map<string, GraphNode> = new Map(nodes.map((node) => [node.id, node]));
+  const progress: Map<string, number | null> = new Map();
 
   nodes.forEach((node) => {
     const descendants = getDescendantNodeIds(node.id, edges);
@@ -146,17 +201,17 @@ function buildBranchProgress(nodes, edges) {
   return progress;
 }
 
-function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTodo }) {
+function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTodo }: GraphWorkspaceProps) {
   const flow = useReactFlow();
-  const importGraphRef = useRef(null);
-  const canvasRef = useRef(null);
-  const searchInputRef = useRef(null);
+  const importGraphRef = useRef<HTMLInputElement | null>(null);
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [selectedNodeIds, setSelectedNodeIds] = useState([]);
-  const [selectedEdgeIds, setSelectedEdgeIds] = useState([]);
-  const [hoveredNodeId, setHoveredNodeId] = useState(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  const [defaultEdgeType, setDefaultEdgeType] = useState('curved');
+  const [defaultEdgeType, setDefaultEdgeType] = useState<GraphEdge['type']>('curved');
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize, setGridSize] = useState(28);
   const [showMiniMap, setShowMiniMap] = useState(true);
@@ -169,22 +224,22 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   const [transparentExport, setTransparentExport] = useState(false);
   const [exportBackground, setExportBackground] = useState('#f4ede6');
 
-  const [savedPositions, setSavedPositions] = useState(null);
+  const [savedPositions, setSavedPositions] = useState<Record<string, NodePosition> | null>(null);
 
   const normalizedGraph = useMemo(() => normalizeGraph(graph), [graph]);
   const nodes = normalizedGraph.nodes;
   const edges = normalizedGraph.edges;
 
   const notify = useCallback(
-    (type, message) => {
+    (type: NotifyKind, message: string) => {
       onNotify?.(type, message);
     },
     [onNotify]
   );
 
   const commitGraph = useCallback(
-    (updater, options = { recordHistory: true }) => {
-      onGraphChange?.((currentGraph) => {
+    (updater: GraphUpdater, options: GraphChangeOptions = { recordHistory: true }) => {
+      onGraphChange?.((currentGraph: Graph) => {
         const current = normalizeGraph(currentGraph);
         const next = typeof updater === 'function' ? updater(current) : updater;
         return normalizeGraph(next);
@@ -194,8 +249,8 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   useEffect(() => {
-    const validNodeIds = new Set(nodes.map((node) => node.id));
-    const validEdgeIds = new Set(edges.map((edge) => edge.id));
+    const validNodeIds: Set<string> = new Set(nodes.map((node) => node.id));
+    const validEdgeIds: Set<string> = new Set(edges.map((edge) => edge.id));
 
     setSelectedNodeIds((prev) => prev.filter((id) => validNodeIds.has(id)));
     setSelectedEdgeIds((prev) => prev.filter((id) => validEdgeIds.has(id)));
@@ -220,7 +275,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const connectionCounts = useMemo(() => {
-    const counts = new Map(nodes.map((node) => [node.id, 0]));
+    const counts: Map<string, number> = new Map(nodes.map((node) => [node.id, 0]));
     edges.forEach((edge) => {
       counts.set(edge.from, (counts.get(edge.from) || 0) + 1);
       counts.set(edge.to, (counts.get(edge.to) || 0) + 1);
@@ -243,10 +298,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   const searchMatches = useMemo(() => {
     const query = searchText.trim().toLowerCase();
     if (!query) {
-      return new Set();
+      return new Set<string>();
     }
 
-    return new Set(
+    return new Set<string>(
       nodes
         .filter((node) => {
           const bucket = [
@@ -297,7 +352,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             related: relatedSet.has(node.id),
             critical: criticalNodeIds.has(node.id),
             searchMatch,
-            onToggleCompleted: (nodeId) => {
+            onToggleCompleted: (nodeId: string) => {
               commitGraph(
                 (prev) => ({
                   ...prev,
@@ -315,7 +370,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 { recordHistory: true }
               );
             },
-            onRename: (nodeId) => {
+            onRename: (nodeId: string) => {
               const target = nodes.find((entry) => entry.id === nodeId);
               if (!target) {
                 return;
@@ -342,7 +397,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 { recordHistory: true }
               );
             },
-            onAddChild: (nodeId) => {
+            onAddChild: (nodeId: string) => {
               const parent = nodes.find((entry) => entry.id === nodeId);
               if (!parent) {
                 return;
@@ -450,7 +505,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   }, [flow, nodes.length, snapToGrid, gridSize, commitGraph, notify]);
 
   const handlePaneDoubleClick = useCallback(
-    (event) => {
+    (event: { clientX: number; clientY: number }) => {
       const point = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const node = createNode(`Node ${nodes.length + 1}`);
       node.x = snapToGrid ? Math.round(point.x / gridSize) * gridSize : point.x;
@@ -475,8 +530,8 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       return;
     }
 
-    const nodeSet = new Set(selectedNodeIds);
-    const edgeSet = new Set(selectedEdgeIds);
+    const nodeSet: Set<string> = new Set(selectedNodeIds);
+    const edgeSet: Set<string> = new Set(selectedEdgeIds);
 
     commitGraph(
       (prev) => ({
@@ -500,13 +555,13 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       return;
     }
 
-    const selectedSet = new Set(selectedNodeIds);
-    const map = new Map();
+    const selectedSet: Set<string> = new Set(selectedNodeIds);
+    const map: Map<string, string> = new Map();
 
     const clones = nodes
       .filter((node) => selectedSet.has(node.id))
       .map((node) => {
-        const clone = {
+        const clone: GraphNode = {
           ...node,
           id: createNode().id,
           label: `${node.label} copy`,
@@ -522,14 +577,23 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
 
     const clonedEdges = edges
       .filter((edge) => selectedSet.has(edge.from) && selectedSet.has(edge.to))
-      .map((edge) => ({
-        ...edge,
-        id: createEdge('', '').id,
-        from: map.get(edge.from),
-        to: map.get(edge.to),
-        createdAt: nowIso(),
-        updatedAt: nowIso()
-      }));
+      .map((edge) => {
+        const from = map.get(edge.from);
+        const to = map.get(edge.to);
+        if (!from || !to) {
+          return null;
+        }
+
+        return {
+          ...edge,
+          id: createEdge('', '').id,
+          from,
+          to,
+          createdAt: nowIso(),
+          updatedAt: nowIso()
+        };
+      })
+      .filter((edge): edge is GraphEdge => edge !== null);
 
     commitGraph(
       (prev) => ({
@@ -561,7 +625,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   }, [selectedNodeIds, commitGraph, notify]);
 
   const handleConnect = useCallback(
-    (params) => {
+    (params: ConnectParams) => {
       const source = params.source;
       const target = params.target;
 
@@ -600,7 +664,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const handleNodesChange = useCallback(
-    (changes) => {
+    (changes: NodeChangeLike[]) => {
       const positionUpdates = changes.filter((change) => change.type === 'position' && change.position);
       const removals = changes.filter((change) => change.type === 'remove');
 
@@ -614,7 +678,14 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           let nextEdges = prev.edges;
 
           if (positionUpdates.length > 0) {
-            const map = new Map(positionUpdates.map((change) => [change.id, change.position]));
+            const map: Map<string, NodePosition> = new Map(
+              positionUpdates
+                .filter(
+                  (change): change is NodeChangeLike & { id: string; position: NodePosition } =>
+                    typeof change.id === 'string' && Boolean(change.position)
+                )
+                .map((change) => [change.id, change.position])
+            );
             nextNodes = nextNodes.map((node) => {
               const update = map.get(node.id);
               if (!update) {
@@ -631,7 +702,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           }
 
           if (removals.length > 0) {
-            const ids = new Set(removals.map((change) => change.id));
+            const ids: Set<string> = new Set(
+              removals
+                .map((change) => change.id)
+                .filter((id): id is string => typeof id === 'string')
+            );
             nextNodes = nextNodes.filter((node) => !ids.has(node.id));
             nextEdges = nextEdges.filter((edge) => !ids.has(edge.from) && !ids.has(edge.to));
           }
@@ -649,7 +724,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const handleNodeDragStop = useCallback(
-    (_event, node) => {
+    (_event: unknown, node: { id: string; position: NodePosition }) => {
       commitGraph(
         (prev) => ({
           ...prev,
@@ -671,13 +746,17 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const handleEdgesChange = useCallback(
-    (changes) => {
+    (changes: NodeChangeLike[]) => {
       const removals = changes.filter((change) => change.type === 'remove');
       if (removals.length === 0) {
         return;
       }
 
-      const ids = new Set(removals.map((change) => change.id));
+      const ids: Set<string> = new Set(
+        removals
+          .map((change) => change.id)
+          .filter((id): id is string => typeof id === 'string')
+      );
       commitGraph(
         (prev) => ({
           ...prev,
@@ -689,20 +768,20 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     [commitGraph]
   );
 
-  const handleSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }) => {
+  const handleSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }: SelectionChangeLike) => {
     setSelectedNodeIds(selectedNodes.map((node) => node.id));
     setSelectedEdgeIds(selectedEdges.map((edge) => edge.id));
   }, []);
 
   const applyEdgeType = useCallback(
-    (type) => {
+    (type: GraphEdge['type']) => {
       if (selectedEdgeIds.length === 0) {
         setDefaultEdgeType(type);
         notify('success', `New connections will use ${type} style.`);
         return;
       }
 
-      const selected = new Set(selectedEdgeIds);
+      const selected: Set<string> = new Set(selectedEdgeIds);
       commitGraph(
         (prev) => ({
           ...prev,
@@ -725,14 +804,16 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const alignSelected = useCallback(
-    (mode) => {
+    (mode: AlignMode) => {
       const selected = nodes.filter((node) => selectedNodeIds.includes(node.id));
       if (selected.length < 2) {
         notify('warning', 'Select at least two nodes to align.');
         return;
       }
 
-      const dimensions = new Map(selected.map((node) => [node.id, nodeSizeToDimensions(node.size)]));
+      const dimensions: Map<string, { width: number; height: number }> = new Map(
+        selected.map((node) => [node.id, nodeSizeToDimensions(node.size)])
+      );
       const centersX = selected.map((node) => node.x + (dimensions.get(node.id)?.width || 0) / 2);
       const centersY = selected.map((node) => node.y + (dimensions.get(node.id)?.height || 0) / 2);
 
@@ -748,7 +829,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       const targetCenterX = centersX.reduce((sum, value) => sum + value, 0) / centersX.length;
       const targetCenterY = centersY.reduce((sum, value) => sum + value, 0) / centersY.length;
 
-      const selectedSet = new Set(selectedNodeIds);
+      const selectedSet: Set<string> = new Set(selectedNodeIds);
       commitGraph(
         (prev) => ({
           ...prev,
@@ -786,7 +867,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const handleAutoLayout = useCallback(
-    (kind) => {
+    (kind: LayoutKind) => {
       commitGraph(
         (prev) => ({
           ...prev,
@@ -896,7 +977,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   }, [flow]);
 
   const handleCenterOnNode = useCallback(
-    (nodeId) => {
+    (nodeId: string) => {
       const node = nodes.find((entry) => entry.id === nodeId);
       if (!node) {
         return;
@@ -908,7 +989,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 
   const handleFindFirstMatch = useCallback(() => {
-    const firstMatchId = [...searchMatches][0];
+    const firstMatchId = [...searchMatches][0] || null;
     if (!firstMatchId) {
       notify('warning', 'No node matches the current search.');
       return;
@@ -920,7 +1001,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   }, [searchMatches, handleCenterOnNode, notify]);
 
   const handlePatchActiveNode = useCallback(
-    (patch) => {
+    (patch: Partial<GraphNode>) => {
       const nodeId = selectedNodeIds[0];
       if (!nodeId) {
         return;
@@ -974,7 +1055,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     notify('success', 'Graph exported as JSON.');
   }, [nodes, edges, exportName, notify]);
 
-  const handleImportGraph = useCallback(async (event) => {
+  const handleImportGraph = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -997,9 +1078,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       if (replace) {
         commitGraph(incoming, { recordHistory: true });
       } else {
-        const existingNodeIds = new Set(nodes.map((node) => node.id));
-        const existingEdgeIds = new Set(edges.map((edge) => edge.id));
-        const nodeIdMap = new Map();
+        const existingNodeIds: Set<string> = new Set(nodes.map((node) => node.id));
+        const existingEdgeIds: Set<string> = new Set(edges.map((edge) => edge.id));
+        const nodeIdMap: Map<string, string> = new Map();
 
         const remappedNodes = incoming.nodes.map((node) => {
           let nextId = node.id;
@@ -1041,7 +1122,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               updatedAt: nowIso()
             };
           })
-          .filter(Boolean);
+          .filter((edge): edge is GraphEdge => edge !== null);
 
         commitGraph(
           (prev) => ({
@@ -1066,13 +1147,20 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     notify('success', 'Graph exported as SVG.');
   }, [nodes, edges, exportName, notify]);
 
-  const captureCanvas = useCallback(async (format) => {
+  const captureCanvas = useCallback(async (format: ExportImageFormat) => {
     const target = canvasRef.current?.querySelector('.react-flow__viewport');
     if (!target) {
       throw new Error('Graph viewport not found for export.');
     }
+    if (!(target instanceof HTMLElement)) {
+      throw new Error('Graph viewport is not an HTML element.');
+    }
 
-    const config = {
+    const config: {
+      pixelRatio: number;
+      cacheBust: boolean;
+      backgroundColor: string;
+    } = {
       pixelRatio: clamp(exportScale, 1, 5),
       cacheBust: true,
       backgroundColor: transparentExport ? 'transparent' : exportBackground
@@ -1089,7 +1177,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     return toPng(target, config);
   }, [exportScale, transparentExport, exportBackground]);
 
-  const handleExportImage = useCallback(async (format) => {
+  const handleExportImage = useCallback(async (format: ExportImageFormat) => {
     try {
       const dataUrl = await captureCanvas(format);
       downloadFromDataUrl(`${exportName || 'graph-export'}.${format}`, dataUrl);
@@ -1154,7 +1242,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   }, [nodes, edges, exportName, notify]);
 
   useEffect(() => {
-    function onKeyDown(event) {
+    function onKeyDown(event: KeyboardEvent) {
       if (isInputLikeTarget(event.target)) {
         return;
       }
@@ -1260,7 +1348,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           <div className="graph-tool-group">
             <label>
               Edge style
-              <select value={defaultEdgeType} onChange={(event) => setDefaultEdgeType(event.target.value)}>
+              <select
+                value={defaultEdgeType}
+                onChange={(event) => setDefaultEdgeType(event.target.value as GraphEdge['type'])}
+              >
                 {EDGE_TYPES.map((entry) => (
                   <option key={entry.value} value={entry.value}>
                     {entry.label}
@@ -1452,8 +1543,12 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           onEdgesChange={handleEdgesChange}
           onConnect={handleConnect}
           onSelectionChange={handleSelectionChange}
-          onPaneDoubleClick={handlePaneDoubleClick}
-          onNodeMouseEnter={(_event, node) => setHoveredNodeId(node.id)}
+          onPaneClick={(event) => {
+            if (event?.detail === 2) {
+              handlePaneDoubleClick(event);
+            }
+          }}
+          onNodeMouseEnter={(_event, node: FlowNodeLike) => setHoveredNodeId(node.id)}
           onNodeMouseLeave={() => setHoveredNodeId(null)}
           snapToGrid={snapToGrid}
           snapGrid={[gridSize, gridSize]}
@@ -1475,7 +1570,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 if (matched) {
                   return '#9f3027';
                 }
-                return node.data?.color || '#b08968';
+                return typeof node.data?.color === 'string' ? node.data.color : '#b08968';
               }}
             />
           )}
@@ -1522,7 +1617,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Shape
                 <select
                   value={activeNode.shape}
-                  onChange={(event) => handlePatchActiveNode({ shape: event.target.value })}
+                  onChange={(event) => handlePatchActiveNode({ shape: event.target.value as GraphNode['shape'] })}
                 >
                   {SHAPES.map((shape) => (
                     <option key={shape} value={shape}>
@@ -1535,7 +1630,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Size
                 <select
                   value={activeNode.size}
-                  onChange={(event) => handlePatchActiveNode({ size: event.target.value })}
+                  onChange={(event) => handlePatchActiveNode({ size: event.target.value as GraphNode['size'] })}
                 >
                   {SIZES.map((size) => (
                     <option key={size} value={size}>
@@ -1551,7 +1646,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Priority
                 <select
                   value={activeNode.priority}
-                  onChange={(event) => handlePatchActiveNode({ priority: event.target.value })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ priority: event.target.value as GraphNode['priority'] })
+                  }
                 >
                   {PRIORITIES.map((priority) => (
                     <option key={priority} value={priority}>
@@ -1564,7 +1661,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Status
                 <select
                   value={activeNode.status}
-                  onChange={(event) => handlePatchActiveNode({ status: event.target.value })}
+                  onChange={(event) => handlePatchActiveNode({ status: event.target.value as GraphNode['status'] })}
                 >
                   {STATUSES.map((status) => (
                     <option key={status} value={status}>
@@ -1723,7 +1820,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   );
 }
 
-export default function GraphWorkspace(props) {
+export default function GraphWorkspace(props: GraphWorkspaceProps) {
   return (
     <ReactFlowProvider>
       <GraphWorkspaceInner {...props} />
