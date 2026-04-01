@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -11,6 +10,8 @@ import {
   SelectionMode,
   useReactFlow
 } from '@xyflow/react';
+import { toJpeg, toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 import {
   AlignCenterVertical,
   AlignHorizontalJustifyCenter,
@@ -33,173 +34,51 @@ import {
   Trash2,
   Workflow
 } from 'lucide-react';
-import { toJpeg, toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
-import GraphNodeCard from './GraphNodeCard';
 import {
-  arrangeNodesGrid,
-  autoLayoutForce,
-  autoLayoutHierarchical,
   computeCriticalPath,
-  duplicateSubtree,
   getDescendantNodeIds,
   getRelatedNodeSet,
   graphEdgeTypeToFlow,
-  graphToSvg,
   nodeSizeToDimensions,
-  normalizeGraph,
-  wouldCreateCycle
+  normalizeGraph
 } from '../../lib/graph-layout';
-import { createEdge, createNode } from '../../lib/workspace';
-import type { Graph, GraphEdge, GraphNode, Todo } from '../../lib/workspace';
-
-type NotifyKind = 'success' | 'warning' | 'error';
-type AlignMode = 'left' | 'right' | 'hcenter' | 'top' | 'bottom' | 'vcenter';
-type LayoutKind = 'hierarchical' | 'force';
-type ExportImageFormat = 'png' | 'jpg';
-
-interface GraphChangeOptions {
-  recordHistory?: boolean;
-}
-
-type GraphUpdater = Graph | ((currentGraph: Graph) => Graph);
-
-interface GraphWorkspaceProps {
-  graph: Graph | unknown;
-  todos: Todo[];
-  onGraphChange?: (nextGraphOrUpdater: GraphUpdater, options?: GraphChangeOptions) => void;
-  onNotify?: (type: NotifyKind, message: string) => void;
-  onJumpToTodo?: (todoId: string) => void;
-}
-
-interface EdgeTypeOption {
-  value: GraphEdge['type'];
-  label: string;
-}
-
-interface NodePosition {
-  x: number;
-  y: number;
-}
-
-interface NodeChangeLike {
-  id?: string;
-  type: string;
-  position?: NodePosition;
-}
-
-interface SelectionChangeLike {
-  nodes: Array<{ id: string }>;
-  edges: Array<{ id: string }>;
-}
-
-interface ConnectParams {
-  source: string | null;
-  target: string | null;
-}
-
-interface FlowNodeLike {
-  id: string;
-  position: NodePosition;
-  data?: {
-    color?: string;
-  };
-}
-
-const NODE_TYPES = {
-  graphNode: GraphNodeCard
-};
-
-const EDGE_TYPES: EdgeTypeOption[] = [
-  { value: 'curved', label: 'Curved' },
-  { value: 'straight', label: 'Straight' },
-  { value: 'orthogonal', label: 'Orthogonal' }
-];
-
-const SHAPES: GraphNode['shape'][] = ['square', 'circle', 'diamond', 'pill'];
-const SIZES: GraphNode['size'][] = ['sm', 'md', 'lg'];
-const PRIORITIES: Todo['priority'][] = ['low', 'medium', 'high', 'critical'];
-const STATUSES: Todo['status'][] = ['todo', 'doing', 'done', 'blocked'];
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function parseTags(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
-function createDownload(fileName: string, content: string, mimeType: string): void {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-function downloadFromDataUrl(fileName: string, dataUrl: string): void {
-  const anchor = document.createElement('a');
-  anchor.href = dataUrl;
-  anchor.download = fileName;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-}
-
-function isInputLikeTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-
-  if (target.isContentEditable) {
-    return true;
-  }
-
-  const tagName = target.tagName.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
-}
-
-function collectHiddenNodeIds(nodes: GraphNode[], edges: GraphEdge[]): Set<string> {
-  const hidden: Set<string> = new Set();
-  nodes
-    .filter((node) => node.collapsed)
-    .forEach((node) => {
-      getDescendantNodeIds(node.id, edges).forEach((id) => {
-        hidden.add(id);
-      });
-    });
-  return hidden;
-}
-
-function buildBranchProgress(nodes: GraphNode[], edges: GraphEdge[]): Map<string, number | null> {
-  const nodeById: Map<string, GraphNode> = new Map(nodes.map((node) => [node.id, node]));
-  const progress: Map<string, number | null> = new Map();
-
-  nodes.forEach((node) => {
-    const descendants = getDescendantNodeIds(node.id, edges);
-    if (descendants.size === 0) {
-      progress.set(node.id, null);
-      return;
-    }
-
-    const completed = [...descendants].filter((childId) => nodeById.get(childId)?.completed).length;
-    const percent = Math.round((completed / descendants.size) * 100);
-    progress.set(node.id, percent);
-  });
-
-  return progress;
-}
+import type { Graph, GraphEdge, GraphNode } from '../../lib/workspace';
+import { createNode, createEdge } from '../../lib/workspace';
+import {
+  DEFAULT_EDGE_TYPE,
+  EDGE_TYPES,
+  NODE_TYPES,
+  PRIORITIES,
+  SHAPES,
+  SIZES,
+  STATUSES
+} from './graph-workspace/constants';
+import type {
+  FlowNodeLike,
+  GraphWorkspaceProps,
+  NodeChangeLike,
+  NotifyKind,
+  SelectionChangeLike,
+  GraphUpdater,
+  GraphChangeOptions,
+  NodePosition,
+  ExportImageFormat
+} from './graph-workspace/types';
+import {
+  buildBranchProgress,
+  clamp,
+  collectHiddenNodeIds,
+  downloadFromDataUrl,
+  isInputLikeTarget,
+  parseTags,
+  nowIso
+} from './graph-workspace/utils';
+import { useGraphWorkspaceState } from './graph-workspace/useGraphWorkspaceState';
+import { useNodeHandlers } from './graph-workspace/useNodeHandlers';
+import { useEdgeHandlers } from './graph-workspace/useEdgeHandlers';
+import { useViewportHandlers } from './graph-workspace/useViewportHandlers';
+import { useImportHandlers } from './graph-workspace/useImportHandlers';
+import { useGraphExport } from './graph-workspace/useGraphExport';
 
 function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTodo }: GraphWorkspaceProps) {
   const flow = useReactFlow();
@@ -207,24 +86,37 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
-  const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
-
-  const [defaultEdgeType, setDefaultEdgeType] = useState<GraphEdge['type']>('curved');
-  const [snapToGrid, setSnapToGrid] = useState(true);
-  const [gridSize, setGridSize] = useState(28);
-  const [showMiniMap, setShowMiniMap] = useState(true);
-  const [focusMode, setFocusMode] = useState(false);
-  const [showCriticalPath, setShowCriticalPath] = useState(false);
-
-  const [searchText, setSearchText] = useState('');
-  const [exportName, setExportName] = useState('graph-export');
-  const [exportScale, setExportScale] = useState(2);
-  const [transparentExport, setTransparentExport] = useState(false);
-  const [exportBackground, setExportBackground] = useState('#f4ede6');
-
-  const [savedPositions, setSavedPositions] = useState<Record<string, NodePosition> | null>(null);
+  // Extract all UI state into dedicated hook
+  const {
+    selectedNodeIds,
+    setSelectedNodeIds,
+    selectedEdgeIds,
+    setSelectedEdgeIds,
+    hoveredNodeId,
+    setHoveredNodeId,
+    defaultEdgeType,
+    setDefaultEdgeType,
+    snapToGrid,
+    setSnapToGrid,
+    gridSize,
+    setGridSize,
+    showMiniMap,
+    setShowMiniMap,
+    focusMode,
+    setFocusMode,
+    showCriticalPath,
+    setShowCriticalPath,
+    searchText,
+    setSearchText,
+    exportName,
+    setExportName,
+    exportScale,
+    setExportScale,
+    transparentExport,
+    setTransparentExport,
+    exportBackground,
+    setExportBackground
+  } = useGraphWorkspaceState();
 
   const normalizedGraph = useMemo(() => normalizeGraph(graph), [graph]);
   const nodes = normalizedGraph.nodes;
@@ -247,6 +139,161 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     },
     [onGraphChange]
   );
+
+  // Extract all handler categories into dedicated hooks
+  const {
+    handleAddNodeAtCenter,
+    handlePaneDoubleClick,
+    handleDeleteSelection,
+    handleDuplicateSelection,
+    handleDuplicateSubtree,
+    alignSelected,
+    handleAutoLayout,
+    handleResetPositions,
+    handleToggleCollapse,
+    handlePatchActiveNode
+  } = useNodeHandlers({
+    graph,
+    nodes,
+    edges,
+    selectedNodeIds,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    snapToGrid,
+    gridSize,
+    defaultEdgeType,
+    commitGraph,
+    notify
+  });
+
+  const {
+    handleConnect,
+    handleEdgesChange,
+    applyEdgeType
+  } = useEdgeHandlers({
+    edges,
+    nodes,
+    defaultEdgeType,
+    selectedEdgeIds,
+    setSelectedEdgeIds,
+    commitGraph,
+    notify
+  });
+
+  const {
+    handleFitView,
+    handleResetView,
+    handleCenterOnNode,
+    handleSavePositions,
+    handleLoadPositions,
+    handleSelectAll,
+    handleClearSelection,
+    handleFindFirstMatch,
+    savedPositions
+  } = useViewportHandlers({
+    nodes,
+    selectedNodeIds,
+    searchText,
+    setSearchText,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    commitGraph,
+    notify
+  });
+
+  const {
+    handleImportGraph,
+    handleClearGraph
+  } = useImportHandlers({
+    nodes,
+    edges,
+    selectedNodeIds,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    commitGraph,
+    notify
+  });
+
+  const { handleExportGraphJson, handleExportSvg, handlePrintGraph } = useGraphExport(
+    nodes,
+    edges,
+    exportName,
+    notify
+  );
+
+  const handleExportImage = useCallback(
+    async (format: ExportImageFormat) => {
+      try {
+        const target = canvasRef.current?.querySelector('.react-flow__viewport');
+        if (!target) {
+          throw new Error('Graph viewport not found for export.');
+        }
+        if (!(target instanceof HTMLElement)) {
+          throw new Error('Graph viewport is not an HTML element.');
+        }
+
+        const config = {
+          pixelRatio: clamp(exportScale, 1, 5),
+          cacheBust: true,
+          backgroundColor: transparentExport ? 'transparent' : exportBackground
+        };
+
+        let dataUrl: string;
+        if (format === 'jpg') {
+          dataUrl = await toJpeg(target, {
+            ...config,
+            quality: 0.92,
+            backgroundColor: transparentExport ? '#ffffff' : exportBackground
+          });
+        } else {
+          dataUrl = await toPng(target, config);
+        }
+
+        downloadFromDataUrl(`${exportName || 'graph-export'}.${format}`, dataUrl);
+        notify('success', `Graph exported as ${format.toUpperCase()}.`);
+      } catch (error) {
+        notify('error', error instanceof Error ? error.message : 'Image export failed.');
+      }
+    },
+    [exportScale, transparentExport, exportBackground, exportName, notify]
+  );
+
+  const handleExportPdf = useCallback(async () => {
+    try {
+      const target = canvasRef.current?.querySelector('.react-flow__viewport');
+      if (!target) {
+        throw new Error('Graph viewport not found for export.');
+      }
+      if (!(target instanceof HTMLElement)) {
+        throw new Error('Graph viewport is not an HTML element.');
+      }
+
+      const config = {
+        pixelRatio: clamp(exportScale, 1, 5),
+        cacheBust: true,
+        backgroundColor: transparentExport ? 'transparent' : exportBackground
+      };
+
+      const dataUrl = await toPng(target, config);
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      doc.setFontSize(12);
+      doc.text(exportName || 'Graph Export', 34, 26);
+
+      const availableWidth = pageWidth - 68;
+      const availableHeight = pageHeight - 64;
+      doc.addImage(dataUrl, 'PNG', 34, 34, availableWidth, availableHeight);
+
+      doc.setFontSize(9);
+      doc.text(`Exported ${new Date().toLocaleString()}`, 34, pageHeight - 14);
+      doc.save(`${exportName || 'graph-export'}.pdf`);
+      notify('success', 'Graph exported as PDF.');
+    } catch (error) {
+      notify('error', error instanceof Error ? error.message : 'PDF export failed.');
+    }
+  }, [exportScale, transparentExport, exportBackground, exportName, notify]);
 
   useEffect(() => {
     const validNodeIds: Set<string> = new Set(nodes.map((node) => node.id));
@@ -480,189 +527,8 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     [todos, activeNode?.todoId]
   );
 
-  const handleAddNodeAtCenter = useCallback(() => {
-    const viewport = flow.getViewport();
-    const defaultX = Number.isFinite(viewport.x) ? -viewport.x + 160 : 120;
-    const defaultY = Number.isFinite(viewport.y) ? -viewport.y + 120 : 120;
 
-    const node = createNode(`Node ${nodes.length + 1}`);
-    const snappedX = snapToGrid ? Math.round(defaultX / gridSize) * gridSize : defaultX;
-    const snappedY = snapToGrid ? Math.round(defaultY / gridSize) * gridSize : defaultY;
-    node.x = snappedX;
-    node.y = snappedY;
-
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: [...prev.nodes, node]
-      }),
-      { recordHistory: true }
-    );
-
-    setSelectedNodeIds([node.id]);
-    setSelectedEdgeIds([]);
-    notify('success', 'Node added.');
-  }, [flow, nodes.length, snapToGrid, gridSize, commitGraph, notify]);
-
-  const handlePaneDoubleClick = useCallback(
-    (event: { clientX: number; clientY: number }) => {
-      const point = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const node = createNode(`Node ${nodes.length + 1}`);
-      node.x = snapToGrid ? Math.round(point.x / gridSize) * gridSize : point.x;
-      node.y = snapToGrid ? Math.round(point.y / gridSize) * gridSize : point.y;
-
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          nodes: [...prev.nodes, node]
-        }),
-        { recordHistory: true }
-      );
-
-      setSelectedNodeIds([node.id]);
-      setSelectedEdgeIds([]);
-    },
-    [flow, nodes.length, snapToGrid, gridSize, commitGraph]
-  );
-
-  const handleDeleteSelection = useCallback(() => {
-    if (selectedNodeIds.length === 0 && selectedEdgeIds.length === 0) {
-      return;
-    }
-
-    const nodeSet: Set<string> = new Set(selectedNodeIds);
-    const edgeSet: Set<string> = new Set(selectedEdgeIds);
-
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: prev.nodes.filter((node) => !nodeSet.has(node.id)),
-        edges: prev.edges.filter(
-          (edge) => !edgeSet.has(edge.id) && !nodeSet.has(edge.from) && !nodeSet.has(edge.to)
-        )
-      }),
-      { recordHistory: true }
-    );
-
-    setSelectedNodeIds([]);
-    setSelectedEdgeIds([]);
-    notify('success', 'Selection deleted.');
-  }, [selectedNodeIds, selectedEdgeIds, commitGraph, notify]);
-
-  const handleDuplicateSelection = useCallback(() => {
-    if (selectedNodeIds.length === 0) {
-      notify('warning', 'Select at least one node to duplicate.');
-      return;
-    }
-
-    const selectedSet: Set<string> = new Set(selectedNodeIds);
-    const map: Map<string, string> = new Map();
-
-    const clones = nodes
-      .filter((node) => selectedSet.has(node.id))
-      .map((node) => {
-        const clone: GraphNode = {
-          ...node,
-          id: createNode().id,
-          label: `${node.label} copy`,
-          x: node.x + 84,
-          y: node.y + 72,
-          collapsed: false,
-          createdAt: nowIso(),
-          updatedAt: nowIso()
-        };
-        map.set(node.id, clone.id);
-        return clone;
-      });
-
-    const clonedEdges = edges
-      .filter((edge) => selectedSet.has(edge.from) && selectedSet.has(edge.to))
-      .map((edge) => {
-        const from = map.get(edge.from);
-        const to = map.get(edge.to);
-        if (!from || !to) {
-          return null;
-        }
-
-        return {
-          ...edge,
-          id: createEdge('', '').id,
-          from,
-          to,
-          createdAt: nowIso(),
-          updatedAt: nowIso()
-        };
-      })
-      .filter((edge): edge is GraphEdge => edge !== null);
-
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: [...prev.nodes, ...clones],
-        edges: [...prev.edges, ...clonedEdges]
-      }),
-      { recordHistory: true }
-    );
-
-    setSelectedNodeIds(clones.map((node) => node.id));
-    setSelectedEdgeIds([]);
-    notify('success', `Duplicated ${clones.length} node(s).`);
-  }, [selectedNodeIds, nodes, edges, commitGraph, notify]);
-
-  const handleDuplicateSubtree = useCallback(() => {
-    const rootId = selectedNodeIds[0];
-    if (!rootId) {
-      notify('warning', 'Select a root node first.');
-      return;
-    }
-
-    commitGraph(
-      (prev) => duplicateSubtree(prev.nodes, prev.edges, rootId),
-      { recordHistory: true }
-    );
-
-    notify('success', 'Subtree duplicated.');
-  }, [selectedNodeIds, commitGraph, notify]);
-
-  const handleConnect = useCallback(
-    (params: ConnectParams) => {
-      const source = params.source;
-      const target = params.target;
-
-      if (!source || !target) {
-        return;
-      }
-
-      if (source === target) {
-        notify('warning', 'Cannot connect a node to itself.');
-        return;
-      }
-
-      if (wouldCreateCycle(edges, source, target)) {
-        notify('error', 'Connection rejected to prevent a circular dependency.');
-        return;
-      }
-
-      const duplicate = edges.some((edge) => edge.from === source && edge.to === target);
-      if (duplicate) {
-        notify('warning', 'That connection already exists.');
-        return;
-      }
-
-      const edge = createEdge(source, target);
-      edge.type = defaultEdgeType;
-
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          edges: [...prev.edges, edge]
-        }),
-        { recordHistory: true }
-      );
-    },
-    [edges, defaultEdgeType, commitGraph, notify]
-  );
-
+  // ReactFlow event handlers (specific to this component, not extracted)
   const handleNodesChange = useCallback(
     (changes: NodeChangeLike[]) => {
       const positionUpdates = changes.filter((change) => change.type === 'position' && change.position);
@@ -745,501 +611,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     [commitGraph]
   );
 
-  const handleEdgesChange = useCallback(
-    (changes: NodeChangeLike[]) => {
-      const removals = changes.filter((change) => change.type === 'remove');
-      if (removals.length === 0) {
-        return;
-      }
-
-      const ids: Set<string> = new Set(
-        removals
-          .map((change) => change.id)
-          .filter((id): id is string => typeof id === 'string')
-      );
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          edges: prev.edges.filter((edge) => !ids.has(edge.id))
-        }),
-        { recordHistory: true }
-      );
-    },
-    [commitGraph]
-  );
 
   const handleSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }: SelectionChangeLike) => {
     setSelectedNodeIds(selectedNodes.map((node) => node.id));
     setSelectedEdgeIds(selectedEdges.map((edge) => edge.id));
-  }, []);
-
-  const applyEdgeType = useCallback(
-    (type: GraphEdge['type']) => {
-      if (selectedEdgeIds.length === 0) {
-        setDefaultEdgeType(type);
-        notify('success', `New connections will use ${type} style.`);
-        return;
-      }
-
-      const selected: Set<string> = new Set(selectedEdgeIds);
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          edges: prev.edges.map((edge) =>
-            selected.has(edge.id)
-              ? {
-                  ...edge,
-                  type,
-                  updatedAt: nowIso()
-                }
-              : edge
-          )
-        }),
-        { recordHistory: true }
-      );
-
-      notify('success', 'Edge style updated for selection.');
-    },
-    [selectedEdgeIds, commitGraph, notify]
-  );
-
-  const alignSelected = useCallback(
-    (mode: AlignMode) => {
-      const selected = nodes.filter((node) => selectedNodeIds.includes(node.id));
-      if (selected.length < 2) {
-        notify('warning', 'Select at least two nodes to align.');
-        return;
-      }
-
-      const dimensions: Map<string, { width: number; height: number }> = new Map(
-        selected.map((node) => [node.id, nodeSizeToDimensions(node.size)])
-      );
-      const centersX = selected.map((node) => node.x + (dimensions.get(node.id)?.width || 0) / 2);
-      const centersY = selected.map((node) => node.y + (dimensions.get(node.id)?.height || 0) / 2);
-
-      const minX = Math.min(...selected.map((node) => node.x));
-      const maxX = Math.max(
-        ...selected.map((node) => node.x + (dimensions.get(node.id)?.width || 0))
-      );
-      const minY = Math.min(...selected.map((node) => node.y));
-      const maxY = Math.max(
-        ...selected.map((node) => node.y + (dimensions.get(node.id)?.height || 0))
-      );
-
-      const targetCenterX = centersX.reduce((sum, value) => sum + value, 0) / centersX.length;
-      const targetCenterY = centersY.reduce((sum, value) => sum + value, 0) / centersY.length;
-
-      const selectedSet: Set<string> = new Set(selectedNodeIds);
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          nodes: prev.nodes.map((node) => {
-            if (!selectedSet.has(node.id)) {
-              return node;
-            }
-
-            const size = nodeSizeToDimensions(node.size);
-            if (mode === 'left') {
-              return { ...node, x: minX, updatedAt: nowIso() };
-            }
-            if (mode === 'right') {
-              return { ...node, x: maxX - size.width, updatedAt: nowIso() };
-            }
-            if (mode === 'hcenter') {
-              return { ...node, x: targetCenterX - size.width / 2, updatedAt: nowIso() };
-            }
-            if (mode === 'top') {
-              return { ...node, y: minY, updatedAt: nowIso() };
-            }
-            if (mode === 'bottom') {
-              return { ...node, y: maxY - size.height, updatedAt: nowIso() };
-            }
-            if (mode === 'vcenter') {
-              return { ...node, y: targetCenterY - size.height / 2, updatedAt: nowIso() };
-            }
-            return node;
-          })
-        }),
-        { recordHistory: true }
-      );
-    },
-    [nodes, selectedNodeIds, commitGraph, notify]
-  );
-
-  const handleAutoLayout = useCallback(
-    (kind: LayoutKind) => {
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          nodes:
-            kind === 'force'
-              ? autoLayoutForce(prev.nodes, prev.edges)
-              : autoLayoutHierarchical(prev.nodes, prev.edges)
-        }),
-        { recordHistory: true }
-      );
-
-      window.requestAnimationFrame(() => {
-        flow.fitView({ padding: 0.2, duration: 360 });
-      });
-    },
-    [commitGraph, flow]
-  );
-
-  const handleResetPositions = useCallback(() => {
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: arrangeNodesGrid(prev.nodes, 4)
-      }),
-      { recordHistory: true }
-    );
-
-    window.requestAnimationFrame(() => {
-      flow.fitView({ padding: 0.18, duration: 320 });
-    });
-  }, [commitGraph, flow]);
-
-  const handleSavePositions = useCallback(() => {
-    const snapshot = Object.fromEntries(nodes.map((node) => [node.id, { x: node.x, y: node.y }]));
-    setSavedPositions(snapshot);
-    notify('success', 'Node positions snapshot saved.');
-  }, [nodes, notify]);
-
-  const handleLoadPositions = useCallback(() => {
-    if (!savedPositions) {
-      notify('warning', 'No saved position snapshot in this session.');
-      return;
-    }
-
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((node) => {
-          const snapshot = savedPositions[node.id];
-          if (!snapshot) {
-            return node;
-          }
-          return {
-            ...node,
-            x: snapshot.x,
-            y: snapshot.y,
-            updatedAt: nowIso()
-          };
-        })
-      }),
-      { recordHistory: true }
-    );
-
-    notify('success', 'Restored node positions snapshot.');
-  }, [savedPositions, commitGraph, notify]);
-
-  const handleToggleCollapse = useCallback(() => {
-    const nodeId = selectedNodeIds[0];
-    if (!nodeId) {
-      notify('warning', 'Select a node to collapse or expand.');
-      return;
-    }
-
-    commitGraph(
-      (prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((node) =>
-          node.id === nodeId
-            ? {
-                ...node,
-                collapsed: !node.collapsed,
-                updatedAt: nowIso()
-              }
-            : node
-        )
-      }),
-      { recordHistory: true }
-    );
-  }, [selectedNodeIds, commitGraph, notify]);
-
-  const handleSelectAll = useCallback(() => {
-    setSelectedNodeIds(visibleNodes.map((node) => node.id));
-    setSelectedEdgeIds([]);
-  }, [visibleNodes]);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedNodeIds([]);
-    setSelectedEdgeIds([]);
-  }, []);
-
-  const handleFitView = useCallback(() => {
-    flow.fitView({ padding: 0.2, duration: 360 });
-  }, [flow]);
-
-  const handleResetView = useCallback(() => {
-    flow.setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 360 });
-  }, [flow]);
-
-  const handleCenterOnNode = useCallback(
-    (nodeId: string) => {
-      const node = nodes.find((entry) => entry.id === nodeId);
-      if (!node) {
-        return;
-      }
-      const size = nodeSizeToDimensions(node.size);
-      flow.setCenter(node.x + size.width / 2, node.y + size.height / 2, { zoom: 1.15, duration: 360 });
-    },
-    [nodes, flow]
-  );
-
-  const handleFindFirstMatch = useCallback(() => {
-    const firstMatchId = [...searchMatches][0] || null;
-    if (!firstMatchId) {
-      notify('warning', 'No node matches the current search.');
-      return;
-    }
-
-    setSelectedNodeIds([firstMatchId]);
-    setSelectedEdgeIds([]);
-    handleCenterOnNode(firstMatchId);
-  }, [searchMatches, handleCenterOnNode, notify]);
-
-  const handlePatchActiveNode = useCallback(
-    (patch: Partial<GraphNode>) => {
-      const nodeId = selectedNodeIds[0];
-      if (!nodeId) {
-        return;
-      }
-
-      commitGraph(
-        (prev) => ({
-          ...prev,
-          nodes: prev.nodes.map((node) =>
-            node.id === nodeId
-              ? {
-                  ...node,
-                  ...patch,
-                  updatedAt: nowIso()
-                }
-              : node
-          )
-        }),
-        { recordHistory: true }
-      );
-    },
-    [selectedNodeIds, commitGraph]
-  );
-
-  const handleClearGraph = useCallback(() => {
-    if (nodes.length === 0) {
-      return;
-    }
-
-    const confirmed = window.confirm('Clear all nodes and connections in graph mode?');
-    if (!confirmed) {
-      return;
-    }
-
-    commitGraph(
-      {
-        nodes: [],
-        edges: []
-      },
-      { recordHistory: true }
-    );
-
-    setSelectedNodeIds([]);
-    setSelectedEdgeIds([]);
-    notify('success', 'Graph cleared.');
-  }, [nodes.length, commitGraph, notify]);
-
-  const handleExportGraphJson = useCallback(() => {
-    const payload = JSON.stringify({ nodes, edges }, null, 2);
-    createDownload(`${exportName || 'graph-export'}.graph.json`, payload, 'application/json;charset=utf-8');
-    notify('success', 'Graph exported as JSON.');
-  }, [nodes, edges, exportName, notify]);
-
-  const handleImportGraph = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      const raw = await file.text();
-      const parsed = JSON.parse(raw);
-      const input = parsed?.graph ? parsed.graph : parsed;
-      const incoming = normalizeGraph(input);
-
-      if (incoming.nodes.length === 0) {
-        notify('warning', 'Imported graph file had no nodes.');
-        event.target.value = '';
-        return;
-      }
-
-      const replace = window.confirm('Replace current graph? Click Cancel to merge.');
-
-      if (replace) {
-        commitGraph(incoming, { recordHistory: true });
-      } else {
-        const existingNodeIds: Set<string> = new Set(nodes.map((node) => node.id));
-        const existingEdgeIds: Set<string> = new Set(edges.map((edge) => edge.id));
-        const nodeIdMap: Map<string, string> = new Map();
-
-        const remappedNodes = incoming.nodes.map((node) => {
-          let nextId = node.id;
-          if (existingNodeIds.has(nextId) || nodeIdMap.has(nextId)) {
-            nextId = createNode().id;
-          }
-
-          existingNodeIds.add(nextId);
-          nodeIdMap.set(node.id, nextId);
-
-          return {
-            ...node,
-            id: nextId,
-            createdAt: nowIso(),
-            updatedAt: nowIso()
-          };
-        });
-
-        const remappedEdges = incoming.edges
-          .map((edge) => {
-            const from = nodeIdMap.get(edge.from) || edge.from;
-            const to = nodeIdMap.get(edge.to) || edge.to;
-            if (!existingNodeIds.has(from) || !existingNodeIds.has(to)) {
-              return null;
-            }
-
-            let nextEdgeId = edge.id;
-            if (existingEdgeIds.has(nextEdgeId)) {
-              nextEdgeId = createEdge('', '').id;
-            }
-            existingEdgeIds.add(nextEdgeId);
-
-            return {
-              ...edge,
-              id: nextEdgeId,
-              from,
-              to,
-              createdAt: nowIso(),
-              updatedAt: nowIso()
-            };
-          })
-          .filter((edge): edge is GraphEdge => edge !== null);
-
-        commitGraph(
-          (prev) => ({
-            nodes: [...prev.nodes, ...remappedNodes],
-            edges: [...prev.edges, ...remappedEdges]
-          }),
-          { recordHistory: true }
-        );
-      }
-
-      notify('success', `Imported ${incoming.nodes.length} node(s).`);
-    } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'Graph import failed.');
-    } finally {
-      event.target.value = '';
-    }
-  }, [commitGraph, notify]);
-
-  const handleExportSvg = useCallback(() => {
-    const svg = graphToSvg(nodes, edges, { title: exportName || 'Graph Export' });
-    createDownload(`${exportName || 'graph-export'}.svg`, svg, 'image/svg+xml;charset=utf-8');
-    notify('success', 'Graph exported as SVG.');
-  }, [nodes, edges, exportName, notify]);
-
-  const captureCanvas = useCallback(async (format: ExportImageFormat) => {
-    const target = canvasRef.current?.querySelector('.react-flow__viewport');
-    if (!target) {
-      throw new Error('Graph viewport not found for export.');
-    }
-    if (!(target instanceof HTMLElement)) {
-      throw new Error('Graph viewport is not an HTML element.');
-    }
-
-    const config: {
-      pixelRatio: number;
-      cacheBust: boolean;
-      backgroundColor: string;
-    } = {
-      pixelRatio: clamp(exportScale, 1, 5),
-      cacheBust: true,
-      backgroundColor: transparentExport ? 'transparent' : exportBackground
-    };
-
-    if (format === 'jpg') {
-      return toJpeg(target, {
-        ...config,
-        quality: 0.92,
-        backgroundColor: transparentExport ? '#ffffff' : exportBackground
-      });
-    }
-
-    return toPng(target, config);
-  }, [exportScale, transparentExport, exportBackground]);
-
-  const handleExportImage = useCallback(async (format: ExportImageFormat) => {
-    try {
-      const dataUrl = await captureCanvas(format);
-      downloadFromDataUrl(`${exportName || 'graph-export'}.${format}`, dataUrl);
-      notify('success', `Graph exported as ${format.toUpperCase()}.`);
-    } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'Image export failed.');
-    }
-  }, [captureCanvas, exportName, notify]);
-
-  const handleExportPdf = useCallback(async () => {
-    try {
-      const dataUrl = await captureCanvas('png');
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-
-      doc.setFontSize(12);
-      doc.text(exportName || 'Graph Export', 34, 26);
-
-      const availableWidth = pageWidth - 68;
-      const availableHeight = pageHeight - 64;
-      doc.addImage(dataUrl, 'PNG', 34, 34, availableWidth, availableHeight);
-
-      doc.setFontSize(9);
-      doc.text(`Exported ${new Date().toLocaleString()}`, 34, pageHeight - 14);
-      doc.save(`${exportName || 'graph-export'}.pdf`);
-      notify('success', 'Graph exported as PDF.');
-    } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'PDF export failed.');
-    }
-  }, [captureCanvas, exportName, notify]);
-
-  const handlePrintGraph = useCallback(() => {
-    const svg = graphToSvg(nodes, edges, { title: exportName || 'Graph Export' });
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1220,height=940');
-
-    if (!printWindow) {
-      notify('error', 'Popup blocked. Enable popups to print graph.');
-      return;
-    }
-
-    printWindow.document.write(`<!doctype html>
-<html>
-  <head>
-    <title>${exportName || 'Graph Export'}</title>
-    <style>
-      body { margin: 0; padding: 24px; font-family: Georgia, serif; background: #f4ede6; }
-      svg { width: 100%; height: auto; border: 1px solid #ccb7a7; background: #f4ede6; }
-    </style>
-  </head>
-  <body>
-    ${svg}
-    <script>
-      window.onload = function() {
-        window.focus();
-        window.print();
-      };
-    </script>
-  </body>
-</html>`);
-    printWindow.document.close();
-  }, [nodes, edges, exportName, notify]);
+  }, [setSelectedNodeIds, setSelectedEdgeIds]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -1469,7 +845,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Find nodes by name, tag, description"
             />
-            <button type="button" className="secondary-button" onClick={handleFindFirstMatch}>
+            <button type="button" className="secondary-button" onClick={() => handleFindFirstMatch(searchMatches)}>
               Find next
             </button>
           </div>
