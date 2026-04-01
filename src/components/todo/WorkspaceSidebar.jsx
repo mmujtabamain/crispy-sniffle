@@ -17,6 +17,8 @@ import {
   Undo2,
   UploadCloud
 } from 'lucide-react';
+import { DEFAULT_EXPORT_FILE_STEM } from '../../lib/workspace-page-helpers';
+import PanelSection from './PanelSection';
 
 export default function WorkspaceSidebar({
   title,
@@ -136,14 +138,12 @@ export default function WorkspaceSidebar({
         </ul>
       </div>
 
-      <div className="panel">
-        <h2>Workspace</h2>
+      <PanelSection title="Workspace">
         <p className="panel-copy">{title}</p>
         <p className="meta-line">Updated {updatedAtLabel}</p>
-      </div>
+      </PanelSection>
 
-      <div className="panel">
-        <h2>Persistence</h2>
+      <PanelSection title="Persistence">
         <div className="button-stack">
           <button type="button" className="secondary-button" onClick={() => void onOpen()}>
             {busyAction === 'open' ? <LoaderCircle size={16} className="spin" /> : <FileUp size={16} />} Open
@@ -155,10 +155,9 @@ export default function WorkspaceSidebar({
             {busyAction === 'saveAs' ? <LoaderCircle size={16} className="spin" /> : <FileDown size={16} />} Save As
           </button>
         </div>
-      </div>
+      </PanelSection>
 
-      <div className="panel">
-        <h2>Auto-Backup</h2>
+      <PanelSection title="Auto-Backup">
         <label htmlFor="autosave-select" className="setting-label">
           Snapshot interval
         </label>
@@ -168,10 +167,9 @@ export default function WorkspaceSidebar({
           <option value={10}>10 minutes</option>
         </select>
         <p className="meta-line">{backupsCount} local snapshots retained</p>
-      </div>
+      </PanelSection>
 
-      <div className="panel dropzone-panel">
-        <h2>Import</h2>
+      <PanelSection title="Import" className="dropzone-panel">
         <div className="button-stack">
           <button type="button" className="secondary-button" onClick={onPickImportFiles}>
             <UploadCloud size={16} /> Import files
@@ -210,10 +208,9 @@ export default function WorkspaceSidebar({
             </div>
           </>
         )}
-      </div>
+      </PanelSection>
 
-      <div className="panel">
-        <h2>Export</h2>
+      <PanelSection title="Export">
         <label htmlFor="export-scope" className="setting-label">
           Scope
         </label>
@@ -234,7 +231,7 @@ export default function WorkspaceSidebar({
           id="export-filename"
           value={exportConfig.fileName}
           onChange={(event) => onExportConfigChange('fileName', event.target.value)}
-          placeholder="tier2-export"
+          placeholder={DEFAULT_EXPORT_FILE_STEM}
         />
 
         <div className="button-stack export-grid">
@@ -360,10 +357,9 @@ export default function WorkspaceSidebar({
         <button type="button" className="secondary-button" onClick={onExportImages}>
           <FileImage size={15} /> Export images
         </button>
-      </div>
+      </PanelSection>
 
-      <div className="panel">
-        <h2>Recent Files</h2>
+      <PanelSection title="Recent Files">
         {recentFiles.length === 0 ? (
           <p className="meta-line">No recent files yet.</p>
         ) : (
@@ -376,14 +372,13 @@ export default function WorkspaceSidebar({
             ))}
           </ul>
         )}
-      </div>
+      </PanelSection>
 
-      <div className="panel danger-panel">
-        <h2>Danger Zone</h2>
+      <PanelSection title="Danger Zone" className="danger-panel">
         <button type="button" className="danger-button" onClick={onClearLocalData}>
           <Eraser size={16} /> Clear local data
         </button>
-      </div>
+      </PanelSection>
     </aside>
   );
 }

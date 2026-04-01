@@ -48,7 +48,7 @@ import {
   nodeSizeToDimensions,
   normalizeGraph,
   wouldCreateCycle
-} from '../../lib/tier3-graph';
+} from '../../lib/graph-layout';
 import { createEdge, createNode } from '../../lib/workspace';
 
 const NODE_TYPES = {

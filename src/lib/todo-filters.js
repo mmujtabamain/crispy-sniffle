@@ -47,6 +47,10 @@ function resolveSmartRange(smartFilter) {
   return null;
 }
 
+/**
+ * @param {Array<object>} todos - Todo items where each item may contain a `tags` array.
+ * @returns {string[]} Alphabetically sorted unique tag names.
+ */
 export function collectTags(todos) {
   const tags = new Set();
   todos.forEach((todo) => {
@@ -59,6 +63,21 @@ export function collectTags(todos) {
   return [...tags].sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * @param {Array<object>} todos - Todo items to filter and sort.
+ * @param {object} filters - Filter options.
+ * @param {string} [filters.completion] - Completion mode (`active`, `completed`, `pending`, `archived`).
+ * @param {string} [filters.priority] - Priority filter (`all`, `low`, `medium`, `high`, `critical`).
+ * @param {string} [filters.status] - Status filter (`all`, `todo`, `doing`, `done`, `blocked`).
+ * @param {string} [filters.startDate] - Inclusive due-date start in `YYYY-MM-DD` format.
+ * @param {string} [filters.endDate] - Inclusive due-date end in `YYYY-MM-DD` format.
+ * @param {string[]} [filters.tags] - Required tags (all must match).
+ * @param {string} [filters.searchText] - Full-text query.
+ * @param {string} [filters.searchTag] - Tag substring query.
+ * @param {string} [filters.smartFilter] - Smart date filter (`none`, `today`, `thisWeek`, `overdue`).
+ * @param {string} [filters.sortBy] - Sort mode (`manual`, `created-desc`, `created-asc`, `due-asc`, `priority-desc`, `alpha-asc`).
+ * @returns {Array<object>} Filtered and sorted todos.
+ */
 export function applyFiltersAndSort(todos, filters) {
   const safeFilters = {
     completion: 'active',
@@ -77,8 +96,8 @@ export function applyFiltersAndSort(todos, filters) {
   const selectedTags = Array.isArray(safeFilters.tags)
     ? safeFilters.tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)
     : [];
-  const searchText = safeFilters.searchText.trim().toLowerCase();
-  const searchTag = safeFilters.searchTag.trim().toLowerCase();
+  const searchText = String(safeFilters.searchText || '').trim().toLowerCase();
+  const searchTag = String(safeFilters.searchTag || '').trim().toLowerCase();
 
   const startDate = parseDateOnly(safeFilters.startDate);
   const endDate = parseDateOnly(safeFilters.endDate);
@@ -107,7 +126,7 @@ export function applyFiltersAndSort(todos, filters) {
     }
 
     if (selectedTags.length > 0) {
-      const todoTags = (todo.tags || []).map((tag) => tag.toLowerCase());
+      const todoTags = (todo.tags || []).map((tag) => String(tag).toLowerCase());
       const hasAllTags = selectedTags.every((tag) => todoTags.includes(tag));
       if (!hasAllTags) {
         return false;
@@ -115,7 +134,7 @@ export function applyFiltersAndSort(todos, filters) {
     }
 
     if (searchTag) {
-      const todoTags = (todo.tags || []).map((tag) => tag.toLowerCase());
+      const todoTags = (todo.tags || []).map((tag) => String(tag).toLowerCase());
       const hasMatch = todoTags.some((tag) => tag.includes(searchTag));
       if (!hasMatch) {
         return false;
@@ -170,11 +189,19 @@ export function applyFiltersAndSort(todos, filters) {
   }
 
   if (safeFilters.sortBy === 'created-desc') {
-    return sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return sorted.sort((a, b) => {
+      const bTime = new Date(b.createdAt).getTime();
+      const aTime = new Date(a.createdAt).getTime();
+      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+    });
   }
 
   if (safeFilters.sortBy === 'created-asc') {
-    return sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    return sorted.sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return (Number.isFinite(aTime) ? aTime : 0) - (Number.isFinite(bTime) ? bTime : 0);
+    });
   }
 
   if (safeFilters.sortBy === 'due-asc') {
@@ -193,7 +220,11 @@ export function applyFiltersAndSort(todos, filters) {
   }
 
   if (safeFilters.sortBy === 'priority-desc') {
-    return sorted.sort((a, b) => PRIORITY_RANK[b.priority] - PRIORITY_RANK[a.priority]);
+    return sorted.sort((a, b) => {
+      const bRank = PRIORITY_RANK[b.priority] || 0;
+      const aRank = PRIORITY_RANK[a.priority] || 0;
+      return bRank - aRank;
+    });
   }
 
   if (safeFilters.sortBy === 'alpha-asc') {
@@ -203,6 +234,9 @@ export function applyFiltersAndSort(todos, filters) {
   return sorted;
 }
 
+/**
+ * @returns {object} Default filter state object expected by `applyFiltersAndSort`.
+ */
 export function createDefaultFilters() {
   return {
     completion: 'active',

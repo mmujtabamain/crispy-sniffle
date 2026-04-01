@@ -9,7 +9,16 @@ import {
   WorkspaceSidebar
 } from '../components/todo';
 import { formatBytes, formatRelativeDate } from '../lib/formatters';
-import { applyFiltersAndSort, collectTags, createDefaultFilters } from '../lib/tier2-filters';
+import {
+  DEFAULT_EXPORT_FILE_STEM,
+  DEFAULT_TIMER_SECONDS,
+  downloadTextFile,
+  fileToAttachment,
+  mergeListTodos,
+  parseTagInput,
+  stampWorkspace
+} from '../lib/workspace-page-helpers';
+import { applyFiltersAndSort, collectTags, createDefaultFilters } from '../lib/todo-filters';
 import {
   importTodosFromCsv,
   parseImportFile,
@@ -17,8 +26,8 @@ import {
   todosToJson,
   todosToMarkdown,
   todosToText
-} from '../lib/tier2-formats';
-import { exportTodosToImages, exportTodosToPdf, printTodos } from '../lib/tier2-export';
+} from '../lib/todo-formats';
+import { exportTodosToImages, exportTodosToPdf, printTodos } from '../lib/todo-export';
 import {
   clearAllLocalData,
   createBackupSnapshot,
@@ -45,73 +54,8 @@ import {
 const HISTORY_LIMIT = 150;
 const TOAST_LIFETIME_MS = 3400;
 const DEFAULT_FILE_NAME = 'workspace.todo.json';
-const DEFAULT_TIMER_SECONDS = 25 * 60;
 
-function stampWorkspace(workspace) {
-  const timestamp = new Date().toISOString();
-  return {
-    ...workspace,
-    meta: {
-      ...workspace.meta,
-      updatedAt: timestamp
-    }
-  };
-}
-
-function mergeListTodos(allTodos, listId, listTodos) {
-  const outsideList = allTodos.filter((todo) => todo.listId !== listId);
-  const normalized = listTodos.map((todo, index) => ({
-    ...todo,
-    listId,
-    order: index,
-    updatedAt: todo.updatedAt || new Date().toISOString()
-  }));
-
-  return [...outsideList, ...normalized];
-}
-
-function parseTagInput(raw) {
-  return raw
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
-function downloadTextFile(content, fileName, mimeType = 'text/plain;charset=utf-8') {
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
-
-async function fileToAttachment(file) {
-  const isImage = file.type.startsWith('image/');
-  let previewUrl = null;
-
-  if (isImage && file.size <= 320 * 1024) {
-    previewUrl = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-      reader.onerror = () => reject(new Error(`Could not read image preview for ${file.name}`));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  return {
-    id: makeId('attachment'),
-    name: file.name,
-    type: file.type || 'application/octet-stream',
-    size: file.size || 0,
-    previewUrl
-  };
-}
-
-export default function Demo() {
+export default function WorkspacePage() {
   const boot = useMemo(() => {
     const loaded = loadWorkspaceFromStorage();
     const settings = readSettings();
@@ -176,7 +120,7 @@ export default function Demo() {
 
   const [exportConfig, setExportConfig] = useState({
     scope: 'list',
-    fileName: 'tier2-export',
+    fileName: DEFAULT_EXPORT_FILE_STEM,
     pdfHeader: '',
     pdfFooter: '',
     imageMode: 'single',
@@ -255,6 +199,11 @@ export default function Demo() {
     setToasts((prev) => prev.filter((toast) => toast.id !== toastId));
   }
 
+  /**
+   * @param {object|function} nextWorkspaceOrUpdater - Next workspace object or React state updater callback.
+   * @param {object} [options] - Commit behavior options.
+   * @param {boolean} [options.recordHistory=true] - Whether to push current state to undo history.
+   */
   function commitWorkspace(nextWorkspaceOrUpdater, { recordHistory = true } = {}) {
     setWorkspace((prevWorkspace) => {
       const nextWorkspace =
@@ -418,6 +367,10 @@ export default function Demo() {
     setEditingDraft('');
   }
 
+  /**
+   * @param {string} todoId - Todo id to patch.
+   * @param {object} patch - Partial todo fields to merge.
+   */
   function handlePatchTodo(todoId, patch) {
     const updatedTodos = listTodos.map((todo) => {
       if (todo.id !== todoId) {
@@ -702,6 +655,12 @@ export default function Demo() {
     replaceActiveListTodos(arrayMove(listTodos, oldIndex, newIndex));
   }
 
+  /**
+   * @param {object} payload - List creation payload.
+   * @param {string} payload.name - Display name for the list.
+   * @param {string} [payload.icon] - Emoji or icon glyph.
+   * @param {string} [payload.color] - CSS color string.
+   */
   function handleCreateList(payload) {
     const name = payload.name.trim();
     if (!name) {
@@ -909,7 +868,7 @@ export default function Demo() {
   function handleExportJson() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToJson(todos);
-    const exportName = `${exportConfig.fileName || 'tier2-export'}.json`;
+    const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.json`;
     downloadTextFile(output, exportName, 'application/json;charset=utf-8');
     registerRecentFile({ name: exportName, source: 'export-json' });
     notify('success', `Exported ${todos.length} todos as JSON.`);
@@ -918,7 +877,7 @@ export default function Demo() {
   function handleExportCsv() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToCsv(todos);
-    const exportName = `${exportConfig.fileName || 'tier2-export'}.csv`;
+    const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.csv`;
     downloadTextFile(output, exportName, 'text/csv;charset=utf-8');
     registerRecentFile({ name: exportName, source: 'export-csv' });
     notify('success', `Exported ${todos.length} todos as CSV.`);
@@ -927,7 +886,7 @@ export default function Demo() {
   function handleExportMarkdown() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToMarkdown(todos, `${activeList?.name || 'Todos'} export`);
-    const exportName = `${exportConfig.fileName || 'tier2-export'}.md`;
+    const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.md`;
     downloadTextFile(output, exportName, 'text/markdown;charset=utf-8');
     registerRecentFile({ name: exportName, source: 'export-md' });
     notify('success', `Exported ${todos.length} todos as Markdown.`);
@@ -936,7 +895,7 @@ export default function Demo() {
   function handleExportTxt() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToText(todos, `${activeList?.name || 'Todos'} export`);
-    const exportName = `${exportConfig.fileName || 'tier2-export'}.txt`;
+    const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.txt`;
     downloadTextFile(output, exportName, 'text/plain;charset=utf-8');
     registerRecentFile({ name: exportName, source: 'export-txt' });
     notify('success', `Exported ${todos.length} todos as TXT.`);
@@ -950,7 +909,7 @@ export default function Demo() {
     }
 
     exportTodosToPdf(todos, {
-      fileName: `${exportConfig.fileName || 'tier2-export'}.pdf`,
+      fileName: `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.pdf`,
       title: activeList?.name || 'Todo export',
       headerText: exportConfig.pdfHeader,
       footerText: exportConfig.pdfFooter,
@@ -996,7 +955,7 @@ export default function Demo() {
       exportConfig.imageFormat === 'both' ? ['png', 'jpg'] : [exportConfig.imageFormat];
 
     exportTodosToImages(todos, {
-      fileNameBase: exportConfig.fileName || 'tier2-export',
+      fileNameBase: exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM,
       title: activeList?.name || 'Todo export',
       mode: exportConfig.imageMode,
       width: exportConfig.imageWidth,

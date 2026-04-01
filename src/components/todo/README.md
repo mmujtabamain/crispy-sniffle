@@ -12,6 +12,6 @@ Shared Tier 1 todo UI building blocks.
 
 ## Usage Notes
 
-- Keep state and side effects in the page container (`Demo`) and pass handlers to these components.
+- Keep state and side effects in the page container (`WorkspacePage`) and pass handlers to these components.
 - Reuse existing CSS tokens and utility classes from `src/styles/tokens.css`.
 - Prefer semantic props (`onSaveAs`, `updatedAtLabel`) over passing raw workspace objects.

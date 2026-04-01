@@ -1,5 +1,9 @@
 import { createTodo, createWorkspace, makeId } from './workspace';
 
+/**
+ * @param {unknown} value - Raw cell value.
+ * @returns {string} CSV-safe field value.
+ */
 function escapeCsv(value) {
   const text = value == null ? '' : String(value);
   const needsQuotes = text.includes(',') || text.includes('"') || text.includes('\n');
@@ -7,6 +11,10 @@ function escapeCsv(value) {
   return needsQuotes ? `"${escaped}"` : escaped;
 }
 
+/**
+ * @param {string} line - One CSV line.
+ * @returns {string[]} Parsed cell values.
+ */
 function parseCsvLine(line) {
   const result = [];
   let current = '';
@@ -35,10 +43,18 @@ function parseCsvLine(line) {
     current += char;
   }
 
+  if (inQuotes) {
+    throw new Error('Malformed CSV row: unmatched quote.');
+  }
+
   result.push(current);
   return result;
 }
 
+/**
+ * @param {string} text - Full CSV document text.
+ * @returns {Array<object>} Parsed row objects keyed by CSV header names.
+ */
 function parseCsv(text) {
   const lines = text
     .split(/\r?\n/)
@@ -60,6 +76,10 @@ function parseCsv(text) {
   });
 }
 
+/**
+ * @param {unknown} value - Raw tag source value (string or array).
+ * @returns {string[]} Normalized tags.
+ */
 function normalizeTags(value) {
   if (!value) {
     return [];
@@ -73,6 +93,10 @@ function normalizeTags(value) {
     .filter(Boolean);
 }
 
+/**
+ * @param {unknown} value - Raw link source value (string or array).
+ * @returns {string[]} Normalized links.
+ */
 function normalizeLinks(value) {
   if (!value) {
     return [];
@@ -86,10 +110,18 @@ function normalizeLinks(value) {
     .filter(Boolean);
 }
 
+/**
+ * @param {Array<object>} todos - Todos to stringify as JSON.
+ * @returns {string} Pretty-printed JSON.
+ */
 export function todosToJson(todos) {
   return JSON.stringify(todos, null, 2);
 }
 
+/**
+ * @param {Array<object>} todos - Todos to serialize as CSV.
+ * @returns {string} CSV content including header row.
+ */
 export function todosToCsv(todos) {
   const headers = [
     'id',
@@ -134,6 +166,11 @@ export function todosToCsv(todos) {
   return [headers.join(','), ...rows].join('\n');
 }
 
+/**
+ * @param {Array<object>} todos - Todos to serialize as Markdown.
+ * @param {string} [title] - Document title.
+ * @returns {string} Markdown document.
+ */
 export function todosToMarkdown(todos, title = 'Todo Export') {
   const lines = [`# ${title}`, '', `Generated: ${new Date().toISOString()}`, ''];
 
@@ -164,6 +201,11 @@ export function todosToMarkdown(todos, title = 'Todo Export') {
   return lines.join('\n');
 }
 
+/**
+ * @param {Array<object>} todos - Todos to serialize as plain text.
+ * @param {string} [title] - Document title.
+ * @returns {string} Text export.
+ */
 export function todosToText(todos, title = 'Todo Export') {
   const lines = [title, '='.repeat(title.length), ''];
 
@@ -184,6 +226,12 @@ export function todosToText(todos, title = 'Todo Export') {
   return lines.join('\n');
 }
 
+/**
+ * @param {object} row - Imported row object.
+ * @param {string} listId - Target list id.
+ * @param {number} index - Row index used for fallback labels and ordering.
+ * @returns {object} Normalized todo object.
+ */
 function rowToTodo(row, listId, index) {
   const text = row.text || row.title || row.task || row.name || `Imported todo ${index + 1}`;
   return createTodo(text, listId, {
@@ -201,6 +249,11 @@ function rowToTodo(row, listId, index) {
   });
 }
 
+/**
+ * @param {string} text - JSON import payload.
+ * @param {string} listId - Target list id.
+ * @returns {Array<object>} Normalized todos.
+ */
 export function importTodosFromJson(text, listId) {
   const parsed = JSON.parse(text);
 
@@ -220,6 +273,11 @@ export function importTodosFromJson(text, listId) {
   throw new Error('JSON import expects an array of todos or an object with a todos array.');
 }
 
+/**
+ * @param {string} text - CSV import payload.
+ * @param {string} listId - Target list id.
+ * @returns {Array<object>} Normalized todos.
+ */
 export function importTodosFromCsv(text, listId) {
   const rows = parseCsv(text);
   if (rows.length === 0) {
@@ -228,6 +286,11 @@ export function importTodosFromCsv(text, listId) {
   return rows.map((row, index) => rowToTodo(row, listId, index));
 }
 
+/**
+ * @param {string} text - Markdown import payload.
+ * @param {string} listId - Target list id.
+ * @returns {Array<object>} Normalized todos.
+ */
 export function importTodosFromMarkdown(text, listId) {
   const lines = text.split(/\r?\n/);
   const todos = [];
@@ -256,6 +319,11 @@ export function importTodosFromMarkdown(text, listId) {
   return fallback;
 }
 
+/**
+ * @param {string} text - Plain text import payload.
+ * @param {string} listId - Target list id.
+ * @returns {Array<object>} Normalized todos.
+ */
 export function importTodosFromText(text, listId) {
   return text
     .split(/\r?\n/)
@@ -270,6 +338,10 @@ export function importTodosFromText(text, listId) {
     });
 }
 
+  /**
+   * @param {string} text - OPML document text.
+   * @returns {{nodes: Array<object>, edges: Array<object>}} Parsed graph payload.
+   */
 export function importOpmlToGraph(text) {
   const parser = new DOMParser();
   const xml = parser.parseFromString(text, 'text/xml');
@@ -320,12 +392,22 @@ export function importOpmlToGraph(text) {
   return { nodes, edges };
 }
 
+/**
+ * @param {File} file - User-selected import file.
+ * @param {string} listId - Active list id for todo imports.
+ * @returns {Promise<object>} Import preview payload with `kind` metadata.
+ */
 export async function parseImportFile(file, listId) {
   const text = await file.text();
   const ext = file.name.toLowerCase().split('.').pop() || '';
 
   if (ext === 'json' || ext === 'todo') {
-    const parsed = JSON.parse(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error(`Could not parse JSON in ${file.name}.`);
+    }
     if (parsed && typeof parsed === 'object' && Number(parsed.schemaVersion) >= 1 && Array.isArray(parsed.lists)) {
       return {
         kind: 'workspace',
@@ -391,6 +473,10 @@ export async function parseImportFile(file, listId) {
   throw new Error(`Unsupported import format for ${file.name}`);
 }
 
+/**
+ * @param {object} payload - Candidate workspace-like value.
+ * @returns {object} Workspace object fallback when payload is invalid.
+ */
 export function ensureWorkspaceShape(payload) {
   if (!payload || typeof payload !== 'object') {
     return createWorkspace();

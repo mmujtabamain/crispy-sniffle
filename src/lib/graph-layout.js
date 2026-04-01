@@ -13,10 +13,18 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+/**
+ * @param {'sm'|'md'|'lg'} [size] - Graph node size token.
+ * @returns {{width:number,height:number}} Pixel dimensions used by layout/rendering.
+ */
 export function nodeSizeToDimensions(size = 'md') {
   return NODE_SIZES[size] || NODE_SIZES.md;
 }
 
+/**
+ * @param {object} graph - Candidate graph payload with `nodes` and `edges` arrays.
+ * @returns {{nodes:Array<object>, edges:Array<object>}} Sanitized graph structure.
+ */
 export function normalizeGraph(graph) {
   const base = graph && typeof graph === 'object' ? graph : { nodes: [], edges: [] };
 
@@ -68,6 +76,10 @@ export function normalizeGraph(graph) {
   return { nodes, edges };
 }
 
+/**
+ * @param {string} type - Internal graph edge type.
+ * @returns {'smoothstep'|'straight'|'step'} React Flow edge type.
+ */
 export function graphEdgeTypeToFlow(type) {
   if (type === 'straight') {
     return 'straight';
@@ -78,6 +90,10 @@ export function graphEdgeTypeToFlow(type) {
   return 'smoothstep';
 }
 
+/**
+ * @param {string} type - React Flow edge type.
+ * @returns {'curved'|'straight'|'orthogonal'} Internal graph edge type.
+ */
 export function flowEdgeTypeToGraph(type) {
   if (type === 'straight') {
     return 'straight';
@@ -88,19 +104,42 @@ export function flowEdgeTypeToGraph(type) {
   return 'curved';
 }
 
-function hasPath(adjacency, start, goal, visited = new Set()) {
+function hasPath(adjacency, start, goal) {
   if (start === goal) {
     return true;
   }
-  if (visited.has(start)) {
-    return false;
+
+  const visited = new Set();
+  const queue = [start];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || visited.has(current)) {
+      continue;
+    }
+
+    if (current === goal) {
+      return true;
+    }
+
+    visited.add(current);
+    const neighbors = adjacency.get(current) || [];
+    neighbors.forEach((neighbor) => {
+      if (!visited.has(neighbor)) {
+        queue.push(neighbor);
+      }
+    });
   }
 
-  visited.add(start);
-  const neighbors = adjacency.get(start) || [];
-  return neighbors.some((next) => hasPath(adjacency, next, goal, visited));
+  return false;
 }
 
+/**
+ * @param {Array<object>} edges - Current edge collection containing `from` and `to` node ids.
+ * @param {string} from - Source node id for the candidate edge.
+ * @param {string} to - Target node id for the candidate edge.
+ * @returns {boolean} True when adding the edge would create a cycle.
+ */
 export function wouldCreateCycle(edges, from, to) {
   if (!from || !to) {
     return false;
@@ -119,9 +158,14 @@ export function wouldCreateCycle(edges, from, to) {
   const seed = adjacency.get(from) || [];
   adjacency.set(from, [...seed, to]);
 
-  return hasPath(adjacency, to, from, new Set());
+  return hasPath(adjacency, to, from);
 }
 
+/**
+ * @param {Array<object>} nodes - Graph nodes.
+ * @param {number} [columns] - Grid columns count.
+ * @returns {Array<object>} Nodes with recalculated x/y positions.
+ */
 export function arrangeNodesGrid(nodes, columns = 4) {
   const safeColumns = Math.max(1, Number(columns) || 4);
   return nodes.map((node, index) => {
@@ -135,6 +179,11 @@ export function arrangeNodesGrid(nodes, columns = 4) {
   });
 }
 
+/**
+ * @param {Array<object>} nodes - Graph nodes.
+ * @param {Array<object>} edges - Graph edges.
+ * @returns {Array<object>} Node list with dagre hierarchical positions.
+ */
 export function autoLayoutHierarchical(nodes, edges) {
   if (nodes.length === 0) {
     return [];
@@ -173,6 +222,12 @@ export function autoLayoutHierarchical(nodes, edges) {
   });
 }
 
+/**
+ * @param {Array<object>} nodes - Graph nodes.
+ * @param {Array<object>} edges - Graph edges.
+ * @param {number} [iterations] - Force simulation iterations.
+ * @returns {Array<object>} Node list with force-directed positions.
+ */
 export function autoLayoutForce(nodes, edges, iterations = 260) {
   if (nodes.length === 0) {
     return [];
@@ -311,10 +366,20 @@ export function getRelatedNodeSet(nodeId, edges) {
   return new Set([nodeId, ...forward, ...backward]);
 }
 
+/**
+ * @param {string} nodeId - Root node id.
+ * @param {Array<object>} edges - Graph edges.
+ * @returns {Set<string>} All descendant node ids reachable from root.
+ */
 export function getDescendantNodeIds(nodeId, edges) {
   return walkForward(nodeId, edges);
 }
 
+/**
+ * @param {Array<object>} nodes - Graph nodes.
+ * @param {Array<object>} edges - Graph edges.
+ * @returns {{nodeIds:string[], edgeIds:string[]}} Longest estimated path in DAG form.
+ */
 export function computeCriticalPath(nodes, edges) {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const incoming = new Map(nodes.map((node) => [node.id, 0]));
@@ -413,6 +478,12 @@ export function computeCriticalPath(nodes, edges) {
   };
 }
 
+/**
+ * @param {Array<object>} nodes - Graph nodes.
+ * @param {Array<object>} edges - Graph edges.
+ * @param {string} rootNodeId - Root node id for the subtree copy.
+ * @returns {{nodes:Array<object>, edges:Array<object>, rootId:string|null}} Updated graph and copied root id.
+ */
 export function duplicateSubtree(nodes, edges, rootNodeId) {
   const root = nodes.find((node) => node.id === rootNodeId);
   if (!root) {
@@ -467,6 +538,13 @@ function escapeXml(text) {
     .replaceAll("'", '&apos;');
 }
 
+  /**
+   * @param {Array<object>} graphNodes - Graph nodes with x/y and size fields.
+   * @param {Array<object>} graphEdges - Graph edges with `from` and `to` node ids.
+   * @param {object} [options] - Export options.
+   * @param {string} [options.title] - SVG title text.
+   * @returns {string} SVG XML markup.
+   */
 export function graphToSvg(graphNodes, graphEdges, { title = 'Graph Export' } = {}) {
   const nodes = graphNodes.map((node) => {
     const size = nodeSizeToDimensions(node.size);
