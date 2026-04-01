@@ -4,8 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import '@xyflow/react/dist/style.css';
 import App from './App';
 import './index.css';
-import './styles/tokens.css';
-import './styles/todo-app.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

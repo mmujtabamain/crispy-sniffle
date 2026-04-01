@@ -12,10 +12,10 @@ export default defineConfig({
             '@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-underline',
             '@tiptap/extension-link', '@tiptap/extension-placeholder',
             '@tiptap/extension-text-align', '@tiptap/extension-color',
-            '@tiptap/extension-text-style',
+            '@tiptap/extension-text-style'
           ],
-        },
-      },
-    },
-  },
+        }
+      }
+    }
+  }
 })
