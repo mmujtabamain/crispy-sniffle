@@ -30,11 +30,8 @@ export default function WorkspaceHeader({
   return (
     <header className="workspace-header">
       <div className="headline-wrap">
-        <p className="kicker">Tier 2 Delivery</p>
-        <h1 className="headline">Local-First Todo Atelier+</h1>
-        <p className="subhead">
-          Multi-list planning with advanced filters, rich task metadata, structured imports, and export pipelines.
-        </p>
+        <p className="kicker">Multi List Planner</p>
+        <h1 className="headline">TaskScape</h1>
         <p className="header-meta-line">
           Active list: <strong>{activeListName || 'Untitled list'}</strong> · Showing {visibleTodoCount} of {totalListTodos} todos
         </p>
