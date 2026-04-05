@@ -17,7 +17,7 @@
   --shadow: 0 20px 40px color-mix(in oklch, var(--ink-0) 16%, transparent);
 }
 
-body[data-theme='dark'] {
+body[data-theme="dark"] {
   color-scheme: dark;
 
   --bg-0: oklch(0.22 0.02 48);
@@ -57,13 +57,21 @@ html {
 
 body {
   min-height: 100vh;
-  font-family: 'Manrope', sans-serif;
+  font-family: "Manrope", sans-serif;
   font-weight: 400;
   line-height: 1.6;
   color: var(--ink-0);
   background:
-    radial-gradient(circle at 12% 20%, color-mix(in oklch, var(--accent) 20%, transparent), transparent 30%),
-    radial-gradient(circle at 85% 10%, color-mix(in oklch, var(--warning) 16%, transparent), transparent 26%),
+    radial-gradient(
+      circle at 12% 20%,
+      color-mix(in oklch, var(--accent) 20%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 85% 10%,
+      color-mix(in oklch, var(--warning) 16%, transparent),
+      transparent 26%
+    ),
     linear-gradient(160deg, var(--bg-0), var(--bg-1));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -75,7 +83,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-weight: 700;
   line-height: 1.2;
 }

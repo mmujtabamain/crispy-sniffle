@@ -1,23 +1,23 @@
-import { useCallback } from 'react';
-import { useReactFlow } from '@xyflow/react';
-import type { Graph, GraphEdge, GraphNode } from '../../../lib/workspace';
-import { createEdge, createNode } from '../../../lib/workspace';
+import { useCallback } from "react";
+import { useReactFlow } from "@xyflow/react";
+import type { Graph, GraphEdge, GraphNode } from "../../../lib/workspace";
+import { createEdge, createNode } from "../../../lib/workspace";
 import {
   arrangeNodesGrid,
   autoLayoutForce,
   autoLayoutHierarchical,
   duplicateSubtree,
-  nodeSizeToDimensions
-} from '../../../lib/graph-layout';
+  nodeSizeToDimensions,
+} from "../../../lib/graph-layout";
 import type {
   AlignMode,
   GraphChangeOptions,
   GraphUpdater,
   LayoutKind,
   NodePosition,
-  NotifyKind
-} from './types';
-import { nowIso } from './utils';
+  NotifyKind,
+} from "./types";
+import { nowIso } from "./utils";
 
 interface NodeHandlerDeps {
   graph: Graph | unknown;
@@ -28,7 +28,7 @@ interface NodeHandlerDeps {
   setSelectedEdgeIds: (ids: string[]) => void;
   snapToGrid: boolean;
   gridSize: number;
-  defaultEdgeType: GraphEdge['type'];
+  defaultEdgeType: GraphEdge["type"];
   commitGraph: (updater: GraphUpdater, options?: GraphChangeOptions) => void;
   notify: (type: NotifyKind, message: string) => void;
   onJumpToTodo?: (todoId: string) => void;
@@ -49,7 +49,7 @@ export function useNodeHandlers({
   gridSize,
   defaultEdgeType,
   commitGraph,
-  notify
+  notify,
 }: NodeHandlerDeps) {
   const flow = useReactFlow();
 
@@ -59,27 +59,43 @@ export function useNodeHandlers({
     const defaultY = Number.isFinite(viewport.y) ? -viewport.y + 120 : 120;
 
     const node = createNode(`Node ${nodes.length + 1}`);
-    const snappedX = snapToGrid ? Math.round(defaultX / gridSize) * gridSize : defaultX;
-    const snappedY = snapToGrid ? Math.round(defaultY / gridSize) * gridSize : defaultY;
+    const snappedX = snapToGrid
+      ? Math.round(defaultX / gridSize) * gridSize
+      : defaultX;
+    const snappedY = snapToGrid
+      ? Math.round(defaultY / gridSize) * gridSize
+      : defaultY;
     node.x = snappedX;
     node.y = snappedY;
 
     commitGraph(
       (prev) => ({
         ...prev,
-        nodes: [...prev.nodes, node]
+        nodes: [...prev.nodes, node],
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
     setSelectedNodeIds([node.id]);
     setSelectedEdgeIds([]);
-    notify('success', 'Node added.');
-  }, [flow, nodes.length, snapToGrid, gridSize, commitGraph, setSelectedNodeIds, setSelectedEdgeIds, notify]);
+    notify("success", "Node added.");
+  }, [
+    flow,
+    nodes.length,
+    snapToGrid,
+    gridSize,
+    commitGraph,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    notify,
+  ]);
 
   const handlePaneDoubleClick = useCallback(
     (event: { clientX: number; clientY: number }) => {
-      const point = flow.screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      const point = flow.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
       const node = createNode(`Node ${nodes.length + 1}`);
       node.x = snapToGrid ? Math.round(point.x / gridSize) * gridSize : point.x;
       node.y = snapToGrid ? Math.round(point.y / gridSize) * gridSize : point.y;
@@ -87,15 +103,23 @@ export function useNodeHandlers({
       commitGraph(
         (prev) => ({
           ...prev,
-          nodes: [...prev.nodes, node]
+          nodes: [...prev.nodes, node],
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
 
       setSelectedNodeIds([node.id]);
       setSelectedEdgeIds([]);
     },
-    [flow, nodes.length, snapToGrid, gridSize, commitGraph, setSelectedNodeIds, setSelectedEdgeIds]
+    [
+      flow,
+      nodes.length,
+      snapToGrid,
+      gridSize,
+      commitGraph,
+      setSelectedNodeIds,
+      setSelectedEdgeIds,
+    ],
   );
 
   const handleDeleteSelection = useCallback(() => {
@@ -110,20 +134,26 @@ export function useNodeHandlers({
         ...prev,
         nodes: prev.nodes.filter((node) => !nodeSet.has(node.id)),
         edges: prev.edges.filter(
-          (edge) => !nodeSet.has(edge.from) && !nodeSet.has(edge.to)
-        )
+          (edge) => !nodeSet.has(edge.from) && !nodeSet.has(edge.to),
+        ),
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
     setSelectedNodeIds([]);
     setSelectedEdgeIds([]);
-    notify('success', 'Selection deleted.');
-  }, [selectedNodeIds, commitGraph, setSelectedNodeIds, setSelectedEdgeIds, notify]);
+    notify("success", "Selection deleted.");
+  }, [
+    selectedNodeIds,
+    commitGraph,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    notify,
+  ]);
 
   const handleDuplicateSelection = useCallback(() => {
     if (selectedNodeIds.length === 0) {
-      notify('warning', 'Select at least one node to duplicate.');
+      notify("warning", "Select at least one node to duplicate.");
       return;
     }
 
@@ -141,7 +171,7 @@ export function useNodeHandlers({
           y: node.y + 72,
           collapsed: false,
           createdAt: nowIso(),
-          updatedAt: nowIso()
+          updatedAt: nowIso(),
         };
         map.set(node.id, clone.id);
         return clone;
@@ -158,11 +188,11 @@ export function useNodeHandlers({
 
         return {
           ...edge,
-          id: createEdge('', '').id,
+          id: createEdge("", "").id,
           from,
           to,
           createdAt: nowIso(),
-          updatedAt: nowIso()
+          updatedAt: nowIso(),
         };
       })
       .filter((edge): edge is GraphEdge => edge !== null);
@@ -171,52 +201,76 @@ export function useNodeHandlers({
       (prev) => ({
         ...prev,
         nodes: [...prev.nodes, ...clones],
-        edges: [...prev.edges, ...clonedEdges]
+        edges: [...prev.edges, ...clonedEdges],
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
     setSelectedNodeIds(clones.map((node) => node.id));
     setSelectedEdgeIds([]);
-    notify('success', `Duplicated ${clones.length} node(s).`);
-  }, [selectedNodeIds, nodes, edges, commitGraph, setSelectedNodeIds, setSelectedEdgeIds, notify]);
+    notify("success", `Duplicated ${clones.length} node(s).`);
+  }, [
+    selectedNodeIds,
+    nodes,
+    edges,
+    commitGraph,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    notify,
+  ]);
 
   const handleDuplicateSubtree = useCallback(() => {
     const rootId = selectedNodeIds[0];
     if (!rootId) {
-      notify('warning', 'Select a root node first.');
+      notify("warning", "Select a root node first.");
       return;
     }
 
-    commitGraph(
-      (prev) => duplicateSubtree(prev.nodes, prev.edges, rootId),
-      { recordHistory: true }
-    );
+    commitGraph((prev) => duplicateSubtree(prev.nodes, prev.edges, rootId), {
+      recordHistory: true,
+    });
 
-    notify('success', 'Subtree duplicated.');
+    notify("success", "Subtree duplicated.");
   }, [selectedNodeIds, commitGraph, notify]);
 
   const alignSelected = useCallback(
     (mode: AlignMode) => {
-      const selected = nodes.filter((node) => selectedNodeIds.includes(node.id));
+      const selected = nodes.filter((node) =>
+        selectedNodeIds.includes(node.id),
+      );
       if (selected.length < 2) {
-        notify('warning', 'Select at least two nodes to align.');
+        notify("warning", "Select at least two nodes to align.");
         return;
       }
 
-      const dimensions: Map<string, { width: number; height: number }> = new Map(
-        selected.map((node) => [node.id, nodeSizeToDimensions(node.size)])
+      const dimensions: Map<string, { width: number; height: number }> =
+        new Map(
+          selected.map((node) => [node.id, nodeSizeToDimensions(node.size)]),
+        );
+      const centersX = selected.map(
+        (node) => node.x + (dimensions.get(node.id)?.width || 0) / 2,
       );
-      const centersX = selected.map((node) => node.x + (dimensions.get(node.id)?.width || 0) / 2);
-      const centersY = selected.map((node) => node.y + (dimensions.get(node.id)?.height || 0) / 2);
+      const centersY = selected.map(
+        (node) => node.y + (dimensions.get(node.id)?.height || 0) / 2,
+      );
 
       const minX = Math.min(...selected.map((node) => node.x));
-      const maxX = Math.max(...selected.map((node) => node.x + (dimensions.get(node.id)?.width || 0)));
+      const maxX = Math.max(
+        ...selected.map(
+          (node) => node.x + (dimensions.get(node.id)?.width || 0),
+        ),
+      );
       const minY = Math.min(...selected.map((node) => node.y));
-      const maxY = Math.max(...selected.map((node) => node.y + (dimensions.get(node.id)?.height || 0)));
+      const maxY = Math.max(
+        ...selected.map(
+          (node) => node.y + (dimensions.get(node.id)?.height || 0),
+        ),
+      );
 
-      const targetCenterX = centersX.reduce((sum, value) => sum + value, 0) / centersX.length;
-      const targetCenterY = centersY.reduce((sum, value) => sum + value, 0) / centersY.length;
+      const targetCenterX =
+        centersX.reduce((sum, value) => sum + value, 0) / centersX.length;
+      const targetCenterY =
+        centersY.reduce((sum, value) => sum + value, 0) / centersY.length;
 
       const selectedSet: Set<string> = new Set(selectedNodeIds);
       commitGraph(
@@ -228,19 +282,33 @@ export function useNodeHandlers({
             }
 
             const size = nodeSizeToDimensions(node.size);
-            if (mode === 'left') return { ...node, x: minX, updatedAt: nowIso() };
-            if (mode === 'right') return { ...node, x: maxX - size.width, updatedAt: nowIso() };
-            if (mode === 'hcenter') return { ...node, x: targetCenterX - size.width / 2, updatedAt: nowIso() };
-            if (mode === 'top') return { ...node, y: minY, updatedAt: nowIso() };
-            if (mode === 'bottom') return { ...node, y: maxY - size.height, updatedAt: nowIso() };
-            if (mode === 'vcenter') return { ...node, y: targetCenterY - size.height / 2, updatedAt: nowIso() };
+            if (mode === "left")
+              return { ...node, x: minX, updatedAt: nowIso() };
+            if (mode === "right")
+              return { ...node, x: maxX - size.width, updatedAt: nowIso() };
+            if (mode === "hcenter")
+              return {
+                ...node,
+                x: targetCenterX - size.width / 2,
+                updatedAt: nowIso(),
+              };
+            if (mode === "top")
+              return { ...node, y: minY, updatedAt: nowIso() };
+            if (mode === "bottom")
+              return { ...node, y: maxY - size.height, updatedAt: nowIso() };
+            if (mode === "vcenter")
+              return {
+                ...node,
+                y: targetCenterY - size.height / 2,
+                updatedAt: nowIso(),
+              };
             return node;
-          })
+          }),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
     },
-    [nodes, selectedNodeIds, commitGraph, notify]
+    [nodes, selectedNodeIds, commitGraph, notify],
   );
 
   const handleAutoLayout = useCallback(
@@ -249,27 +317,27 @@ export function useNodeHandlers({
         (prev) => ({
           ...prev,
           nodes:
-            kind === 'force'
+            kind === "force"
               ? autoLayoutForce(prev.nodes, prev.edges)
-              : autoLayoutHierarchical(prev.nodes, prev.edges)
+              : autoLayoutHierarchical(prev.nodes, prev.edges),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
 
       window.requestAnimationFrame(() => {
         flow.fitView({ padding: 0.2, duration: 360 });
       });
     },
-    [commitGraph, flow]
+    [commitGraph, flow],
   );
 
   const handleResetPositions = useCallback(() => {
     commitGraph(
       (prev) => ({
         ...prev,
-        nodes: arrangeNodesGrid(prev.nodes, 4)
+        nodes: arrangeNodesGrid(prev.nodes, 4),
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
     window.requestAnimationFrame(() => {
@@ -280,7 +348,7 @@ export function useNodeHandlers({
   const handleToggleCollapse = useCallback(() => {
     const nodeId = selectedNodeIds[0];
     if (!nodeId) {
-      notify('warning', 'Select a node to collapse or expand.');
+      notify("warning", "Select a node to collapse or expand.");
       return;
     }
 
@@ -292,12 +360,12 @@ export function useNodeHandlers({
             ? {
                 ...node,
                 collapsed: !node.collapsed,
-                updatedAt: nowIso()
+                updatedAt: nowIso(),
               }
-            : node
-        )
+            : node,
+        ),
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
   }, [selectedNodeIds, commitGraph, notify]);
 
@@ -316,15 +384,15 @@ export function useNodeHandlers({
               ? {
                   ...node,
                   ...patch,
-                  updatedAt: nowIso()
+                  updatedAt: nowIso(),
                 }
-              : node
-          )
+              : node,
+          ),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
     },
-    [selectedNodeIds, commitGraph]
+    [selectedNodeIds, commitGraph],
   );
 
   return {
@@ -337,6 +405,6 @@ export function useNodeHandlers({
     handleAutoLayout,
     handleResetPositions,
     handleToggleCollapse,
-    handlePatchActiveNode
+    handlePatchActiveNode,
   };
 }

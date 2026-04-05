@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -16,11 +16,11 @@ import {
   Star,
   Trash2,
   Undo2,
-  UploadCloud
-} from 'lucide-react';
-import type { List } from '../../lib/workspace';
-import { DEFAULT_EXPORT_FILE_STEM } from '../../lib/workspace-page-helpers';
-import PanelSection from './PanelSection';
+  UploadCloud,
+} from "lucide-react";
+import type { List } from "../../lib/workspace";
+import { DEFAULT_EXPORT_FILE_STEM } from "../../lib/workspace-page-helpers";
+import PanelSection from "./PanelSection";
 
 interface ImportPreview {
   id: string;
@@ -30,11 +30,11 @@ interface ImportPreview {
 }
 
 interface ExportConfig {
-  scope: 'list' | 'all' | 'selected';
+  scope: "list" | "all" | "selected";
   fileName: string;
   pdfHeader: string;
   pdfFooter: string;
-  imageMode: 'single' | 'gallery';
+  imageMode: "single" | "gallery";
   imageFormat: string;
   imageWidth: number;
   imageHeight: number;
@@ -128,9 +128,11 @@ export default function WorkspaceSidebar({
   onExportTxt,
   onExportPdf,
   onPrint,
-  onExportImages
+  onExportImages,
 }: WorkspaceSidebarProps): ReactNode {
-  const visibleLists = lists.filter((list: List) => (showArchivedLists ? true : !list.archived));
+  const visibleLists = lists.filter((list: List) =>
+    showArchivedLists ? true : !list.archived,
+  );
 
   return (
     <aside className="workspace-aside">
@@ -141,12 +143,13 @@ export default function WorkspaceSidebar({
             type="button"
             className="ghost-button"
             onClick={() => {
-              const name = window.prompt('New list name', 'New list');
+              const name = window.prompt("New list name", "New list");
               if (!name) {
                 return;
               }
-              const icon = window.prompt('List icon or emoji', '🗂️') || '🗂️';
-              const color = window.prompt('List color (hex)', '#b08968') || '#b08968';
+              const icon = window.prompt("List icon or emoji", "🗂️") || "🗂️";
+              const color =
+                window.prompt("List color (hex)", "#b08968") || "#b08968";
               onCreateList({ name, icon, color });
             }}
           >
@@ -158,15 +161,24 @@ export default function WorkspaceSidebar({
           <input
             type="checkbox"
             checked={showArchivedLists}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => onToggleShowArchivedLists(event.target.checked)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              onToggleShowArchivedLists(event.target.checked)
+            }
           />
           <span>Show archived lists</span>
         </label>
 
         <ul className="list-stack">
           {visibleLists.map((list: List, index: number) => (
-            <li key={list.id} className={`list-row ${list.id === activeListId ? 'active' : ''}`}>
-              <button type="button" className="list-select" onClick={() => onSelectList(list.id)}>
+            <li
+              key={list.id}
+              className={`list-row ${list.id === activeListId ? "active" : ""}`}
+            >
+              <button
+                type="button"
+                className="list-select"
+                onClick={() => onSelectList(list.id)}
+              >
                 <span className="list-icon" style={{ background: list.color }}>
                   {list.icon}
                 </span>
@@ -176,7 +188,12 @@ export default function WorkspaceSidebar({
                 </span>
               </button>
               <div className="list-actions">
-                <button type="button" className="ghost-button" onClick={() => onMoveList(list.id, -1)} disabled={index === 0}>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => onMoveList(list.id, -1)}
+                  disabled={index === 0}
+                >
                   <ArrowUp size={14} />
                 </button>
                 <button
@@ -187,19 +204,35 @@ export default function WorkspaceSidebar({
                 >
                   <ArrowDown size={14} />
                 </button>
-                <button type="button" className="ghost-button" onClick={() => onRenameList(list.id)}>
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => onRenameList(list.id)}
+                >
                   <Star size={14} />
                 </button>
                 {list.archived ? (
-                  <button type="button" className="ghost-button" onClick={() => onRestoreList(list.id)}>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => onRestoreList(list.id)}
+                  >
                     <Undo2 size={14} />
                   </button>
                 ) : (
-                  <button type="button" className="ghost-button" onClick={() => onArchiveList(list.id)}>
+                  <button
+                    type="button"
+                    className="ghost-button"
+                    onClick={() => onArchiveList(list.id)}
+                  >
                     <Archive size={14} />
                   </button>
                 )}
-                <button type="button" className="ghost-button danger" onClick={() => onDeleteList(list.id)}>
+                <button
+                  type="button"
+                  className="ghost-button danger"
+                  onClick={() => onDeleteList(list.id)}
+                >
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -215,14 +248,41 @@ export default function WorkspaceSidebar({
 
       <PanelSection title="Persistence">
         <div className="button-stack">
-          <button type="button" className="secondary-button" onClick={() => void onOpen()}>
-            {busyAction === 'open' ? <LoaderCircle size={16} className="spin" /> : <FileUp size={16} />} Open
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void onOpen()}
+          >
+            {busyAction === "open" ? (
+              <LoaderCircle size={16} className="spin" />
+            ) : (
+              <FileUp size={16} />
+            )}{" "}
+            Open
           </button>
-          <button type="button" className="secondary-button" onClick={() => void onSave()}>
-            {busyAction === 'save' ? <LoaderCircle size={16} className="spin" /> : <Save size={16} />} Save
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void onSave()}
+          >
+            {busyAction === "save" ? (
+              <LoaderCircle size={16} className="spin" />
+            ) : (
+              <Save size={16} />
+            )}{" "}
+            Save
           </button>
-          <button type="button" className="secondary-button" onClick={() => void onSaveAs()}>
-            {busyAction === 'saveAs' ? <LoaderCircle size={16} className="spin" /> : <FileDown size={16} />} Save As
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => void onSaveAs()}
+          >
+            {busyAction === "saveAs" ? (
+              <LoaderCircle size={16} className="spin" />
+            ) : (
+              <FileDown size={16} />
+            )}{" "}
+            Save As
           </button>
         </div>
       </PanelSection>
@@ -231,7 +291,13 @@ export default function WorkspaceSidebar({
         <label htmlFor="autosave-select" className="setting-label">
           Snapshot interval
         </label>
-        <select id="autosave-select" value={autosaveMinutes} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onAutosaveChange(Number(event.target.value))}>
+        <select
+          id="autosave-select"
+          value={autosaveMinutes}
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+            onAutosaveChange(Number(event.target.value))
+          }
+        >
           <option value={1}>1 minute</option>
           <option value={5}>5 minutes</option>
           <option value={10}>10 minutes</option>
@@ -241,7 +307,11 @@ export default function WorkspaceSidebar({
 
       <PanelSection title="Import" className="dropzone-panel">
         <div className="button-stack">
-          <button type="button" className="secondary-button" onClick={onPickImportFiles}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onPickImportFiles}
+          >
             <UploadCloud size={16} /> Import files
           </button>
         </div>
@@ -249,13 +319,21 @@ export default function WorkspaceSidebar({
         <label htmlFor="import-mode" className="setting-label">
           Import strategy
         </label>
-        <select id="import-mode" value={importMode} onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onImportModeChange(event.target.value)}>
+        <select
+          id="import-mode"
+          value={importMode}
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+            onImportModeChange(event.target.value)
+          }
+        >
           <option value="merge">Merge imported todos</option>
           <option value="replace">Replace current list todos</option>
         </select>
 
         {importPreviews.length === 0 ? (
-          <p className="meta-line">Drop JSON, CSV, Markdown, TXT, or OPML files to preview.</p>
+          <p className="meta-line">
+            Drop JSON, CSV, Markdown, TXT, or OPML files to preview.
+          </p>
         ) : (
           <>
             <ul className="recent-list import-preview-list">
@@ -269,10 +347,18 @@ export default function WorkspaceSidebar({
               ))}
             </ul>
             <div className="button-stack inline-row">
-              <button type="button" className="secondary-button" onClick={onApplyImports}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onApplyImports}
+              >
                 Apply import
               </button>
-              <button type="button" className="secondary-button" onClick={onClearImportPreview}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={onClearImportPreview}
+              >
                 Clear preview
               </button>
             </div>
@@ -287,7 +373,9 @@ export default function WorkspaceSidebar({
         <select
           id="export-scope"
           value={exportConfig.scope}
-          onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onExportConfigChange('scope', event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+            onExportConfigChange("scope", event.target.value)
+          }
         >
           <option value="list">Current list</option>
           <option value="all">All lists</option>
@@ -300,21 +388,39 @@ export default function WorkspaceSidebar({
         <input
           id="export-filename"
           value={exportConfig.fileName}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('fileName', event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            onExportConfigChange("fileName", event.target.value)
+          }
           placeholder={DEFAULT_EXPORT_FILE_STEM}
         />
 
         <div className="button-stack export-grid">
-          <button type="button" className="secondary-button" onClick={onExportJson}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportJson}
+          >
             <FileDown size={15} /> JSON
           </button>
-          <button type="button" className="secondary-button" onClick={onExportCsv}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportCsv}
+          >
             <FileSpreadsheet size={15} /> CSV
           </button>
-          <button type="button" className="secondary-button" onClick={onExportMarkdown}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportMarkdown}
+          >
             <FileText size={15} /> Markdown
           </button>
-          <button type="button" className="secondary-button" onClick={onExportTxt}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportTxt}
+          >
             <FileText size={15} /> TXT
           </button>
         </div>
@@ -325,7 +431,9 @@ export default function WorkspaceSidebar({
         <input
           id="pdf-header"
           value={exportConfig.pdfHeader}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('pdfHeader', event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            onExportConfigChange("pdfHeader", event.target.value)
+          }
           placeholder="Sprint notes"
         />
 
@@ -335,12 +443,18 @@ export default function WorkspaceSidebar({
         <input
           id="pdf-footer"
           value={exportConfig.pdfFooter}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('pdfFooter', event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            onExportConfigChange("pdfFooter", event.target.value)
+          }
           placeholder="Confidential"
         />
 
         <div className="button-stack inline-row">
-          <button type="button" className="secondary-button" onClick={onExportPdf}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onExportPdf}
+          >
             <FileDown size={15} /> PDF
           </button>
           <button type="button" className="secondary-button" onClick={onPrint}>
@@ -353,7 +467,9 @@ export default function WorkspaceSidebar({
             Image mode
             <select
               value={exportConfig.imageMode}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onExportConfigChange('imageMode', event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                onExportConfigChange("imageMode", event.target.value)
+              }
             >
               <option value="single">Single image</option>
               <option value="gallery">Gallery</option>
@@ -363,7 +479,9 @@ export default function WorkspaceSidebar({
             Format
             <select
               value={exportConfig.imageFormat}
-              onChange={(event: React.ChangeEvent<HTMLSelectElement>) => onExportConfigChange('imageFormat', event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+                onExportConfigChange("imageFormat", event.target.value)
+              }
             >
               <option value="png">PNG</option>
               <option value="jpg">JPG</option>
@@ -379,7 +497,12 @@ export default function WorkspaceSidebar({
               type="number"
               min={500}
               value={exportConfig.imageWidth}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('imageWidth', Number(event.target.value) || 1400)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onExportConfigChange(
+                  "imageWidth",
+                  Number(event.target.value) || 1400,
+                )
+              }
             />
           </label>
           <label>
@@ -388,7 +511,12 @@ export default function WorkspaceSidebar({
               type="number"
               min={500}
               value={exportConfig.imageHeight}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('imageHeight', Number(event.target.value) || 1800)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onExportConfigChange(
+                  "imageHeight",
+                  Number(event.target.value) || 1800,
+                )
+              }
             />
           </label>
         </div>
@@ -400,7 +528,12 @@ export default function WorkspaceSidebar({
               type="number"
               min={14}
               value={exportConfig.imageFontSize}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('imageFontSize', Number(event.target.value) || 28)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onExportConfigChange(
+                  "imageFontSize",
+                  Number(event.target.value) || 28,
+                )
+              }
             />
           </label>
           <label>
@@ -409,7 +542,12 @@ export default function WorkspaceSidebar({
               type="number"
               min={1}
               value={exportConfig.todosPerImage}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('todosPerImage', Number(event.target.value) || 12)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onExportConfigChange(
+                  "todosPerImage",
+                  Number(event.target.value) || 12,
+                )
+              }
             />
           </label>
         </div>
@@ -420,11 +558,17 @@ export default function WorkspaceSidebar({
         <input
           id="image-bg"
           value={exportConfig.imageBackground}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onExportConfigChange('imageBackground', event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            onExportConfigChange("imageBackground", event.target.value)
+          }
           placeholder="#f6efe9"
         />
 
-        <button type="button" className="secondary-button" onClick={onExportImages}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onExportImages}
+        >
           <FileImage size={15} /> Export images
         </button>
       </PanelSection>
@@ -445,7 +589,11 @@ export default function WorkspaceSidebar({
       </PanelSection>
 
       <PanelSection title="Danger Zone" className="danger-panel">
-        <button type="button" className="danger-button" onClick={onClearLocalData}>
+        <button
+          type="button"
+          className="danger-button"
+          onClick={onClearLocalData}
+        >
           <Eraser size={16} /> Clear local data
         </button>
       </PanelSection>

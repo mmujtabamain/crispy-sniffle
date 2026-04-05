@@ -11,12 +11,12 @@ export function formatBytes(bytes: number): string {
 export function formatRelativeDate(isoString: string): string {
   try {
     return new Intl.DateTimeFormat(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     }).format(new Date(isoString));
   } catch {
-    return 'Unknown';
+    return "Unknown";
   }
 }

@@ -1,10 +1,16 @@
-import type { Todo } from './workspace';
+import type { Todo } from "./workspace";
 
-type CompletionFilter = 'active' | 'completed' | 'pending' | 'archived' | 'all';
-type PriorityFilter = 'all' | 'low' | 'medium' | 'high' | 'critical';
-type StatusFilter = 'all' | 'todo' | 'doing' | 'done' | 'blocked';
-type SmartFilter = 'none' | 'today' | 'thisWeek' | 'overdue';
-type SortFilter = 'manual' | 'created-desc' | 'created-asc' | 'due-asc' | 'priority-desc' | 'alpha-asc';
+type CompletionFilter = "active" | "completed" | "pending" | "archived" | "all";
+type PriorityFilter = "all" | "low" | "medium" | "high" | "critical";
+type StatusFilter = "all" | "todo" | "doing" | "done" | "blocked";
+type SmartFilter = "none" | "today" | "thisWeek" | "overdue";
+type SortFilter =
+  | "manual"
+  | "created-desc"
+  | "created-asc"
+  | "due-asc"
+  | "priority-desc"
+  | "alpha-asc";
 
 export interface TodoFilters {
   completion: CompletionFilter;
@@ -19,11 +25,11 @@ export interface TodoFilters {
   sortBy: SortFilter;
 }
 
-const PRIORITY_RANK: Record<'low' | 'medium' | 'high' | 'critical', number> = {
+const PRIORITY_RANK: Record<"low" | "medium" | "high" | "critical", number> = {
   low: 1,
   medium: 2,
   high: 3,
-  critical: 4
+  critical: 4,
 };
 
 function startOfDay(date: Date): Date {
@@ -45,22 +51,21 @@ function parseDateOnly(value: string): Date | null {
   return candidate;
 }
 
-function resolveSmartRange(smartFilter: SmartFilter):
-  | { start: Date; end: Date }
-  | { overdueBefore: Date }
-  | null {
+function resolveSmartRange(
+  smartFilter: SmartFilter,
+): { start: Date; end: Date } | { overdueBefore: Date } | null {
   const now = new Date();
   const today = startOfDay(now);
 
-  if (smartFilter === 'today') {
+  if (smartFilter === "today") {
     return { start: today, end: today };
   }
 
-  if (smartFilter === 'overdue') {
+  if (smartFilter === "overdue") {
     return { overdueBefore: today };
   }
 
-  if (smartFilter === 'thisWeek') {
+  if (smartFilter === "thisWeek") {
     const day = today.getDay();
     const mondayOffset = day === 0 ? -6 : 1 - day;
     const monday = new Date(today);
@@ -78,7 +83,7 @@ export function collectTags(todos: Todo[]): string[] {
 
   todos.forEach((todo) => {
     (todo.tags || []).forEach((tag) => {
-      if (typeof tag === 'string' && tag.trim()) {
+      if (typeof tag === "string" && tag.trim()) {
         tags.add(tag.trim());
       }
     });
@@ -89,48 +94,57 @@ export function collectTags(todos: Todo[]): string[] {
 
 export function applyFiltersAndSort(
   todos: Todo[],
-  filters: Partial<TodoFilters>
+  filters: Partial<TodoFilters>,
 ): Todo[] {
   const safeFilters: TodoFilters = {
     ...createDefaultFilters(),
     ...filters,
-    tags: Array.isArray(filters.tags) ? filters.tags : []
+    tags: Array.isArray(filters.tags) ? filters.tags : [],
   };
 
   const selectedTags = safeFilters.tags
     .map((tag) => String(tag).trim().toLowerCase())
     .filter(Boolean);
-  const searchText = String(safeFilters.searchText || '').trim().toLowerCase();
-  const searchTag = String(safeFilters.searchTag || '').trim().toLowerCase();
+  const searchText = String(safeFilters.searchText || "")
+    .trim()
+    .toLowerCase();
+  const searchTag = String(safeFilters.searchTag || "")
+    .trim()
+    .toLowerCase();
 
   const startDate = parseDateOnly(safeFilters.startDate);
   const endDate = parseDateOnly(safeFilters.endDate);
   const smartRange = resolveSmartRange(safeFilters.smartFilter);
 
   const filtered = todos.filter((todo) => {
-    if (safeFilters.completion === 'active' && todo.archived) {
+    if (safeFilters.completion === "active" && todo.archived) {
       return false;
     }
-    if (safeFilters.completion === 'completed' && !todo.completed) {
+    if (safeFilters.completion === "completed" && !todo.completed) {
       return false;
     }
-    if (safeFilters.completion === 'pending' && todo.completed) {
+    if (safeFilters.completion === "pending" && todo.completed) {
       return false;
     }
-    if (safeFilters.completion === 'archived' && !todo.archived) {
-      return false;
-    }
-
-    if (safeFilters.priority !== 'all' && todo.priority !== safeFilters.priority) {
+    if (safeFilters.completion === "archived" && !todo.archived) {
       return false;
     }
 
-    if (safeFilters.status !== 'all' && todo.status !== safeFilters.status) {
+    if (
+      safeFilters.priority !== "all" &&
+      todo.priority !== safeFilters.priority
+    ) {
+      return false;
+    }
+
+    if (safeFilters.status !== "all" && todo.status !== safeFilters.status) {
       return false;
     }
 
     if (selectedTags.length > 0) {
-      const todoTags = (todo.tags || []).map((tag) => String(tag).toLowerCase());
+      const todoTags = (todo.tags || []).map((tag) =>
+        String(tag).toLowerCase(),
+      );
       const hasAllTags = selectedTags.every((tag) => todoTags.includes(tag));
       if (!hasAllTags) {
         return false;
@@ -138,7 +152,9 @@ export function applyFiltersAndSort(
     }
 
     if (searchTag) {
-      const todoTags = (todo.tags || []).map((tag) => String(tag).toLowerCase());
+      const todoTags = (todo.tags || []).map((tag) =>
+        String(tag).toLowerCase(),
+      );
       const hasMatch = todoTags.some((tag) => tag.includes(searchTag));
       if (!hasMatch) {
         return false;
@@ -152,9 +168,9 @@ export function applyFiltersAndSort(
         todo.category,
         todo.notes,
         ...(todo.tags || []),
-        ...(todo.links || [])
+        ...(todo.links || []),
       ]
-        .join(' ')
+        .join(" ")
         .toLowerCase();
 
       if (!bundle.includes(searchText)) {
@@ -162,7 +178,7 @@ export function applyFiltersAndSort(
       }
     }
 
-    const due = parseDateOnly(todo.dueDate || '');
+    const due = parseDateOnly(todo.dueDate || "");
 
     if (startDate && (!due || due < startDate)) {
       return false;
@@ -172,13 +188,13 @@ export function applyFiltersAndSort(
       return false;
     }
 
-    if (smartRange && 'overdueBefore' in smartRange) {
+    if (smartRange && "overdueBefore" in smartRange) {
       if (!due || due >= smartRange.overdueBefore || todo.completed) {
         return false;
       }
     }
 
-    if (smartRange && 'start' in smartRange) {
+    if (smartRange && "start" in smartRange) {
       if (!due || due < smartRange.start || due > smartRange.end) {
         return false;
       }
@@ -189,27 +205,33 @@ export function applyFiltersAndSort(
 
   const sorted = [...filtered];
 
-  if (safeFilters.sortBy === 'manual') {
+  if (safeFilters.sortBy === "manual") {
     return sorted.sort((a, b) => a.order - b.order);
   }
 
-  if (safeFilters.sortBy === 'created-desc') {
+  if (safeFilters.sortBy === "created-desc") {
     return sorted.sort((a, b) => {
       const bTime = new Date(b.createdAt).getTime();
       const aTime = new Date(a.createdAt).getTime();
-      return (Number.isFinite(bTime) ? bTime : 0) - (Number.isFinite(aTime) ? aTime : 0);
+      return (
+        (Number.isFinite(bTime) ? bTime : 0) -
+        (Number.isFinite(aTime) ? aTime : 0)
+      );
     });
   }
 
-  if (safeFilters.sortBy === 'created-asc') {
+  if (safeFilters.sortBy === "created-asc") {
     return sorted.sort((a, b) => {
       const aTime = new Date(a.createdAt).getTime();
       const bTime = new Date(b.createdAt).getTime();
-      return (Number.isFinite(aTime) ? aTime : 0) - (Number.isFinite(bTime) ? bTime : 0);
+      return (
+        (Number.isFinite(aTime) ? aTime : 0) -
+        (Number.isFinite(bTime) ? bTime : 0)
+      );
     });
   }
 
-  if (safeFilters.sortBy === 'due-asc') {
+  if (safeFilters.sortBy === "due-asc") {
     return sorted.sort((a, b) => {
       if (!a.dueDate && !b.dueDate) {
         return 0;
@@ -224,7 +246,7 @@ export function applyFiltersAndSort(
     });
   }
 
-  if (safeFilters.sortBy === 'priority-desc') {
+  if (safeFilters.sortBy === "priority-desc") {
     return sorted.sort((a, b) => {
       const bRank = PRIORITY_RANK[b.priority] || 0;
       const aRank = PRIORITY_RANK[a.priority] || 0;
@@ -232,7 +254,7 @@ export function applyFiltersAndSort(
     });
   }
 
-  if (safeFilters.sortBy === 'alpha-asc') {
+  if (safeFilters.sortBy === "alpha-asc") {
     return sorted.sort((a, b) => a.text.localeCompare(b.text));
   }
 
@@ -241,15 +263,15 @@ export function applyFiltersAndSort(
 
 export function createDefaultFilters(): TodoFilters {
   return {
-    completion: 'active',
-    priority: 'all',
-    status: 'all',
-    startDate: '',
-    endDate: '',
+    completion: "active",
+    priority: "all",
+    status: "all",
+    startDate: "",
+    endDate: "",
     tags: [],
-    searchText: '',
-    searchTag: '',
-    smartFilter: 'none',
-    sortBy: 'manual'
+    searchText: "",
+    searchTag: "",
+    smartFilter: "none",
+    sortBy: "manual",
   };
 }

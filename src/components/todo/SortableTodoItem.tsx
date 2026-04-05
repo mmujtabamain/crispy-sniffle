@@ -1,9 +1,16 @@
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { Archive, Check, Copy, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
-import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
-import type { Todo } from '../../lib/workspace';
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
+import {
+  Archive,
+  Check,
+  Copy,
+  MoreHorizontal,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
+import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
+import type { Todo } from "../../lib/workspace";
 
 interface SortableTodoItemProps {
   todo: Todo;
@@ -42,16 +49,17 @@ export default function SortableTodoItem({
   onDelete,
   onFocus,
   onOpenContextMenu,
-  dragDisabled
+  dragDisabled,
 }: SortableTodoItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: todo.id,
-    disabled: dragDisabled
-  });
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({
+      id: todo.id,
+      disabled: dragDisabled,
+    });
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
   };
 
   return (
@@ -63,7 +71,7 @@ export default function SortableTodoItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.96 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`todo-item ${todo.completed ? 'todo-complete' : ''} ${todo.archived ? 'todo-archived' : ''} ${isSelected ? 'todo-selected' : ''}`}
+      className={`todo-item ${todo.completed ? "todo-complete" : ""} ${todo.archived ? "todo-archived" : ""} ${isSelected ? "todo-selected" : ""}`}
       onClick={() => onFocus(todo.id)}
       onContextMenu={(event: MouseEvent<HTMLLIElement>) => {
         event.preventDefault();
@@ -83,7 +91,11 @@ export default function SortableTodoItem({
         type="button"
         className="grab-handle"
         aria-label="Reorder todo"
-        title={dragDisabled ? 'Enable manual sort with no active filters to reorder' : 'Drag to reorder'}
+        title={
+          dragDisabled
+            ? "Enable manual sort with no active filters to reorder"
+            : "Drag to reorder"
+        }
         disabled={dragDisabled}
         {...attributes}
         {...listeners}
@@ -96,7 +108,7 @@ export default function SortableTodoItem({
           type="checkbox"
           checked={todo.completed}
           onChange={() => onToggle(todo.id)}
-          aria-label={`Mark ${todo.text} as ${todo.completed ? 'incomplete' : 'complete'}`}
+          aria-label={`Mark ${todo.text} as ${todo.completed ? "incomplete" : "complete"}`}
         />
         <span className="todo-check-mark" aria-hidden="true">
           <Check size={14} />
@@ -111,10 +123,10 @@ export default function SortableTodoItem({
             onChange={(event) => onDraftChange(event.target.value)}
             onBlur={onCommitEdit}
             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === 'Enter') {
+              if (event.key === "Enter") {
                 onCommitEdit();
               }
-              if (event.key === 'Escape') {
+              if (event.key === "Escape") {
                 onCancelEdit();
               }
             }}
@@ -122,40 +134,70 @@ export default function SortableTodoItem({
             aria-label="Edit todo text"
           />
         ) : (
-          <button type="button" className="todo-text-button" onClick={() => onBeginEdit(todo)}>
+          <button
+            type="button"
+            className="todo-text-button"
+            onClick={() => onBeginEdit(todo)}
+          >
             <span className="todo-text">{todo.text}</span>
           </button>
         )}
 
         <div className="todo-meta">
-          <span className={`pill priority-${todo.priority}`}>{todo.priority}</span>
+          <span className={`pill priority-${todo.priority}`}>
+            {todo.priority}
+          </span>
           <span className={`pill status-${todo.status}`}>{todo.status}</span>
-          {todo.dueDate && <span className="pill due-pill">Due {todo.dueDate}</span>}
+          {todo.dueDate && (
+            <span className="pill due-pill">Due {todo.dueDate}</span>
+          )}
           {todo.tags.slice(0, 3).map((tag: string) => (
             <span key={`${todo.id}-${tag}`} className="pill tag-pill">
               #{tag}
             </span>
           ))}
-          {todo.tags?.length > 3 && <span className="pill tag-pill">+{todo.tags.length - 3}</span>}
+          {todo.tags?.length > 3 && (
+            <span className="pill tag-pill">+{todo.tags.length - 3}</span>
+          )}
         </div>
       </div>
 
       <div className="todo-actions">
-        <button type="button" className="ghost-button" onClick={() => onDuplicate(todo.id)} aria-label="Duplicate todo">
+        <button
+          type="button"
+          className="ghost-button"
+          onClick={() => onDuplicate(todo.id)}
+          aria-label="Duplicate todo"
+        >
           <Copy size={15} />
         </button>
 
         {todo.archived ? (
-          <button type="button" className="ghost-button" onClick={() => onRestore(todo.id)} aria-label="Restore todo">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => onRestore(todo.id)}
+            aria-label="Restore todo"
+          >
             <RotateCcw size={15} />
           </button>
         ) : (
-          <button type="button" className="ghost-button" onClick={() => onArchive(todo.id)} aria-label="Archive todo">
+          <button
+            type="button"
+            className="ghost-button"
+            onClick={() => onArchive(todo.id)}
+            aria-label="Archive todo"
+          >
             <Archive size={15} />
           </button>
         )}
 
-        <button type="button" className="ghost-button danger" onClick={() => onDelete(todo.id)} aria-label="Delete todo">
+        <button
+          type="button"
+          className="ghost-button danger"
+          onClick={() => onDelete(todo.id)}
+          aria-label="Delete todo"
+        >
           <Trash2 size={15} />
         </button>
 
@@ -164,7 +206,11 @@ export default function SortableTodoItem({
           className="ghost-button"
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             const rect = event.currentTarget.getBoundingClientRect();
-            onOpenContextMenu(todo.id, rect.left + rect.width / 2, rect.bottom + 8);
+            onOpenContextMenu(
+              todo.id,
+              rect.left + rect.width / 2,
+              rect.bottom + 8,
+            );
           }}
           aria-label="More actions"
         >

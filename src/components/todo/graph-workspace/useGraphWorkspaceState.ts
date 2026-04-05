@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import type { GraphEdge, GraphNode } from '../../../lib/workspace';
-import type { NodePosition } from './types';
+import { useState } from "react";
+import type { GraphEdge, GraphNode } from "../../../lib/workspace";
+import type { NodePosition } from "./types";
 
 /**
  * Central state management for GraphWorkspace UI.
@@ -11,20 +11,24 @@ export function useGraphWorkspaceState() {
   const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([]);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  const [defaultEdgeType, setDefaultEdgeType] = useState<GraphEdge['type']>('curved');
+  const [defaultEdgeType, setDefaultEdgeType] =
+    useState<GraphEdge["type"]>("curved");
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize, setGridSize] = useState(28);
   const [showMiniMap, setShowMiniMap] = useState(true);
   const [focusMode, setFocusMode] = useState(false);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
 
-  const [searchText, setSearchText] = useState('');
-  const [exportName, setExportName] = useState('graph-export');
+  const [searchText, setSearchText] = useState("");
+  const [exportName, setExportName] = useState("graph-export");
   const [exportScale, setExportScale] = useState(2);
   const [transparentExport, setTransparentExport] = useState(false);
-  const [exportBackground, setExportBackground] = useState('#f4ede6');
+  const [exportBackground, setExportBackground] = useState("#f4ede6");
 
-  const [savedPositions, setSavedPositions] = useState<Record<string, NodePosition> | null>(null);
+  const [savedPositions, setSavedPositions] = useState<Record<
+    string,
+    NodePosition
+  > | null>(null);
 
   return {
     selectedNodeIds,
@@ -56,6 +60,6 @@ export function useGraphWorkspaceState() {
     exportBackground,
     setExportBackground,
     savedPositions,
-    setSavedPositions
+    setSavedPositions,
   };
 }

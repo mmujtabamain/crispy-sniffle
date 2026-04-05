@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 interface PanelSectionProps {
   title?: string;
@@ -6,8 +6,12 @@ interface PanelSectionProps {
   children: ReactNode;
 }
 
-export default function PanelSection({ title, className = '', children }: PanelSectionProps) {
-  const classes = ['panel', className].filter(Boolean).join(' ');
+export default function PanelSection({
+  title,
+  className = "",
+  children,
+}: PanelSectionProps) {
+  const classes = ["panel", className].filter(Boolean).join(" ");
 
   return (
     <section className={classes}>

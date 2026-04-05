@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -8,10 +8,10 @@ import {
   ReactFlow,
   ReactFlowProvider,
   SelectionMode,
-  useReactFlow
-} from '@xyflow/react';
-import { toJpeg, toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
+  useReactFlow,
+} from "@xyflow/react";
+import { toJpeg, toPng } from "html-to-image";
+import jsPDF from "jspdf";
 import {
   AlignCenterVertical,
   AlignHorizontalJustifyCenter,
@@ -32,18 +32,18 @@ import {
   Search,
   Sparkles,
   Trash2,
-  Workflow
-} from 'lucide-react';
+  Workflow,
+} from "lucide-react";
 import {
   computeCriticalPath,
   getDescendantNodeIds,
   getRelatedNodeSet,
   graphEdgeTypeToFlow,
   nodeSizeToDimensions,
-  normalizeGraph
-} from '../../lib/graph-layout';
-import type { Graph, GraphEdge, GraphNode } from '../../lib/workspace';
-import { createNode, createEdge } from '../../lib/workspace';
+  normalizeGraph,
+} from "../../lib/graph-layout";
+import type { Graph, GraphEdge, GraphNode } from "../../lib/workspace";
+import { createNode, createEdge } from "../../lib/workspace";
 import {
   DEFAULT_EDGE_TYPE,
   EDGE_TYPES,
@@ -51,8 +51,8 @@ import {
   PRIORITIES,
   SHAPES,
   SIZES,
-  STATUSES
-} from './graph-workspace/constants';
+  STATUSES,
+} from "./graph-workspace/constants";
 import type {
   FlowNodeLike,
   GraphWorkspaceProps,
@@ -62,8 +62,8 @@ import type {
   GraphUpdater,
   GraphChangeOptions,
   NodePosition,
-  ExportImageFormat
-} from './graph-workspace/types';
+  ExportImageFormat,
+} from "./graph-workspace/types";
 import {
   buildBranchProgress,
   clamp,
@@ -71,16 +71,22 @@ import {
   downloadFromDataUrl,
   isInputLikeTarget,
   parseTags,
-  nowIso
-} from './graph-workspace/utils';
-import { useGraphWorkspaceState } from './graph-workspace/useGraphWorkspaceState';
-import { useNodeHandlers } from './graph-workspace/useNodeHandlers';
-import { useEdgeHandlers } from './graph-workspace/useEdgeHandlers';
-import { useViewportHandlers } from './graph-workspace/useViewportHandlers';
-import { useImportHandlers } from './graph-workspace/useImportHandlers';
-import { useGraphExport } from './graph-workspace/useGraphExport';
+  nowIso,
+} from "./graph-workspace/utils";
+import { useGraphWorkspaceState } from "./graph-workspace/useGraphWorkspaceState";
+import { useNodeHandlers } from "./graph-workspace/useNodeHandlers";
+import { useEdgeHandlers } from "./graph-workspace/useEdgeHandlers";
+import { useViewportHandlers } from "./graph-workspace/useViewportHandlers";
+import { useImportHandlers } from "./graph-workspace/useImportHandlers";
+import { useGraphExport } from "./graph-workspace/useGraphExport";
 
-function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTodo }: GraphWorkspaceProps) {
+function GraphWorkspaceInner({
+  graph,
+  todos,
+  onGraphChange,
+  onNotify,
+  onJumpToTodo,
+}: GraphWorkspaceProps) {
   const flow = useReactFlow();
   const importGraphRef = useRef<HTMLInputElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
@@ -115,7 +121,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     transparentExport,
     setTransparentExport,
     exportBackground,
-    setExportBackground
+    setExportBackground,
   } = useGraphWorkspaceState();
 
   const normalizedGraph = useMemo(() => normalizeGraph(graph), [graph]);
@@ -126,18 +132,21 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     (type: NotifyKind, message: string) => {
       onNotify?.(type, message);
     },
-    [onNotify]
+    [onNotify],
   );
 
   const commitGraph = useCallback(
-    (updater: GraphUpdater, options: GraphChangeOptions = { recordHistory: true }) => {
+    (
+      updater: GraphUpdater,
+      options: GraphChangeOptions = { recordHistory: true },
+    ) => {
       onGraphChange?.((currentGraph: Graph) => {
         const current = normalizeGraph(currentGraph);
-        const next = typeof updater === 'function' ? updater(current) : updater;
+        const next = typeof updater === "function" ? updater(current) : updater;
         return normalizeGraph(next);
       }, options);
     },
-    [onGraphChange]
+    [onGraphChange],
   );
 
   // Extract all handler categories into dedicated hooks
@@ -151,7 +160,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     handleAutoLayout,
     handleResetPositions,
     handleToggleCollapse,
-    handlePatchActiveNode
+    handlePatchActiveNode,
   } = useNodeHandlers({
     graph,
     nodes,
@@ -163,21 +172,17 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     gridSize,
     defaultEdgeType,
     commitGraph,
-    notify
+    notify,
   });
 
-  const {
-    handleConnect,
-    handleEdgesChange,
-    applyEdgeType
-  } = useEdgeHandlers({
+  const { handleConnect, handleEdgesChange, applyEdgeType } = useEdgeHandlers({
     edges,
     nodes,
     defaultEdgeType,
     selectedEdgeIds,
     setSelectedEdgeIds,
     commitGraph,
-    notify
+    notify,
   });
 
   const {
@@ -189,7 +194,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     handleSelectAll,
     handleClearSelection,
     handleFindFirstMatch,
-    savedPositions
+    savedPositions,
   } = useViewportHandlers({
     nodes,
     selectedNodeIds,
@@ -198,100 +203,108 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     setSelectedNodeIds,
     setSelectedEdgeIds,
     commitGraph,
-    notify
+    notify,
   });
 
-  const {
-    handleImportGraph,
-    handleClearGraph
-  } = useImportHandlers({
+  const { handleImportGraph, handleClearGraph } = useImportHandlers({
     nodes,
     edges,
     selectedNodeIds,
     setSelectedNodeIds,
     setSelectedEdgeIds,
     commitGraph,
-    notify
+    notify,
   });
 
-  const { handleExportGraphJson, handleExportSvg, handlePrintGraph } = useGraphExport(
-    nodes,
-    edges,
-    exportName,
-    notify
-  );
+  const { handleExportGraphJson, handleExportSvg, handlePrintGraph } =
+    useGraphExport(nodes, edges, exportName, notify);
 
   const handleExportImage = useCallback(
     async (format: ExportImageFormat) => {
       try {
-        const target = canvasRef.current?.querySelector('.react-flow__viewport');
+        const target = canvasRef.current?.querySelector(
+          ".react-flow__viewport",
+        );
         if (!target) {
-          throw new Error('Graph viewport not found for export.');
+          throw new Error("Graph viewport not found for export.");
         }
         if (!(target instanceof HTMLElement)) {
-          throw new Error('Graph viewport is not an HTML element.');
+          throw new Error("Graph viewport is not an HTML element.");
         }
 
         const config = {
           pixelRatio: clamp(exportScale, 1, 5),
           cacheBust: true,
-          backgroundColor: transparentExport ? 'transparent' : exportBackground
+          backgroundColor: transparentExport ? "transparent" : exportBackground,
         };
 
         let dataUrl: string;
-        if (format === 'jpg') {
+        if (format === "jpg") {
           dataUrl = await toJpeg(target, {
             ...config,
             quality: 0.92,
-            backgroundColor: transparentExport ? '#ffffff' : exportBackground
+            backgroundColor: transparentExport ? "#ffffff" : exportBackground,
           });
         } else {
           dataUrl = await toPng(target, config);
         }
 
-        downloadFromDataUrl(`${exportName || 'graph-export'}.${format}`, dataUrl);
-        notify('success', `Graph exported as ${format.toUpperCase()}.`);
+        downloadFromDataUrl(
+          `${exportName || "graph-export"}.${format}`,
+          dataUrl,
+        );
+        notify("success", `Graph exported as ${format.toUpperCase()}.`);
       } catch (error) {
-        notify('error', error instanceof Error ? error.message : 'Image export failed.');
+        notify(
+          "error",
+          error instanceof Error ? error.message : "Image export failed.",
+        );
       }
     },
-    [exportScale, transparentExport, exportBackground, exportName, notify]
+    [exportScale, transparentExport, exportBackground, exportName, notify],
   );
 
   const handleExportPdf = useCallback(async () => {
     try {
-      const target = canvasRef.current?.querySelector('.react-flow__viewport');
+      const target = canvasRef.current?.querySelector(".react-flow__viewport");
       if (!target) {
-        throw new Error('Graph viewport not found for export.');
+        throw new Error("Graph viewport not found for export.");
       }
       if (!(target instanceof HTMLElement)) {
-        throw new Error('Graph viewport is not an HTML element.');
+        throw new Error("Graph viewport is not an HTML element.");
       }
 
       const config = {
         pixelRatio: clamp(exportScale, 1, 5),
         cacheBust: true,
-        backgroundColor: transparentExport ? 'transparent' : exportBackground
+        backgroundColor: transparentExport ? "transparent" : exportBackground,
       };
 
       const dataUrl = await toPng(target, config);
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+      const doc = new jsPDF({
+        orientation: "landscape",
+        unit: "pt",
+        format: "a4",
+      });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
       doc.setFontSize(12);
-      doc.text(exportName || 'Graph Export', 34, 26);
+      doc.text(exportName || "Graph Export", 34, 26);
 
       const availableWidth = pageWidth - 68;
       const availableHeight = pageHeight - 64;
-      doc.addImage(dataUrl, 'PNG', 34, 34, availableWidth, availableHeight);
+      doc.addImage(dataUrl, "PNG", 34, 34, availableWidth, availableHeight);
 
       doc.setFontSize(9);
       doc.text(`Exported ${new Date().toLocaleString()}`, 34, pageHeight - 14);
-      doc.save(`${exportName || 'graph-export'}.pdf`);
-      notify('success', 'Graph exported as PDF.');
+      doc.save(`${exportName || "graph-export"}.pdf`);
+      notify("success", "Graph exported as PDF.");
     } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'PDF export failed.');
+      notify(
+        "error",
+        error instanceof Error ? error.message : "PDF export failed.",
+      );
     }
   }, [exportScale, transparentExport, exportBackground, exportName, notify]);
 
@@ -307,22 +320,33 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     }
   }, [nodes, edges, hoveredNodeId]);
 
-  const hiddenNodeIds = useMemo(() => collectHiddenNodeIds(nodes, edges), [nodes, edges]);
+  const hiddenNodeIds = useMemo(
+    () => collectHiddenNodeIds(nodes, edges),
+    [nodes, edges],
+  );
 
   const visibleNodes = useMemo(
     () => nodes.filter((node) => !hiddenNodeIds.has(node.id)),
-    [nodes, hiddenNodeIds]
+    [nodes, hiddenNodeIds],
   );
 
-  const visibleNodeIds = useMemo(() => new Set(visibleNodes.map((node) => node.id)), [visibleNodes]);
+  const visibleNodeIds = useMemo(
+    () => new Set(visibleNodes.map((node) => node.id)),
+    [visibleNodes],
+  );
 
   const visibleEdges = useMemo(
-    () => edges.filter((edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)),
-    [edges, visibleNodeIds]
+    () =>
+      edges.filter(
+        (edge) => visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to),
+      ),
+    [edges, visibleNodeIds],
   );
 
   const connectionCounts = useMemo(() => {
-    const counts: Map<string, number> = new Map(nodes.map((node) => [node.id, 0]));
+    const counts: Map<string, number> = new Map(
+      nodes.map((node) => [node.id, 0]),
+    );
     edges.forEach((edge) => {
       counts.set(edge.from, (counts.get(edge.from) || 0) + 1);
       counts.set(edge.to, (counts.get(edge.to) || 0) + 1);
@@ -330,7 +354,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     return counts;
   }, [nodes, edges]);
 
-  const branchProgress = useMemo(() => buildBranchProgress(nodes, edges), [nodes, edges]);
+  const branchProgress = useMemo(
+    () => buildBranchProgress(nodes, edges),
+    [nodes, edges],
+  );
 
   const criticalPath = useMemo(() => {
     if (!showCriticalPath) {
@@ -339,8 +366,14 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
     return computeCriticalPath(nodes, edges);
   }, [showCriticalPath, nodes, edges]);
 
-  const criticalNodeIds = useMemo(() => new Set(criticalPath.nodeIds), [criticalPath.nodeIds]);
-  const criticalEdgeIds = useMemo(() => new Set(criticalPath.edgeIds), [criticalPath.edgeIds]);
+  const criticalNodeIds = useMemo(
+    () => new Set(criticalPath.nodeIds),
+    [criticalPath.nodeIds],
+  );
+  const criticalEdgeIds = useMemo(
+    () => new Set(criticalPath.edgeIds),
+    [criticalPath.edgeIds],
+  );
 
   const searchMatches = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -356,13 +389,13 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             node.description,
             node.alias,
             node.owner,
-            ...(Array.isArray(node.tags) ? node.tags : [])
+            ...(Array.isArray(node.tags) ? node.tags : []),
           ]
-            .join(' ')
+            .join(" ")
             .toLowerCase();
           return bucket.includes(query);
         })
-        .map((node) => node.id)
+        .map((node) => node.id),
     );
   }, [nodes, searchText]);
 
@@ -380,16 +413,17 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       visibleNodes.map((node) => {
         const dimensions = nodeSizeToDimensions(node.size);
         const dimmed = focusMode && anchorNodeId && !relatedSet.has(node.id);
-        const searchMatch = searchMatches.size > 0 && searchMatches.has(node.id);
+        const searchMatch =
+          searchMatches.size > 0 && searchMatches.has(node.id);
 
         return {
           id: node.id,
-          type: 'graphNode',
+          type: "graphNode",
           position: { x: node.x, y: node.y },
           selected: selectedNodeIds.includes(node.id),
           style: {
             width: dimensions.width,
-            height: dimensions.height
+            height: dimensions.height,
           },
           data: {
             ...node,
@@ -408,13 +442,13 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                       ? {
                           ...entry,
                           completed: !entry.completed,
-                          status: !entry.completed ? 'done' : 'todo',
-                          updatedAt: nowIso()
+                          status: !entry.completed ? "done" : "todo",
+                          updatedAt: nowIso(),
                         }
-                      : entry
-                  )
+                      : entry,
+                  ),
                 }),
-                { recordHistory: true }
+                { recordHistory: true },
               );
             },
             onRename: (nodeId: string) => {
@@ -423,7 +457,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 return;
               }
 
-              const nextLabel = window.prompt('Rename node', target.label);
+              const nextLabel = window.prompt("Rename node", target.label);
               if (!nextLabel) {
                 return;
               }
@@ -436,12 +470,12 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                       ? {
                           ...entry,
                           label: nextLabel.trim() || entry.label,
-                          updatedAt: nowIso()
+                          updatedAt: nowIso(),
                         }
-                      : entry
-                  )
+                      : entry,
+                  ),
                 }),
-                { recordHistory: true }
+                { recordHistory: true },
               );
             },
             onAddChild: (nodeId: string) => {
@@ -462,16 +496,16 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 (prev) => ({
                   ...prev,
                   nodes: [...prev.nodes, child],
-                  edges: [...prev.edges, edge]
+                  edges: [...prev.edges, edge],
                 }),
-                { recordHistory: true }
+                { recordHistory: true },
               );
 
               setSelectedNodeIds([child.id]);
               setSelectedEdgeIds([]);
-              notify('success', 'Child node created.');
-            }
-          }
+              notify("success", "Child node created.");
+            },
+          },
         };
       }),
     [
@@ -487,15 +521,18 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       commitGraph,
       nodes,
       defaultEdgeType,
-      notify
-    ]
+      notify,
+    ],
   );
 
   const flowEdges = useMemo(
     () =>
       visibleEdges.map((edge) => {
         const isCritical = criticalEdgeIds.has(edge.id);
-        const isDimmed = focusMode && anchorNodeId && !(relatedSet.has(edge.from) && relatedSet.has(edge.to));
+        const isDimmed =
+          focusMode &&
+          anchorNodeId &&
+          !(relatedSet.has(edge.from) && relatedSet.has(edge.to));
 
         return {
           id: edge.id,
@@ -505,34 +542,42 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           selected: selectedEdgeIds.includes(edge.id),
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: isCritical ? '#9f3027' : '#7b5640'
+            color: isCritical ? "#9f3027" : "#7b5640",
           },
           style: {
-            stroke: isCritical ? '#9f3027' : '#7b5640',
+            stroke: isCritical ? "#9f3027" : "#7b5640",
             strokeWidth: isCritical ? 2.8 : 2,
-            opacity: isDimmed ? 0.2 : 0.92
-          }
+            opacity: isDimmed ? 0.2 : 0.92,
+          },
         };
       }),
-    [visibleEdges, criticalEdgeIds, focusMode, anchorNodeId, relatedSet, selectedEdgeIds]
+    [
+      visibleEdges,
+      criticalEdgeIds,
+      focusMode,
+      anchorNodeId,
+      relatedSet,
+      selectedEdgeIds,
+    ],
   );
 
   const activeNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeIds[0]) || null,
-    [nodes, selectedNodeIds]
+    [nodes, selectedNodeIds],
   );
 
   const selectedLinkedTodo = useMemo(
     () => todos.find((todo) => todo.id === activeNode?.todoId) || null,
-    [todos, activeNode?.todoId]
+    [todos, activeNode?.todoId],
   );
-
 
   // ReactFlow event handlers (specific to this component, not extracted)
   const handleNodesChange = useCallback(
     (changes: NodeChangeLike[]) => {
-      const positionUpdates = changes.filter((change) => change.type === 'position' && change.position);
-      const removals = changes.filter((change) => change.type === 'remove');
+      const positionUpdates = changes.filter(
+        (change) => change.type === "position" && change.position,
+      );
+      const removals = changes.filter((change) => change.type === "remove");
 
       if (positionUpdates.length === 0 && removals.length === 0) {
         return;
@@ -547,10 +592,15 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             const map: Map<string, NodePosition> = new Map(
               positionUpdates
                 .filter(
-                  (change): change is NodeChangeLike & { id: string; position: NodePosition } =>
-                    typeof change.id === 'string' && Boolean(change.position)
+                  (
+                    change,
+                  ): change is NodeChangeLike & {
+                    id: string;
+                    position: NodePosition;
+                  } =>
+                    typeof change.id === "string" && Boolean(change.position),
                 )
-                .map((change) => [change.id, change.position])
+                .map((change) => [change.id, change.position]),
             );
             nextNodes = nextNodes.map((node) => {
               const update = map.get(node.id);
@@ -562,7 +612,7 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 ...node,
                 x: update.x,
                 y: update.y,
-                updatedAt: nowIso()
+                updatedAt: nowIso(),
               };
             });
           }
@@ -571,22 +621,24 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             const ids: Set<string> = new Set(
               removals
                 .map((change) => change.id)
-                .filter((id): id is string => typeof id === 'string')
+                .filter((id): id is string => typeof id === "string"),
             );
             nextNodes = nextNodes.filter((node) => !ids.has(node.id));
-            nextEdges = nextEdges.filter((edge) => !ids.has(edge.from) && !ids.has(edge.to));
+            nextEdges = nextEdges.filter(
+              (edge) => !ids.has(edge.from) && !ids.has(edge.to),
+            );
           }
 
           return {
             ...prev,
             nodes: nextNodes,
-            edges: nextEdges
+            edges: nextEdges,
           };
         },
-        { recordHistory: false }
+        { recordHistory: false },
       );
     },
-    [commitGraph]
+    [commitGraph],
   );
 
   const handleNodeDragStop = useCallback(
@@ -600,22 +652,24 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                   ...entry,
                   x: node.position.x,
                   y: node.position.y,
-                  updatedAt: nowIso()
+                  updatedAt: nowIso(),
                 }
-              : entry
-          )
+              : entry,
+          ),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
     },
-    [commitGraph]
+    [commitGraph],
   );
 
-
-  const handleSelectionChange = useCallback(({ nodes: selectedNodes, edges: selectedEdges }: SelectionChangeLike) => {
-    setSelectedNodeIds(selectedNodes.map((node) => node.id));
-    setSelectedEdgeIds(selectedEdges.map((edge) => edge.id));
-  }, [setSelectedNodeIds, setSelectedEdgeIds]);
+  const handleSelectionChange = useCallback(
+    ({ nodes: selectedNodes, edges: selectedEdges }: SelectionChangeLike) => {
+      setSelectedNodeIds(selectedNodes.map((node) => node.id));
+      setSelectedEdgeIds(selectedEdges.map((edge) => edge.id));
+    },
+    [setSelectedNodeIds, setSelectedEdgeIds],
+  );
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -626,46 +680,49 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       const key = event.key.toLowerCase();
       const isMod = event.metaKey || event.ctrlKey;
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeIds.length + selectedEdgeIds.length > 0) {
+      if (
+        (event.key === "Delete" || event.key === "Backspace") &&
+        selectedNodeIds.length + selectedEdgeIds.length > 0
+      ) {
         event.preventDefault();
         handleDeleteSelection();
         return;
       }
 
-      if (isMod && key === 'a') {
+      if (isMod && key === "a") {
         event.preventDefault();
         handleSelectAll();
         return;
       }
 
-      if (isMod && key === 'd') {
+      if (isMod && key === "d") {
         event.preventDefault();
         handleDuplicateSelection();
         return;
       }
 
-      if (isMod && key === 'f') {
+      if (isMod && key === "f") {
         event.preventDefault();
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
         return;
       }
 
-      if (key === 'escape') {
+      if (key === "escape") {
         event.preventDefault();
         handleClearSelection();
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [
     selectedNodeIds.length,
     selectedEdgeIds.length,
     handleDeleteSelection,
     handleSelectAll,
     handleDuplicateSelection,
-    handleClearSelection
+    handleClearSelection,
   ]);
 
   useEffect(() => {
@@ -693,28 +750,56 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       <section className="panel graph-toolbar-panel">
         <div className="graph-toolbar-row">
           <div className="graph-tool-group">
-            <button type="button" className="secondary-button" onClick={handleAddNodeAtCenter}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleAddNodeAtCenter}
+            >
               <Sparkles size={14} /> Add node
             </button>
-            <button type="button" className="secondary-button" onClick={handleDuplicateSelection}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleDuplicateSelection}
+            >
               <CopyPlus size={14} /> Duplicate
             </button>
-            <button type="button" className="secondary-button" onClick={handleDuplicateSubtree}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleDuplicateSubtree}
+            >
               <Workflow size={14} /> Duplicate subtree
             </button>
-            <button type="button" className="danger-button" onClick={handleDeleteSelection}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={handleDeleteSelection}
+            >
               <Trash2 size={14} /> Delete selected
             </button>
           </div>
 
           <div className="graph-tool-group">
-            <button type="button" className="secondary-button" onClick={handleSelectAll}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleSelectAll}
+            >
               <BringToFront size={14} /> Select all
             </button>
-            <button type="button" className="secondary-button" onClick={handleClearSelection}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleClearSelection}
+            >
               <Minimize size={14} /> Deselect
             </button>
-            <button type="button" className="secondary-button" onClick={handleToggleCollapse}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleToggleCollapse}
+            >
               <Network size={14} /> Collapse/Expand branch
             </button>
           </div>
@@ -726,7 +811,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               Edge style
               <select
                 value={defaultEdgeType}
-                onChange={(event) => setDefaultEdgeType(event.target.value as GraphEdge['type'])}
+                onChange={(event) =>
+                  setDefaultEdgeType(event.target.value as GraphEdge["type"])
+                }
               >
                 {EDGE_TYPES.map((entry) => (
                   <option key={entry.value} value={entry.value}>
@@ -735,7 +822,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 ))}
               </select>
             </label>
-            <button type="button" className="secondary-button" onClick={() => applyEdgeType(defaultEdgeType)}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => applyEdgeType(defaultEdgeType)}
+            >
               <Link2 size={14} /> Apply edge style
             </button>
 
@@ -746,22 +837,36 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 min={8}
                 max={120}
                 value={gridSize}
-                onChange={(event) => setGridSize(clamp(Number(event.target.value) || 28, 8, 120))}
+                onChange={(event) =>
+                  setGridSize(clamp(Number(event.target.value) || 28, 8, 120))
+                }
               />
             </label>
 
             <label className="inline-toggle">
-              <input type="checkbox" checked={snapToGrid} onChange={(event) => setSnapToGrid(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={snapToGrid}
+                onChange={(event) => setSnapToGrid(event.target.checked)}
+              />
               <span>Snap to grid</span>
             </label>
 
             <label className="inline-toggle">
-              <input type="checkbox" checked={showMiniMap} onChange={(event) => setShowMiniMap(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={showMiniMap}
+                onChange={(event) => setShowMiniMap(event.target.checked)}
+              />
               <span>Minimap</span>
             </label>
 
             <label className="inline-toggle">
-              <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
+              <input
+                type="checkbox"
+                checked={focusMode}
+                onChange={(event) => setFocusMode(event.target.checked)}
+              />
               <span>Focus mode</span>
             </label>
 
@@ -778,22 +883,46 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
 
         <div className="graph-toolbar-row">
           <div className="graph-tool-group">
-            <button type="button" className="secondary-button" onClick={() => alignSelected('left')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("left")}
+            >
               <AlignCenterVertical size={14} /> Align left
             </button>
-            <button type="button" className="secondary-button" onClick={() => alignSelected('right')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("right")}
+            >
               <AlignCenterVertical size={14} /> Align right
             </button>
-            <button type="button" className="secondary-button" onClick={() => alignSelected('hcenter')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("hcenter")}
+            >
               <AlignHorizontalJustifyCenter size={14} /> Align center
             </button>
-            <button type="button" className="secondary-button" onClick={() => alignSelected('top')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("top")}
+            >
               <AlignCenterVertical size={14} /> Align top
             </button>
-            <button type="button" className="secondary-button" onClick={() => alignSelected('bottom')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("bottom")}
+            >
               <AlignCenterVertical size={14} /> Align bottom
             </button>
-            <button type="button" className="secondary-button" onClick={() => alignSelected('vcenter')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => alignSelected("vcenter")}
+            >
               <AlignVerticalJustifyCenter size={14} /> Align middle
             </button>
           </div>
@@ -801,25 +930,53 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
 
         <div className="graph-toolbar-row">
           <div className="graph-tool-group">
-            <button type="button" className="secondary-button" onClick={() => handleAutoLayout('hierarchical')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => handleAutoLayout("hierarchical")}
+            >
               <Workflow size={14} /> Auto-layout (hierarchy)
             </button>
-            <button type="button" className="secondary-button" onClick={() => handleAutoLayout('force')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => handleAutoLayout("force")}
+            >
               <Sparkles size={14} /> Auto-layout (force)
             </button>
-            <button type="button" className="secondary-button" onClick={handleResetPositions}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetPositions}
+            >
               <Grid2x2 size={14} /> Reset positions
             </button>
-            <button type="button" className="secondary-button" onClick={handleSavePositions}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleSavePositions}
+            >
               <FileDown size={14} /> Save positions
             </button>
-            <button type="button" className="secondary-button" onClick={handleLoadPositions}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleLoadPositions}
+            >
               <FileUp size={14} /> Load positions
             </button>
-            <button type="button" className="secondary-button" onClick={handleFitView}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleFitView}
+            >
               <Maximize size={14} /> Fit graph
             </button>
-            <button type="button" className="secondary-button" onClick={handleResetView}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleResetView}
+            >
               <RotateCcw size={14} /> Reset view
             </button>
             <button
@@ -845,7 +1002,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Find nodes by name, tag, description"
             />
-            <button type="button" className="secondary-button" onClick={() => handleFindFirstMatch(searchMatches)}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => handleFindFirstMatch(searchMatches)}
+            >
               Find next
             </button>
           </div>
@@ -864,7 +1025,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 min={1}
                 max={5}
                 value={exportScale}
-                onChange={(event) => setExportScale(clamp(Number(event.target.value) || 2, 1, 5))}
+                onChange={(event) =>
+                  setExportScale(clamp(Number(event.target.value) || 2, 1, 5))
+                }
               />
             </label>
             <label className="inline-toggle">
@@ -881,28 +1044,60 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               onChange={(event) => setExportBackground(event.target.value)}
               title="Export background"
             />
-            <button type="button" className="secondary-button" onClick={handleExportGraphJson}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleExportGraphJson}
+            >
               <FileJson size={14} /> Graph JSON
             </button>
-            <button type="button" className="secondary-button" onClick={() => importGraphRef.current?.click()}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => importGraphRef.current?.click()}
+            >
               <FileUp size={14} /> Import graph
             </button>
-            <button type="button" className="secondary-button" onClick={handleExportSvg}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handleExportSvg}
+            >
               <FileDown size={14} /> SVG
             </button>
-            <button type="button" className="secondary-button" onClick={() => void handleExportImage('png')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void handleExportImage("png")}
+            >
               <FileImage size={14} /> PNG
             </button>
-            <button type="button" className="secondary-button" onClick={() => void handleExportImage('jpg')}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void handleExportImage("jpg")}
+            >
               <FileImage size={14} /> JPG
             </button>
-            <button type="button" className="secondary-button" onClick={() => void handleExportPdf()}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void handleExportPdf()}
+            >
               <FileDown size={14} /> PDF
             </button>
-            <button type="button" className="secondary-button" onClick={handlePrintGraph}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={handlePrintGraph}
+            >
               <FileDown size={14} /> Print
             </button>
-            <button type="button" className="danger-button" onClick={handleClearGraph}>
+            <button
+              type="button"
+              className="danger-button"
+              onClick={handleClearGraph}
+            >
               <Trash2 size={14} /> Clear graph
             </button>
           </div>
@@ -924,7 +1119,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               handlePaneDoubleClick(event);
             }
           }}
-          onNodeMouseEnter={(_event, node: FlowNodeLike) => setHoveredNodeId(node.id)}
+          onNodeMouseEnter={(_event, node: FlowNodeLike) =>
+            setHoveredNodeId(node.id)
+          }
           onNodeMouseLeave={() => setHoveredNodeId(null)}
           snapToGrid={snapToGrid}
           snapGrid={[gridSize, gridSize]}
@@ -935,7 +1132,12 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          <Background gap={gridSize} size={1} variant={BackgroundVariant.Lines} color="var(--line)" />
+          <Background
+            gap={gridSize}
+            size={1}
+            variant={BackgroundVariant.Lines}
+            color="var(--line)"
+          />
           <Controls />
           {showMiniMap && (
             <MiniMap
@@ -944,9 +1146,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               nodeColor={(node) => {
                 const matched = searchMatches.has(node.id);
                 if (matched) {
-                  return '#9f3027';
+                  return "#9f3027";
                 }
-                return typeof node.data?.color === 'string' ? node.data.color : '#b08968';
+                return typeof node.data?.color === "string"
+                  ? node.data.color
+                  : "#b08968";
               }}
             />
           )}
@@ -956,8 +1160,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
       <section className="panel graph-inspector-panel">
         <h3>Graph Inspector</h3>
         <p className="meta-line">
-          {nodes.length} nodes, {edges.length} connections, {selectedNodeIds.length} selected node(s),{' '}
-          {selectedEdgeIds.length} selected edge(s)
+          {nodes.length} nodes, {edges.length} connections,{" "}
+          {selectedNodeIds.length} selected node(s), {selectedEdgeIds.length}{" "}
+          selected edge(s)
         </p>
 
         {activeNode ? (
@@ -967,14 +1172,22 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Label
                 <input
                   value={activeNode.label}
-                  onChange={(event) => handlePatchActiveNode({ label: event.target.value || activeNode.label })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({
+                      label: event.target.value || activeNode.label,
+                    })
+                  }
                 />
               </label>
               <label>
                 Icon/emoji
                 <input
-                  value={activeNode.icon || ''}
-                  onChange={(event) => handlePatchActiveNode({ icon: event.target.value.slice(0, 2) || '◉' })}
+                  value={activeNode.icon || ""}
+                  onChange={(event) =>
+                    handlePatchActiveNode({
+                      icon: event.target.value.slice(0, 2) || "◉",
+                    })
+                  }
                 />
               </label>
             </div>
@@ -983,8 +1196,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               Description
               <textarea
                 rows={3}
-                value={activeNode.description || ''}
-                onChange={(event) => handlePatchActiveNode({ description: event.target.value })}
+                value={activeNode.description || ""}
+                onChange={(event) =>
+                  handlePatchActiveNode({ description: event.target.value })
+                }
               />
             </label>
 
@@ -993,7 +1208,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Shape
                 <select
                   value={activeNode.shape}
-                  onChange={(event) => handlePatchActiveNode({ shape: event.target.value as GraphNode['shape'] })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({
+                      shape: event.target.value as GraphNode["shape"],
+                    })
+                  }
                 >
                   {SHAPES.map((shape) => (
                     <option key={shape} value={shape}>
@@ -1006,7 +1225,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Size
                 <select
                   value={activeNode.size}
-                  onChange={(event) => handlePatchActiveNode({ size: event.target.value as GraphNode['size'] })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({
+                      size: event.target.value as GraphNode["size"],
+                    })
+                  }
                 >
                   {SIZES.map((size) => (
                     <option key={size} value={size}>
@@ -1023,7 +1246,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <select
                   value={activeNode.priority}
                   onChange={(event) =>
-                    handlePatchActiveNode({ priority: event.target.value as GraphNode['priority'] })
+                    handlePatchActiveNode({
+                      priority: event.target.value as GraphNode["priority"],
+                    })
                   }
                 >
                   {PRIORITIES.map((priority) => (
@@ -1037,7 +1262,11 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 Status
                 <select
                   value={activeNode.status}
-                  onChange={(event) => handlePatchActiveNode({ status: event.target.value as GraphNode['status'] })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({
+                      status: event.target.value as GraphNode["status"],
+                    })
+                  }
                 >
                   {STATUSES.map((status) => (
                     <option key={status} value={status}>
@@ -1054,7 +1283,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="color"
                   value={activeNode.color}
-                  onChange={(event) => handlePatchActiveNode({ color: event.target.value })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ color: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -1062,7 +1293,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="color"
                   value={activeNode.textColor}
-                  onChange={(event) => handlePatchActiveNode({ textColor: event.target.value })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ textColor: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -1070,7 +1303,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="color"
                   value={activeNode.borderColor}
-                  onChange={(event) => handlePatchActiveNode({ borderColor: event.target.value })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ borderColor: event.target.value })
+                  }
                 />
               </label>
             </div>
@@ -1083,7 +1318,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 max={1}
                 step={0.05}
                 value={activeNode.opacity ?? 1}
-                onChange={(event) => handlePatchActiveNode({ opacity: Number(event.target.value) })}
+                onChange={(event) =>
+                  handlePatchActiveNode({ opacity: Number(event.target.value) })
+                }
               />
             </label>
 
@@ -1091,15 +1328,19 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
               <label>
                 Alias
                 <input
-                  value={activeNode.alias || ''}
-                  onChange={(event) => handlePatchActiveNode({ alias: event.target.value })}
+                  value={activeNode.alias || ""}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ alias: event.target.value })
+                  }
                 />
               </label>
               <label>
                 Owner
                 <input
-                  value={activeNode.owner || ''}
-                  onChange={(event) => handlePatchActiveNode({ owner: event.target.value })}
+                  value={activeNode.owner || ""}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ owner: event.target.value })
+                  }
                 />
               </label>
             </div>
@@ -1107,8 +1348,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             <label>
               Tags
               <input
-                value={(activeNode.tags || []).join(', ')}
-                onChange={(event) => handlePatchActiveNode({ tags: parseTags(event.target.value) })}
+                value={(activeNode.tags || []).join(", ")}
+                onChange={(event) =>
+                  handlePatchActiveNode({ tags: parseTags(event.target.value) })
+                }
                 placeholder="planning, release"
               />
             </label>
@@ -1116,8 +1359,10 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
             <label>
               Link to todo
               <select
-                value={activeNode.todoId || ''}
-                onChange={(event) => handlePatchActiveNode({ todoId: event.target.value || null })}
+                value={activeNode.todoId || ""}
+                onChange={(event) =>
+                  handlePatchActiveNode({ todoId: event.target.value || null })
+                }
               >
                 <option value="">None</option>
                 {todos.map((todo) => (
@@ -1133,7 +1378,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="checkbox"
                   checked={Boolean(activeNode.completed)}
-                  onChange={(event) => handlePatchActiveNode({ completed: event.target.checked })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ completed: event.target.checked })
+                  }
                 />
                 <span>Completed</span>
               </label>
@@ -1142,7 +1389,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="checkbox"
                   checked={Boolean(activeNode.collapsed)}
-                  onChange={(event) => handlePatchActiveNode({ collapsed: event.target.checked })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ collapsed: event.target.checked })
+                  }
                 />
                 <span>Collapsed</span>
               </label>
@@ -1151,7 +1400,9 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 <input
                   type="checkbox"
                   checked={Boolean(activeNode.shadow)}
-                  onChange={(event) => handlePatchActiveNode({ shadow: event.target.checked })}
+                  onChange={(event) =>
+                    handlePatchActiveNode({ shadow: event.target.checked })
+                  }
                 />
                 <span>Shadow</span>
               </label>
@@ -1162,8 +1413,14 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                 type="button"
                 className="secondary-button"
                 onClick={() => {
-                  const descendants = getDescendantNodeIds(activeNode.id, edges);
-                  notify('success', `${descendants.size} downstream node(s) in this branch.`);
+                  const descendants = getDescendantNodeIds(
+                    activeNode.id,
+                    edges,
+                  );
+                  notify(
+                    "success",
+                    `${descendants.size} downstream node(s) in this branch.`,
+                  );
                 }}
               >
                 <Network size={14} /> Branch stats
@@ -1177,18 +1434,24 @@ function GraphWorkspaceInner({ graph, todos, onGraphChange, onNotify, onJumpToTo
                   <Focus size={14} /> Open linked todo
                 </button>
               )}
-              <button type="button" className="secondary-button" onClick={() => handleCenterOnNode(activeNode.id)}>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => handleCenterOnNode(activeNode.id)}
+              >
                 <Focus size={14} /> Center on node
               </button>
             </div>
 
             <p className="meta-line">
-              Created: {new Date(activeNode.createdAt).toLocaleString()} · Updated: {new Date(activeNode.updatedAt).toLocaleString()}
+              Created: {new Date(activeNode.createdAt).toLocaleString()} ·
+              Updated: {new Date(activeNode.updatedAt).toLocaleString()}
             </p>
           </div>
         ) : (
           <p className="meta-line">
-            Select a node to edit shape, metadata, colors, links, and branch controls.
+            Select a node to edit shape, metadata, colors, links, and branch
+            controls.
           </p>
         )}
       </section>

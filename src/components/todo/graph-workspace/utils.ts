@@ -1,5 +1,5 @@
-import { getDescendantNodeIds } from '../../../lib/graph-layout';
-import type { GraphEdge, GraphNode } from '../../../lib/workspace';
+import { getDescendantNodeIds } from "../../../lib/graph-layout";
+import type { GraphEdge, GraphNode } from "../../../lib/workspace";
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -11,15 +11,19 @@ export function clamp(value: number, min: number, max: number): number {
 
 export function parseTags(raw: string): string[] {
   return raw
-    .split(',')
+    .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean);
 }
 
-export function createDownload(fileName: string, content: string, mimeType: string): void {
+export function createDownload(
+  fileName: string,
+  content: string,
+  mimeType: string,
+): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
+  const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = fileName;
   document.body.append(anchor);
@@ -29,7 +33,7 @@ export function createDownload(fileName: string, content: string, mimeType: stri
 }
 
 export function downloadFromDataUrl(fileName: string, dataUrl: string): void {
-  const anchor = document.createElement('a');
+  const anchor = document.createElement("a");
   anchor.href = dataUrl;
   anchor.download = fileName;
   document.body.append(anchor);
@@ -47,10 +51,13 @@ export function isInputLikeTarget(target: EventTarget | null): boolean {
   }
 
   const tagName = target.tagName.toLowerCase();
-  return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+  return tagName === "input" || tagName === "textarea" || tagName === "select";
 }
 
-export function collectHiddenNodeIds(nodes: GraphNode[], edges: GraphEdge[]): Set<string> {
+export function collectHiddenNodeIds(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): Set<string> {
   const hidden: Set<string> = new Set();
   nodes
     .filter((node) => node.collapsed)
@@ -62,8 +69,13 @@ export function collectHiddenNodeIds(nodes: GraphNode[], edges: GraphEdge[]): Se
   return hidden;
 }
 
-export function buildBranchProgress(nodes: GraphNode[], edges: GraphEdge[]): Map<string, number | null> {
-  const nodeById: Map<string, GraphNode> = new Map(nodes.map((node) => [node.id, node]));
+export function buildBranchProgress(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): Map<string, number | null> {
+  const nodeById: Map<string, GraphNode> = new Map(
+    nodes.map((node) => [node.id, node]),
+  );
   const progress: Map<string, number | null> = new Map();
 
   nodes.forEach((node) => {
@@ -73,7 +85,9 @@ export function buildBranchProgress(nodes: GraphNode[], edges: GraphEdge[]): Map
       return;
     }
 
-    const completed = [...descendants].filter((childId) => nodeById.get(childId)?.completed).length;
+    const completed = [...descendants].filter(
+      (childId) => nodeById.get(childId)?.completed,
+    ).length;
     const percent = Math.round((completed / descendants.size) * 100);
     progress.set(node.id, percent);
   });

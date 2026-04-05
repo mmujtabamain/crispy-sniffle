@@ -1,14 +1,14 @@
-import { useCallback, useState } from 'react';
-import { useReactFlow } from '@xyflow/react';
-import type { GraphNode } from '../../../lib/workspace';
-import { nodeSizeToDimensions } from '../../../lib/graph-layout';
+import { useCallback, useState } from "react";
+import { useReactFlow } from "@xyflow/react";
+import type { GraphNode } from "../../../lib/workspace";
+import { nodeSizeToDimensions } from "../../../lib/graph-layout";
 import type {
   GraphChangeOptions,
   GraphUpdater,
   NodePosition,
-  NotifyKind
-} from './types';
-import { nowIso } from './utils';
+  NotifyKind,
+} from "./types";
+import { nowIso } from "./utils";
 
 interface ViewportHandlerDeps {
   nodes: GraphNode[];
@@ -33,10 +33,13 @@ export function useViewportHandlers({
   setSelectedNodeIds,
   setSelectedEdgeIds,
   commitGraph,
-  notify
+  notify,
 }: ViewportHandlerDeps) {
   const flow = useReactFlow();
-  const [savedPositions, setSavedPositions] = useState<Record<string, NodePosition> | null>(null);
+  const [savedPositions, setSavedPositions] = useState<Record<
+    string,
+    NodePosition
+  > | null>(null);
 
   const handleFitView = useCallback(() => {
     flow.fitView({ padding: 0.2, duration: 360 });
@@ -55,21 +58,23 @@ export function useViewportHandlers({
       const size = nodeSizeToDimensions(node.size);
       flow.setCenter(node.x + size.width / 2, node.y + size.height / 2, {
         zoom: 1.15,
-        duration: 360
+        duration: 360,
       });
     },
-    [nodes, flow]
+    [nodes, flow],
   );
 
   const handleSavePositions = useCallback(() => {
-    const snapshot = Object.fromEntries(nodes.map((node) => [node.id, { x: node.x, y: node.y }]));
+    const snapshot = Object.fromEntries(
+      nodes.map((node) => [node.id, { x: node.x, y: node.y }]),
+    );
     setSavedPositions(snapshot);
-    notify('success', 'Node positions snapshot saved.');
+    notify("success", "Node positions snapshot saved.");
   }, [nodes, notify]);
 
   const handleLoadPositions = useCallback(() => {
     if (!savedPositions) {
-      notify('warning', 'No saved position snapshot in this session.');
+      notify("warning", "No saved position snapshot in this session.");
       return;
     }
 
@@ -85,14 +90,14 @@ export function useViewportHandlers({
             ...node,
             x: snapshot.x,
             y: snapshot.y,
-            updatedAt: nowIso()
+            updatedAt: nowIso(),
           };
-        })
+        }),
       }),
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
-    notify('success', 'Restored node positions snapshot.');
+    notify("success", "Restored node positions snapshot.");
   }, [savedPositions, commitGraph, notify]);
 
   const handleSelectAll = useCallback(() => {
@@ -109,7 +114,7 @@ export function useViewportHandlers({
     (searchMatches: Set<string>) => {
       const firstMatchId = [...searchMatches][0] || null;
       if (!firstMatchId) {
-        notify('warning', 'No node matches the current search.');
+        notify("warning", "No node matches the current search.");
         return;
       }
 
@@ -117,7 +122,7 @@ export function useViewportHandlers({
       setSelectedEdgeIds([]);
       handleCenterOnNode(firstMatchId);
     },
-    [setSelectedNodeIds, setSelectedEdgeIds, handleCenterOnNode, notify]
+    [setSelectedNodeIds, setSelectedEdgeIds, handleCenterOnNode, notify],
   );
 
   return {
@@ -129,6 +134,6 @@ export function useViewportHandlers({
     handleSelectAll,
     handleClearSelection,
     handleFindFirstMatch,
-    savedPositions
+    savedPositions,
   };
 }

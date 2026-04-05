@@ -1,13 +1,31 @@
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Archive, Check, CloudUpload, Filter, Sparkles, Trash2, X } from 'lucide-react';
-import type { ChangeEvent, ComponentProps, KeyboardEvent, MutableRefObject } from 'react';
-import type { DragEndEvent } from '@dnd-kit/core';
-import SortableTodoItem from './SortableTodoItem';
-import TodoInspector from './TodoInspector';
-import type { Todo } from '../../lib/workspace';
-import type { TodoFilters } from '../../lib/todo-filters';
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AlertTriangle,
+  Archive,
+  Check,
+  CloudUpload,
+  Filter,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
+import type {
+  ChangeEvent,
+  ComponentProps,
+  KeyboardEvent,
+  MutableRefObject,
+} from "react";
+import type { DragEndEvent } from "@dnd-kit/core";
+import SortableTodoItem from "./SortableTodoItem";
+import TodoInspector from "./TodoInspector";
+import type { Todo } from "../../lib/workspace";
+import type { TodoFilters } from "../../lib/todo-filters";
+import { formatBytes } from "../../lib/formatters";
 
 interface QuotaStatus {
   usedBytes: number;
@@ -30,15 +48,14 @@ interface TimerState {
 interface WorkspaceMainProps {
   composerInputRef: MutableRefObject<HTMLInputElement | null>;
   quotaStatus: QuotaStatus;
-  formatBytes: (bytes: number) => string;
   errorMessage: string;
   activeListName: string;
   newTodoText: string;
   onNewTodoTextChange: (value: string) => void;
   onComposerEnter: () => void;
   onAddTodo: () => void;
-  quickPriority: Todo['priority'];
-  onQuickPriorityChange: (value: Todo['priority']) => void;
+  quickPriority: Todo["priority"];
+  onQuickPriorityChange: (value: Todo["priority"]) => void;
   quickDueDate: string;
   onQuickDueDateChange: (value: string) => void;
   quickTags: string;
@@ -63,7 +80,7 @@ interface WorkspaceMainProps {
   onSaveCurrentFilters: () => void;
   onApplySavedFilter: (presetId: string) => void;
   onDeleteSavedFilter: (presetId: string) => void;
-  sensors: ComponentProps<typeof DndContext>['sensors'];
+  sensors: ComponentProps<typeof DndContext>["sensors"];
   onDragEnd: (event: DragEndEvent) => void;
   dragDisabled: boolean;
   editingId: string | null;
@@ -88,105 +105,41 @@ interface WorkspaceMainProps {
   onStartTimer: (todoId: string) => void;
   onStopTimer: () => void;
   onResetTimer: () => void;
-  onBulkSetPriority: (priority: Todo['priority']) => void;
+  onBulkSetPriority: (priority: Todo["priority"]) => void;
   onBulkDelete: () => void;
   onBulkArchive: () => void;
   onFocusTodo: (todoId: string | null) => void;
 }
 
-export default function WorkspaceMain({
-  composerInputRef,
-  quotaStatus,
-  formatBytes,
-  errorMessage,
-  activeListName,
-  newTodoText,
-  onNewTodoTextChange,
-  onComposerEnter,
-  onAddTodo,
-  quickPriority,
-  onQuickPriorityChange,
-  quickDueDate,
-  onQuickDueDateChange,
-  quickTags,
-  onQuickTagsChange,
-  todos,
-  allListTodosCount,
-  completedCount,
-  pendingCount,
-  archivedCount,
-  selectedTodoIds,
-  onToggleSelect,
-  onSelectAllFiltered,
-  onClearSelection,
-  onClearCompleted,
-  onArchiveCompleted,
-  onClearAll,
-  filters,
-  onFilterChange,
-  onClearFilters,
-  availableTags,
-  savedFilters,
-  onSaveCurrentFilters,
-  onApplySavedFilter,
-  onDeleteSavedFilter,
-  sensors,
-  onDragEnd,
-  dragDisabled,
-  editingId,
-  editingDraft,
-  onDraftChange,
-  onBeginEdit,
-  onCommitEdit,
-  onCancelEdit,
-  onToggle,
-  onDuplicate,
-  onArchive,
-  onRestore,
-  onDelete,
-  onOpenContextMenu,
-  focusedTodo,
-  timer,
-  onPatchTodo,
-  onAddSubtask,
-  onToggleSubtask,
-  onDeleteSubtask,
-  onAttachFiles,
-  onStartTimer,
-  onStopTimer,
-  onResetTimer,
-  onBulkSetPriority,
-  onBulkDelete,
-  onBulkArchive,
-  onFocusTodo
-}: WorkspaceMainProps) {
+export default function WorkspaceMain(props: WorkspaceMainProps) {
   const isAnyFilterActive =
-    filters.completion !== 'active' ||
-    filters.priority !== 'all' ||
-    filters.status !== 'all' ||
-    filters.startDate ||
-    filters.endDate ||
-    filters.tags.length > 0 ||
-    filters.searchText ||
-    filters.searchTag ||
-    filters.smartFilter !== 'none' ||
-    filters.sortBy !== 'manual';
+    props.filters.completion !== "active" ||
+    props.filters.priority !== "all" ||
+    props.filters.status !== "all" ||
+    props.filters.startDate ||
+    props.filters.endDate ||
+    props.filters.tags.length > 0 ||
+    props.filters.searchText ||
+    props.filters.searchTag ||
+    props.filters.smartFilter !== "none" ||
+    props.filters.sortBy !== "manual";
 
   return (
     <main className="workspace-main">
-      {quotaStatus.warning && (
+      {props.quotaStatus.warning && (
         <div className="warning-banner" role="status">
           <AlertTriangle size={17} />
           <span>
-            Storage warning: {formatBytes(quotaStatus.usedBytes)} used of about {formatBytes(quotaStatus.quotaBytes)}.
+            Storage warning: {formatBytes(props.quotaStatus.usedBytes)} used of
+            about {formatBytes(props.quotaStatus.quotaBytes)}.
           </span>
         </div>
       )}
 
-      {errorMessage && (
+      {props.errorMessage && (
         <div className="error-banner" role="alert">
           <AlertTriangle size={17} />
-          <span>{errorMessage}</span>
+          <span>{props.errorMessage}</span>
         </div>
       )}
 
@@ -197,20 +150,26 @@ export default function WorkspaceMain({
         <div className="composer-input-grid">
           <input
             id="todo-input"
-            ref={composerInputRef}
-            value={newTodoText}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onNewTodoTextChange(event.target.value)}
+            ref={props.composerInputRef}
+            value={props.newTodoText}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              props.onNewTodoTextChange(event.target.value)
+            }
             onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-              if (event.key === 'Enter') {
-                onComposerEnter();
+              if (event.key === "Enter") {
+                props.onComposerEnter();
               }
             }}
             placeholder="Add a focused task, then press Enter"
           />
 
           <select
-            value={quickPriority}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) => onQuickPriorityChange(event.target.value as Todo['priority'])}
+            value={props.quickPriority}
+            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+              props.onQuickPriorityChange(
+                event.target.value as Todo["priority"],
+              )
+            }
           >
             <option value="low">Low priority</option>
             <option value="medium">Medium priority</option>
@@ -220,19 +179,27 @@ export default function WorkspaceMain({
 
           <input
             type="date"
-            value={quickDueDate}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onQuickDueDateChange(event.target.value)}
+            value={props.quickDueDate}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              props.onQuickDueDateChange(event.target.value)
+            }
             aria-label="Due date"
           />
 
           <input
-            value={quickTags}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => onQuickTagsChange(event.target.value)}
+            value={props.quickTags}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              props.onQuickTagsChange(event.target.value)
+            }
             placeholder="tags: launch, inbox"
             aria-label="Quick tags"
           />
         </div>
-        <button type="button" className="primary-button" onClick={onAddTodo}>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={props.onAddTodo}
+        >
           <Sparkles size={16} /> Add
         </button>
       </div>
@@ -243,10 +210,18 @@ export default function WorkspaceMain({
             <Filter size={16} /> Filters & Sorting
           </h3>
           <div className="inline-row">
-            <button type="button" className="secondary-button" onClick={onSaveCurrentFilters}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={props.onSaveCurrentFilters}
+            >
               Save current filter
             </button>
-            <button type="button" className="secondary-button" onClick={onClearFilters}>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={props.onClearFilters}
+            >
               <X size={14} /> Clear
             </button>
           </div>
@@ -256,8 +231,10 @@ export default function WorkspaceMain({
           <label>
             Completion
             <select
-              value={filters.completion}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('completion', event.target.value)}
+              value={props.filters.completion}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                props.onFilterChange("completion", event.target.value)
+              }
             >
               <option value="active">Active only</option>
               <option value="completed">Completed only</option>
@@ -270,8 +247,10 @@ export default function WorkspaceMain({
           <label>
             Priority
             <select
-              value={filters.priority}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('priority', event.target.value)}
+              value={props.filters.priority}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                props.onFilterChange("priority", event.target.value)
+              }
             >
               <option value="all">All priorities</option>
               <option value="low">Low</option>
@@ -284,8 +263,10 @@ export default function WorkspaceMain({
           <label>
             Status
             <select
-              value={filters.status}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('status', event.target.value)}
+              value={props.filters.status}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                props.onFilterChange("status", event.target.value)
+              }
             >
               <option value="all">All statuses</option>
               <option value="todo">Todo</option>
@@ -298,8 +279,10 @@ export default function WorkspaceMain({
           <label>
             Smart filter
             <select
-              value={filters.smartFilter}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('smartFilter', event.target.value)}
+              value={props.filters.smartFilter}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                props.onFilterChange("smartFilter", event.target.value)
+              }
             >
               <option value="none">None</option>
               <option value="today">Today</option>
@@ -311,8 +294,10 @@ export default function WorkspaceMain({
           <label>
             Search text
             <input
-              value={filters.searchText}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('searchText', event.target.value)}
+              value={props.filters.searchText}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                props.onFilterChange("searchText", event.target.value)
+              }
               placeholder="Search todos and notes"
             />
           </label>
@@ -320,8 +305,10 @@ export default function WorkspaceMain({
           <label>
             Search tag
             <input
-              value={filters.searchTag}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('searchTag', event.target.value)}
+              value={props.filters.searchTag}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                props.onFilterChange("searchTag", event.target.value)
+              }
               placeholder="tag name"
             />
           </label>
@@ -330,8 +317,10 @@ export default function WorkspaceMain({
             Date start
             <input
               type="date"
-              value={filters.startDate}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('startDate', event.target.value)}
+              value={props.filters.startDate}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                props.onFilterChange("startDate", event.target.value)
+              }
             />
           </label>
 
@@ -339,16 +328,20 @@ export default function WorkspaceMain({
             Date end
             <input
               type="date"
-              value={filters.endDate}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => onFilterChange('endDate', event.target.value)}
+              value={props.filters.endDate}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                props.onFilterChange("endDate", event.target.value)
+              }
             />
           </label>
 
           <label>
             Sort
             <select
-              value={filters.sortBy}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => onFilterChange('sortBy', event.target.value)}
+              value={props.filters.sortBy}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                props.onFilterChange("sortBy", event.target.value)
+              }
             >
               <option value="manual">Manual order</option>
               <option value="created-desc">Created newest</option>
@@ -367,11 +360,11 @@ export default function WorkspaceMain({
                 if (!event.target.value) {
                   return;
                 }
-                onApplySavedFilter(event.target.value);
+                props.onApplySavedFilter(event.target.value);
               }}
             >
               <option value="">Apply preset…</option>
-              {savedFilters.map((preset: SavedFilter) => (
+              {props.savedFilters.map((preset: SavedFilter) => (
                 <option key={preset.id} value={preset.id}>
                   {preset.name}
                 </option>
@@ -381,16 +374,20 @@ export default function WorkspaceMain({
         </div>
 
         <div className="tag-toggle-row">
-          {availableTags.map((tag: string) => {
-            const isActive = filters.tags.includes(tag);
+          {props.availableTags.map((tag: string) => {
+            const isActive = props.filters.tags.includes(tag);
             return (
               <button
                 key={tag}
                 type="button"
-                className={`chip-button ${isActive ? 'active' : ''}`}
+                className={`chip-button ${isActive ? "active" : ""}`}
                 onClick={() => {
-                  const next = isActive ? filters.tags.filter((entry: string) => entry !== tag) : [...filters.tags, tag];
-                  onFilterChange('tags', next);
+                  const next = isActive
+                    ? props.filters.tags.filter(
+                        (entry: string) => entry !== tag,
+                      )
+                    : [...props.filters.tags, tag];
+                  props.onFilterChange("tags", next);
                 }}
               >
                 #{tag}
@@ -399,10 +396,15 @@ export default function WorkspaceMain({
           })}
         </div>
 
-        {savedFilters.length > 0 && (
+        {props.savedFilters.length > 0 && (
           <div className="saved-filter-row">
-            {savedFilters.map((preset: SavedFilter) => (
-              <button key={preset.id} type="button" className="chip-button" onClick={() => onDeleteSavedFilter(preset.id)}>
+            {props.savedFilters.map((preset: SavedFilter) => (
+              <button
+                key={preset.id}
+                type="button"
+                className="chip-button"
+                onClick={() => props.onDeleteSavedFilter(preset.id)}
+              >
                 Delete {preset.name}
               </button>
             ))}
@@ -412,99 +414,147 @@ export default function WorkspaceMain({
 
       <div className="stats-row" aria-label="Todo counters">
         <div>
-          <strong>{todos.length}</strong>
+          <strong>{props.todos.length}</strong>
           <span>Visible</span>
         </div>
         <div>
-          <strong>{allListTodosCount}</strong>
-          <span>In {activeListName || 'list'}</span>
+          <strong>{props.allListTodosCount}</strong>
+          <span>In {props.activeListName || "list"}</span>
         </div>
         <div>
-          <strong>{completedCount}</strong>
+          <strong>{props.completedCount}</strong>
           <span>Completed</span>
         </div>
         <div>
-          <strong>{pendingCount}</strong>
+          <strong>{props.pendingCount}</strong>
           <span>Open</span>
         </div>
         <div>
-          <strong>{archivedCount}</strong>
+          <strong>{props.archivedCount}</strong>
           <span>Archived</span>
         </div>
         <div>
-          <strong>{formatBytes(quotaStatus.usedBytes)}</strong>
+          <strong>{formatBytes(props.quotaStatus.usedBytes)}</strong>
           <span>Storage used</span>
         </div>
       </div>
 
       <div className="action-row">
-        <button type="button" className="secondary-button" onClick={onClearCompleted}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={props.onClearCompleted}
+        >
           <Check size={15} /> Clear completed
         </button>
-        <button type="button" className="secondary-button" onClick={onArchiveCompleted}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={props.onArchiveCompleted}
+        >
           <Archive size={15} /> Archive completed
         </button>
-        <button type="button" className="secondary-button" onClick={onClearAll}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={props.onClearAll}
+        >
           <Trash2 size={15} /> Clear all
         </button>
       </div>
 
-      {selectedTodoIds.length > 0 && (
+      {props.selectedTodoIds.length > 0 && (
         <div className="bulk-bar">
-          <strong>{selectedTodoIds.length} selected</strong>
-          <button type="button" className="secondary-button" onClick={() => onBulkSetPriority('high')}>
+          <strong>{props.selectedTodoIds.length} selected</strong>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => props.onBulkSetPriority("high")}
+          >
             Set high priority
           </button>
-          <button type="button" className="secondary-button" onClick={onBulkArchive}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={props.onBulkArchive}
+          >
             Archive selected
           </button>
-          <button type="button" className="danger-button" onClick={onBulkDelete}>
+          <button
+            type="button"
+            className="danger-button"
+            onClick={props.onBulkDelete}
+          >
             Delete selected
           </button>
-          <button type="button" className="secondary-button" onClick={onSelectAllFiltered}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={props.onSelectAllFiltered}
+          >
             Select visible
           </button>
-          <button type="button" className="secondary-button" onClick={onClearSelection}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={props.onClearSelection}
+          >
             Clear selection
           </button>
         </div>
       )}
 
-      {dragDisabled && !isAnyFilterActive && (
-        <p className="meta-line">Manual sorting is disabled because another sort mode is active.</p>
+      {props.dragDisabled && !isAnyFilterActive && (
+        <p className="meta-line">
+          Manual sorting is disabled because another sort mode is active.
+        </p>
       )}
 
-      {todos.length === 0 ? (
-        <motion.div className="empty-state" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      {props.todos.length === 0 ? (
+        <motion.div
+          className="empty-state"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <CloudUpload size={24} />
           <h3>Your runway is clear</h3>
-          <p>Use the composer, import panel, or saved filters to build your Tier 2 workspace.</p>
+          <p>
+            Use the composer, import panel, or saved filters to build your Tier
+            2 workspace.
+          </p>
         </motion.div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-          <SortableContext items={todos.map((todo: Todo) => todo.id)} strategy={verticalListSortingStrategy}>
+        <DndContext
+          sensors={props.sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={props.onDragEnd}
+        >
+          <SortableContext
+            items={props.todos.map((todo: Todo) => todo.id)}
+            strategy={verticalListSortingStrategy}
+          >
             <motion.ul className="todo-list" layout>
               <AnimatePresence>
-                {todos.map((todo: Todo) => (
+                {props.todos.map((todo: Todo) => (
                   <SortableTodoItem
                     key={todo.id}
                     todo={todo}
-                    isEditing={editingId === todo.id}
-                    editDraft={editingDraft}
-                    onDraftChange={onDraftChange}
-                    onBeginEdit={onBeginEdit}
-                    onCommitEdit={onCommitEdit}
-                    onCancelEdit={onCancelEdit}
-                    isSelected={selectedTodoIds.includes(todo.id)}
-                    onSelect={onToggleSelect}
-                    onToggle={onToggle}
-                    onDuplicate={onDuplicate}
-                    onArchive={onArchive}
-                    onRestore={onRestore}
-                    onDelete={onDelete}
-                    onFocus={onFocusTodo}
-                    onOpenContextMenu={onOpenContextMenu}
-                    dragDisabled={dragDisabled}
+                    isEditing={props.editingId === todo.id}
+                    editDraft={props.editingDraft}
+                    onDraftChange={props.onDraftChange}
+                    onBeginEdit={props.onBeginEdit}
+                    onCommitEdit={props.onCommitEdit}
+                    onCancelEdit={props.onCancelEdit}
+                    isSelected={props.selectedTodoIds.includes(todo.id)}
+                    onSelect={props.onToggleSelect}
+                    onToggle={props.onToggle}
+                    onDuplicate={props.onDuplicate}
+                    onArchive={props.onArchive}
+                    onRestore={props.onRestore}
+                    onDelete={props.onDelete}
+                    onFocus={props.onFocusTodo}
+                    onOpenContextMenu={props.onOpenContextMenu}
+                    dragDisabled={props.dragDisabled}
                   />
                 ))}
               </AnimatePresence>
@@ -514,16 +564,16 @@ export default function WorkspaceMain({
       )}
 
       <TodoInspector
-        todo={focusedTodo}
-        timer={timer}
-        onPatch={onPatchTodo}
-        onAddSubtask={onAddSubtask}
-        onToggleSubtask={onToggleSubtask}
-        onDeleteSubtask={onDeleteSubtask}
-        onAttachFiles={onAttachFiles}
-        onStartTimer={onStartTimer}
-        onStopTimer={onStopTimer}
-        onResetTimer={onResetTimer}
+        todo={props.focusedTodo}
+        timer={props.timer}
+        onPatch={props.onPatchTodo}
+        onAddSubtask={props.onAddSubtask}
+        onToggleSubtask={props.onToggleSubtask}
+        onDeleteSubtask={props.onDeleteSubtask}
+        onAttachFiles={props.onAttachFiles}
+        onStartTimer={props.onStartTimer}
+        onStopTimer={props.onStopTimer}
+        onResetTimer={props.onResetTimer}
       />
 
       <footer className="shortcut-strip">

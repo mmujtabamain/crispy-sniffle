@@ -1,6 +1,6 @@
-import dagre from 'dagre';
-import { createEdge, createNode, makeId } from './workspace';
-import type { Graph, GraphEdge, GraphNode } from './workspace';
+import dagre from "dagre";
+import { createEdge, createNode, makeId } from "./workspace";
+import type { Graph, GraphEdge, GraphNode } from "./workspace";
 
 interface NodeDimensions {
   width: number;
@@ -11,10 +11,10 @@ interface GraphSvgOptions {
   title?: string;
 }
 
-const NODE_SIZES: Record<'sm' | 'md' | 'lg', NodeDimensions> = {
+const NODE_SIZES: Record<"sm" | "md" | "lg", NodeDimensions> = {
   sm: { width: 152, height: 74 },
   md: { width: 198, height: 96 },
-  lg: { width: 246, height: 118 }
+  lg: { width: 246, height: 118 },
 };
 
 function nowIso(): string {
@@ -22,11 +22,13 @@ function nowIso(): string {
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
-export function nodeSizeToDimensions(size: string = 'md'): NodeDimensions {
-  if (size === 'sm' || size === 'md' || size === 'lg') {
+export function nodeSizeToDimensions(size: string = "md"): NodeDimensions {
+  if (size === "sm" || size === "md" || size === "lg") {
     return NODE_SIZES[size];
   }
   return NODE_SIZES.md;
@@ -38,106 +40,134 @@ export function normalizeGraph(graph: unknown): Graph {
   const edgeRows = Array.isArray(base.edges) ? base.edges : [];
 
   const nodes: GraphNode[] = nodeRows
-    .filter((node) => typeof node === 'object' && node !== null)
+    .filter((node) => typeof node === "object" && node !== null)
     .map((nodeValue, index) => {
       const node = asRecord(nodeValue);
-      const built = createNode(typeof node.label === 'string' ? node.label : `Node ${index + 1}`);
+      const built = createNode(
+        typeof node.label === "string" ? node.label : `Node ${index + 1}`,
+      );
       return {
         ...built,
         ...node,
-        id: typeof node.id === 'string' ? node.id : makeId('node'),
+        id: typeof node.id === "string" ? node.id : makeId("node"),
         label:
-          typeof node.label === 'string' && node.label.trim()
+          typeof node.label === "string" && node.label.trim()
             ? node.label.trim()
             : `Node ${index + 1}`,
         shape:
-          node.shape === 'circle' || node.shape === 'square' || node.shape === 'diamond' || node.shape === 'pill'
+          node.shape === "circle" ||
+          node.shape === "square" ||
+          node.shape === "diamond" ||
+          node.shape === "pill"
             ? node.shape
-            : 'square',
-        size: node.size === 'sm' || node.size === 'md' || node.size === 'lg' ? node.size : 'md',
-        color: typeof node.color === 'string' && node.color.trim() ? node.color : built.color,
+            : "square",
+        size:
+          node.size === "sm" || node.size === "md" || node.size === "lg"
+            ? node.size
+            : "md",
+        color:
+          typeof node.color === "string" && node.color.trim()
+            ? node.color
+            : built.color,
         textColor:
-          typeof node.textColor === 'string' && node.textColor.trim() ? node.textColor : built.textColor,
+          typeof node.textColor === "string" && node.textColor.trim()
+            ? node.textColor
+            : built.textColor,
         borderColor:
-          typeof node.borderColor === 'string' && node.borderColor.trim()
+          typeof node.borderColor === "string" && node.borderColor.trim()
             ? node.borderColor
             : built.borderColor,
-        x: typeof node.x === 'number' && Number.isFinite(node.x) ? node.x : 0,
-        y: typeof node.y === 'number' && Number.isFinite(node.y) ? node.y : 0,
+        x: typeof node.x === "number" && Number.isFinite(node.x) ? node.x : 0,
+        y: typeof node.y === "number" && Number.isFinite(node.y) ? node.y : 0,
         tags: Array.isArray(node.tags)
           ? node.tags.map((tag) => String(tag).trim()).filter(Boolean)
           : [],
         opacity:
-          typeof node.opacity === 'number' && Number.isFinite(node.opacity)
+          typeof node.opacity === "number" && Number.isFinite(node.opacity)
             ? Math.max(0.15, Math.min(1, node.opacity))
             : 1,
         collapsed: Boolean(node.collapsed),
         completed: Boolean(node.completed),
-        createdAt: typeof node.createdAt === 'string' ? node.createdAt : nowIso(),
-        updatedAt: typeof node.updatedAt === 'string' ? node.updatedAt : nowIso()
+        createdAt:
+          typeof node.createdAt === "string" ? node.createdAt : nowIso(),
+        updatedAt:
+          typeof node.updatedAt === "string" ? node.updatedAt : nowIso(),
       };
     });
 
   const nodeIds: Set<string> = new Set(nodes.map((node) => node.id));
 
   const edges: GraphEdge[] = edgeRows
-    .filter((edge) => typeof edge === 'object' && edge !== null)
+    .filter((edge) => typeof edge === "object" && edge !== null)
     .map((edgeValue) => {
       const edge = asRecord(edgeValue);
       const from =
-        typeof edge.from === 'string'
+        typeof edge.from === "string"
           ? edge.from
-          : typeof edge.source === 'string'
+          : typeof edge.source === "string"
             ? edge.source
-            : '';
+            : "";
       const to =
-        typeof edge.to === 'string'
+        typeof edge.to === "string"
           ? edge.to
-          : typeof edge.target === 'string'
+          : typeof edge.target === "string"
             ? edge.target
-            : '';
+            : "";
 
       return {
         ...createEdge(from, to),
         ...edge,
-        id: typeof edge.id === 'string' ? edge.id : makeId('edge'),
+        id: typeof edge.id === "string" ? edge.id : makeId("edge"),
         from,
         to,
-        type: (
-          edge.type === 'straight' || edge.type === 'orthogonal' || edge.type === 'curved'
-            ? edge.type
-            : 'curved'
-        ) as GraphEdge['type'],
-        createdAt: typeof edge.createdAt === 'string' ? edge.createdAt : nowIso(),
-        updatedAt: typeof edge.updatedAt === 'string' ? edge.updatedAt : nowIso()
+        type: (edge.type === "straight" ||
+        edge.type === "orthogonal" ||
+        edge.type === "curved"
+          ? edge.type
+          : "curved") as GraphEdge["type"],
+        createdAt:
+          typeof edge.createdAt === "string" ? edge.createdAt : nowIso(),
+        updatedAt:
+          typeof edge.updatedAt === "string" ? edge.updatedAt : nowIso(),
       };
     })
-    .filter((edge) => edge.from && edge.to && nodeIds.has(edge.from) && nodeIds.has(edge.to));
+    .filter(
+      (edge) =>
+        edge.from && edge.to && nodeIds.has(edge.from) && nodeIds.has(edge.to),
+    );
 
   return { nodes, edges };
 }
 
-export function graphEdgeTypeToFlow(type: string): 'smoothstep' | 'straight' | 'step' {
-  if (type === 'straight') {
-    return 'straight';
+export function graphEdgeTypeToFlow(
+  type: string,
+): "smoothstep" | "straight" | "step" {
+  if (type === "straight") {
+    return "straight";
   }
-  if (type === 'orthogonal') {
-    return 'step';
+  if (type === "orthogonal") {
+    return "step";
   }
-  return 'smoothstep';
+  return "smoothstep";
 }
 
-export function flowEdgeTypeToGraph(type: string): 'curved' | 'straight' | 'orthogonal' {
-  if (type === 'straight') {
-    return 'straight';
+export function flowEdgeTypeToGraph(
+  type: string,
+): "curved" | "straight" | "orthogonal" {
+  if (type === "straight") {
+    return "straight";
   }
-  if (type === 'step') {
-    return 'orthogonal';
+  if (type === "step") {
+    return "orthogonal";
   }
-  return 'curved';
+  return "curved";
 }
 
-function hasPath(adjacency: Map<string, string[]>, start: string, goal: string): boolean {
+function hasPath(
+  adjacency: Map<string, string[]>,
+  start: string,
+  goal: string,
+): boolean {
   if (start === goal) {
     return true;
   }
@@ -167,7 +197,11 @@ function hasPath(adjacency: Map<string, string[]>, start: string, goal: string):
   return false;
 }
 
-export function wouldCreateCycle(edges: GraphEdge[], from: string, to: string): boolean {
+export function wouldCreateCycle(
+  edges: GraphEdge[],
+  from: string,
+  to: string,
+): boolean {
   if (!from || !to) {
     return false;
   }
@@ -188,7 +222,10 @@ export function wouldCreateCycle(edges: GraphEdge[], from: string, to: string): 
   return hasPath(adjacency, to, from);
 }
 
-export function arrangeNodesGrid(nodes: GraphNode[], columns: number = 4): GraphNode[] {
+export function arrangeNodesGrid(
+  nodes: GraphNode[],
+  columns: number = 4,
+): GraphNode[] {
   const safeColumns = Math.max(1, Math.floor(columns || 4));
   return nodes.map((node, index) => {
     const size = nodeSizeToDimensions(node.size);
@@ -196,18 +233,27 @@ export function arrangeNodesGrid(nodes: GraphNode[], columns: number = 4): Graph
       ...node,
       x: (index % safeColumns) * (size.width + 52),
       y: Math.floor(index / safeColumns) * (size.height + 56),
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     };
   });
 }
 
-export function autoLayoutHierarchical(nodes: GraphNode[], edges: GraphEdge[]): GraphNode[] {
+export function autoLayoutHierarchical(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+): GraphNode[] {
   if (nodes.length === 0) {
     return [];
   }
 
   const graph = new dagre.graphlib.Graph();
-  graph.setGraph({ rankdir: 'LR', ranksep: 72, nodesep: 48, marginx: 30, marginy: 30 });
+  graph.setGraph({
+    rankdir: "LR",
+    ranksep: 72,
+    nodesep: 48,
+    marginx: 30,
+    marginy: 30,
+  });
   graph.setDefaultEdgeLabel(() => ({}));
 
   nodes.forEach((node) => {
@@ -224,7 +270,9 @@ export function autoLayoutHierarchical(nodes: GraphNode[], edges: GraphEdge[]): 
   dagre.layout(graph);
 
   return nodes.map((node) => {
-    const positioned = graph.node(node.id) as { x: number; y: number } | undefined;
+    const positioned = graph.node(node.id) as
+      | { x: number; y: number }
+      | undefined;
     const size = nodeSizeToDimensions(node.size);
     if (!positioned) {
       return node;
@@ -234,7 +282,7 @@ export function autoLayoutHierarchical(nodes: GraphNode[], edges: GraphEdge[]): 
       ...node,
       x: Math.round(positioned.x - size.width / 2),
       y: Math.round(positioned.y - size.height / 2),
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     };
   });
 }
@@ -242,7 +290,7 @@ export function autoLayoutHierarchical(nodes: GraphNode[], edges: GraphEdge[]): 
 export function autoLayoutForce(
   nodes: GraphNode[],
   edges: GraphEdge[],
-  iterations: number = 260
+  iterations: number = 260,
 ): GraphNode[] {
   if (nodes.length === 0) {
     return [];
@@ -251,11 +299,11 @@ export function autoLayoutForce(
   const positions: Map<string, { x: number; y: number }> = new Map(
     nodes.map((node, index) => [
       node.id,
-      { x: node.x || index * 24, y: node.y || index * 18 }
-    ])
+      { x: node.x || index * 24, y: node.y || index * 18 },
+    ]),
   );
   const velocity: Map<string, { x: number; y: number }> = new Map(
-    nodes.map((node) => [node.id, { x: 0, y: 0 }])
+    nodes.map((node) => [node.id, { x: 0, y: 0 }]),
   );
 
   const repulsion = 7200;
@@ -336,7 +384,7 @@ export function autoLayoutForce(
       ...node,
       x: Math.round(pos.x),
       y: Math.round(pos.y),
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     };
   });
 }
@@ -387,7 +435,10 @@ function walkBackward(sourceId: string, edges: GraphEdge[]): Set<string> {
   return out;
 }
 
-export function getRelatedNodeSet(nodeId: string, edges: GraphEdge[]): Set<string> {
+export function getRelatedNodeSet(
+  nodeId: string,
+  edges: GraphEdge[],
+): Set<string> {
   if (!nodeId) {
     return new Set();
   }
@@ -397,17 +448,26 @@ export function getRelatedNodeSet(nodeId: string, edges: GraphEdge[]): Set<strin
   return new Set([nodeId, ...forward, ...backward]);
 }
 
-export function getDescendantNodeIds(nodeId: string, edges: GraphEdge[]): Set<string> {
+export function getDescendantNodeIds(
+  nodeId: string,
+  edges: GraphEdge[],
+): Set<string> {
   return walkForward(nodeId, edges);
 }
 
 export function computeCriticalPath(
   nodes: GraphNode[],
-  edges: GraphEdge[]
+  edges: GraphEdge[],
 ): { nodeIds: string[]; edgeIds: string[] } {
-  const nodeById: Map<string, GraphNode> = new Map(nodes.map((node) => [node.id, node]));
-  const incoming: Map<string, number> = new Map(nodes.map((node) => [node.id, 0]));
-  const outgoing: Map<string, string[]> = new Map(nodes.map((node) => [node.id, []]));
+  const nodeById: Map<string, GraphNode> = new Map(
+    nodes.map((node) => [node.id, node]),
+  );
+  const incoming: Map<string, number> = new Map(
+    nodes.map((node) => [node.id, 0]),
+  );
+  const outgoing: Map<string, string[]> = new Map(
+    nodes.map((node) => [node.id, []]),
+  );
 
   edges.forEach((edge) => {
     if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) {
@@ -446,13 +506,16 @@ export function computeCriticalPath(
   }
 
   const distances: Map<string, number> = new Map(
-    nodes.map((node) => [node.id, Number.NEGATIVE_INFINITY])
+    nodes.map((node) => [node.id, Number.NEGATIVE_INFINITY]),
   );
   const previous: Map<string, string> = new Map();
 
   topo.forEach((nodeId) => {
     if ((incoming.get(nodeId) || 0) === 0) {
-      distances.set(nodeId, Math.max(1, Number(nodeById.get(nodeId)?.estimateMinutes || 1)));
+      distances.set(
+        nodeId,
+        Math.max(1, Number(nodeById.get(nodeId)?.estimateMinutes || 1)),
+      );
     }
 
     const base = distances.get(nodeId);
@@ -461,7 +524,10 @@ export function computeCriticalPath(
     }
 
     (outgoing.get(nodeId) || []).forEach((next) => {
-      const weight = Math.max(1, Number(nodeById.get(next)?.estimateMinutes || 1));
+      const weight = Math.max(
+        1,
+        Number(nodeById.get(next)?.estimateMinutes || 1),
+      );
       const candidate = (base as number) + weight;
       if (candidate > (distances.get(next) || Number.NEGATIVE_INFINITY)) {
         distances.set(next, candidate);
@@ -504,14 +570,14 @@ export function computeCriticalPath(
 
   return {
     nodeIds: pathNodes,
-    edgeIds: pathEdges
+    edgeIds: pathEdges,
   };
 }
 
 export function duplicateSubtree(
   nodes: GraphNode[],
   edges: GraphEdge[],
-  rootNodeId: string
+  rootNodeId: string,
 ): { nodes: GraphNode[]; edges: GraphEdge[]; rootId: string | null } {
   const root = nodes.find((node) => node.id === rootNodeId);
   if (!root) {
@@ -525,7 +591,7 @@ export function duplicateSubtree(
   const clones = nodes
     .filter((node) => scope.has(node.id))
     .map((node) => {
-      const nextId = makeId('node');
+      const nextId = makeId("node");
       map.set(node.id, nextId);
       return {
         ...node,
@@ -535,7 +601,7 @@ export function duplicateSubtree(
         y: node.y + 72,
         createdAt: nowIso(),
         updatedAt: nowIso(),
-        collapsed: false
+        collapsed: false,
       };
     });
 
@@ -543,40 +609,40 @@ export function duplicateSubtree(
     .filter((edge) => scope.has(edge.from) && scope.has(edge.to))
     .map((edge) => ({
       ...edge,
-      id: makeId('edge'),
+      id: makeId("edge"),
       from: map.get(edge.from) || edge.from,
       to: map.get(edge.to) || edge.to,
       createdAt: nowIso(),
-      updatedAt: nowIso()
+      updatedAt: nowIso(),
     }));
 
   return {
     nodes: [...nodes, ...clones],
     edges: [...edges, ...cloneEdges],
-    rootId: map.get(rootNodeId) || null
+    rootId: map.get(rootNodeId) || null,
   };
 }
 
 function escapeXml(text: string): string {
   return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;');
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
 }
 
 export function graphToSvg(
   graphNodes: GraphNode[],
   graphEdges: GraphEdge[],
-  { title = 'Graph Export' }: GraphSvgOptions = {}
+  { title = "Graph Export" }: GraphSvgOptions = {},
 ): string {
   const nodes = graphNodes.map((node) => {
     const size = nodeSizeToDimensions(node.size);
     return {
       ...node,
       width: size.width,
-      height: size.height
+      height: size.height,
     };
   });
 
@@ -602,7 +668,7 @@ export function graphToSvg(
       const from = nodes.find((node) => node.id === edge.from);
       const to = nodes.find((node) => node.id === edge.to);
       if (!from || !to) {
-        return '';
+        return "";
       }
 
       const x1 = from.x + from.width + offsetX;
@@ -610,12 +676,12 @@ export function graphToSvg(
       const x2 = to.x + offsetX;
       const y2 = to.y + to.height / 2 + offsetY;
 
-      if (edge.type === 'orthogonal') {
+      if (edge.type === "orthogonal") {
         const midX = Math.round((x1 + x2) / 2);
         return `<path d="M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}" stroke="#6a4a34" stroke-width="2" fill="none" marker-end="url(#arrow)" />`;
       }
 
-      if (edge.type === 'straight') {
+      if (edge.type === "straight") {
         return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#6a4a34" stroke-width="2" marker-end="url(#arrow)" />`;
       }
 
@@ -623,7 +689,7 @@ export function graphToSvg(
       const cx2 = x2 - 68;
       return `<path d="M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}" stroke="#6a4a34" stroke-width="2" fill="none" marker-end="url(#arrow)" />`;
     })
-    .join('\n');
+    .join("\n");
 
   const nodeMarkup = nodes
     .map((node) => {
@@ -631,43 +697,43 @@ export function graphToSvg(
       const y = node.y + offsetY;
       const w = node.width;
       const h = node.height;
-      const fill = escapeXml(node.color || '#b08968');
-      const stroke = escapeXml(node.borderColor || '#6a4a34');
-      const textColor = escapeXml(node.textColor || '#2e241f');
+      const fill = escapeXml(node.color || "#b08968");
+      const stroke = escapeXml(node.borderColor || "#6a4a34");
+      const textColor = escapeXml(node.textColor || "#2e241f");
 
-      if (node.shape === 'circle') {
+      if (node.shape === "circle") {
         const r = Math.min(w, h) / 2;
         const cx = x + w / 2;
         const cy = y + h / 2;
         return `
           <g>
             <circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="2" />
-            <text x="${cx}" y="${cy}" fill="${textColor}" font-size="14" text-anchor="middle" dominant-baseline="middle">${escapeXml(node.icon || '')} ${escapeXml(node.label)}</text>
+            <text x="${cx}" y="${cy}" fill="${textColor}" font-size="14" text-anchor="middle" dominant-baseline="middle">${escapeXml(node.icon || "")} ${escapeXml(node.label)}</text>
           </g>
         `;
       }
 
-      if (node.shape === 'diamond') {
+      if (node.shape === "diamond") {
         const cx = x + w / 2;
         const cy = y + h / 2;
         const points = `${cx},${y} ${x + w},${cy} ${cx},${y + h} ${x},${cy}`;
         return `
           <g>
             <polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="2" />
-            <text x="${cx}" y="${cy}" fill="${textColor}" font-size="13" text-anchor="middle" dominant-baseline="middle">${escapeXml(node.icon || '')} ${escapeXml(node.label)}</text>
+            <text x="${cx}" y="${cy}" fill="${textColor}" font-size="13" text-anchor="middle" dominant-baseline="middle">${escapeXml(node.icon || "")} ${escapeXml(node.label)}</text>
           </g>
         `;
       }
 
-      const radius = node.shape === 'pill' ? Math.round(h / 2) : 14;
+      const radius = node.shape === "pill" ? Math.round(h / 2) : 14;
       return `
         <g>
           <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${radius}" ry="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="2" />
-          <text x="${x + 12}" y="${y + h / 2}" fill="${textColor}" font-size="14" dominant-baseline="middle">${escapeXml(node.icon || '')} ${escapeXml(node.label)}</text>
+          <text x="${x + 12}" y="${y + h / 2}" fill="${textColor}" font-size="14" dominant-baseline="middle">${escapeXml(node.icon || "")} ${escapeXml(node.label)}</text>
         </g>
       `;
     })
-    .join('\n');
+    .join("\n");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">

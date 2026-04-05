@@ -1,7 +1,15 @@
-import { Clock3, Link as LinkIcon, Pause, Play, Plus, TimerReset, Trash2 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import type { Attachment, Subtask, Todo } from '../../lib/workspace';
+import {
+  Clock3,
+  Link as LinkIcon,
+  Pause,
+  Play,
+  Plus,
+  TimerReset,
+  Trash2,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import type { Attachment, Subtask, Todo } from "../../lib/workspace";
 
 interface TimerState {
   todoId: string | null;
@@ -23,11 +31,11 @@ interface TodoInspectorProps {
 }
 
 function toTagString(tags: string[]): string {
-  return (tags || []).join(', ');
+  return (tags || []).join(", ");
 }
 
 function toLinksString(links: string[]): string {
-  return (links || []).join('\n');
+  return (links || []).join("\n");
 }
 
 export default function TodoInspector({
@@ -40,13 +48,16 @@ export default function TodoInspector({
   onAttachFiles,
   onStartTimer,
   onStopTimer,
-  onResetTimer
+  onResetTimer,
 }: TodoInspectorProps) {
   if (!todo) {
     return (
       <aside className="inspector-panel">
         <h3>Todo Details</h3>
-        <p className="meta-line">Select a task to edit Tier 2 properties, notes, tags, links, and subtasks.</p>
+        <p className="meta-line">
+          Select a task to edit Tier 2 properties, notes, tags, links, and
+          subtasks.
+        </p>
       </aside>
     );
   }
@@ -59,7 +70,7 @@ export default function TodoInspector({
         Title
         <input
           value={todo.text}
-            onChange={(event) => onPatch(todo.id, { text: event.target.value })}
+          onChange={(event) => onPatch(todo.id, { text: event.target.value })}
           placeholder="Task title"
         />
       </label>
@@ -69,7 +80,11 @@ export default function TodoInspector({
           Priority
           <select
             value={todo.priority}
-            onChange={(event) => onPatch(todo.id, { priority: event.target.value as Todo['priority'] })}
+            onChange={(event) =>
+              onPatch(todo.id, {
+                priority: event.target.value as Todo["priority"],
+              })
+            }
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -82,7 +97,9 @@ export default function TodoInspector({
           Status
           <select
             value={todo.status}
-            onChange={(event) => onPatch(todo.id, { status: event.target.value as Todo['status'] })}
+            onChange={(event) =>
+              onPatch(todo.id, { status: event.target.value as Todo["status"] })
+            }
           >
             <option value="todo">Todo</option>
             <option value="doing">Doing</option>
@@ -97,8 +114,10 @@ export default function TodoInspector({
           Due date
           <input
             type="date"
-            value={todo.dueDate || ''}
-            onChange={(event) => onPatch(todo.id, { dueDate: event.target.value || null })}
+            value={todo.dueDate || ""}
+            onChange={(event) =>
+              onPatch(todo.id, { dueDate: event.target.value || null })
+            }
           />
         </label>
 
@@ -106,7 +125,11 @@ export default function TodoInspector({
           Recurring
           <select
             value={todo.recurrence}
-            onChange={(event) => onPatch(todo.id, { recurrence: event.target.value as Todo['recurrence'] })}
+            onChange={(event) =>
+              onPatch(todo.id, {
+                recurrence: event.target.value as Todo["recurrence"],
+              })
+            }
           >
             <option value="none">None</option>
             <option value="daily">Daily</option>
@@ -120,8 +143,10 @@ export default function TodoInspector({
         <label>
           Category
           <input
-            value={todo.category || ''}
-            onChange={(event) => onPatch(todo.id, { category: event.target.value })}
+            value={todo.category || ""}
+            onChange={(event) =>
+              onPatch(todo.id, { category: event.target.value })
+            }
             placeholder="Category"
           />
         </label>
@@ -133,9 +158,9 @@ export default function TodoInspector({
             onChange={(event) =>
               onPatch(todo.id, {
                 tags: event.target.value
-                  .split(',')
+                  .split(",")
                   .map((tag: string) => tag.trim())
-                  .filter(Boolean)
+                  .filter(Boolean),
               })
             }
             placeholder="design, launch"
@@ -149,7 +174,7 @@ export default function TodoInspector({
           <input
             type="number"
             min={0}
-            value={todo.estimateMinutes ?? ''}
+            value={todo.estimateMinutes ?? ""}
             onChange={(event) => {
               const next = event.target.value;
               onPatch(todo.id, { estimateMinutes: next ? Number(next) : null });
@@ -176,8 +201,10 @@ export default function TodoInspector({
         Description
         <textarea
           rows={3}
-          value={todo.description || ''}
-          onChange={(event) => onPatch(todo.id, { description: event.target.value })}
+          value={todo.description || ""}
+          onChange={(event) =>
+            onPatch(todo.id, { description: event.target.value })
+          }
           placeholder="Short description"
         />
       </label>
@@ -192,7 +219,7 @@ export default function TodoInspector({
               links: event.target.value
                 .split(/\r?\n/)
                 .map((line: string) => line.trim())
-                .filter(Boolean)
+                .filter(Boolean),
             })
           }
           placeholder="https://example.com"
@@ -211,7 +238,7 @@ export default function TodoInspector({
         Notes (Markdown)
         <textarea
           rows={5}
-          value={todo.notes || ''}
+          value={todo.notes || ""}
           onChange={(event) => onPatch(todo.id, { notes: event.target.value })}
           placeholder="Use markdown, including inline code like `npm run dev`."
         />
@@ -220,7 +247,9 @@ export default function TodoInspector({
       {todo.notes && (
         <div className="markdown-preview">
           <p className="meta-line">Preview</p>
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{todo.notes}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {todo.notes}
+          </ReactMarkdown>
         </div>
       )}
 
@@ -231,7 +260,7 @@ export default function TodoInspector({
             type="button"
             className="ghost-button"
             onClick={() => {
-              const text = window.prompt('New subtask');
+              const text = window.prompt("New subtask");
               if (text) {
                 onAddSubtask(todo.id, text);
               }
@@ -251,7 +280,11 @@ export default function TodoInspector({
                 />
                 <span>{subtask.text}</span>
               </label>
-              <button type="button" className="ghost-button danger" onClick={() => onDeleteSubtask(todo.id, subtask.id)}>
+              <button
+                type="button"
+                className="ghost-button danger"
+                onClick={() => onDeleteSubtask(todo.id, subtask.id)}
+              >
                 <Trash2 size={13} />
               </button>
             </li>
@@ -273,7 +306,7 @@ export default function TodoInspector({
                 if (files.length > 0) {
                   void onAttachFiles(todo.id, files);
                 }
-                event.target.value = '';
+                event.target.value = "";
               }}
             />
           </label>
@@ -286,7 +319,9 @@ export default function TodoInspector({
                 <strong>{attachment.name}</strong>
                 <small>{Math.round((attachment.size || 0) / 1024)} KB</small>
               </div>
-              {attachment.previewUrl && <img src={attachment.previewUrl} alt={attachment.name} />}
+              {attachment.previewUrl && (
+                <img src={attachment.previewUrl} alt={attachment.name} />
+              )}
             </li>
           ))}
         </ul>
@@ -295,16 +330,32 @@ export default function TodoInspector({
       <section className="inspector-block">
         <div className="inspector-block-header">
           <h4>Pomodoro Timer</h4>
-          <span className="meta-line">{timer.todoId === todo.id ? `${Math.ceil(timer.remainingSec / 60)}m left` : 'idle'}</span>
+          <span className="meta-line">
+            {timer.todoId === todo.id
+              ? `${Math.ceil(timer.remainingSec / 60)}m left`
+              : "idle"}
+          </span>
         </div>
         <div className="timer-row">
-          <button type="button" className="secondary-button" onClick={() => onStartTimer(todo.id)}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => onStartTimer(todo.id)}
+          >
             <Play size={14} /> Start 25m
           </button>
-          <button type="button" className="secondary-button" onClick={onStopTimer}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onStopTimer}
+          >
             <Pause size={14} /> Stop
           </button>
-          <button type="button" className="secondary-button" onClick={onResetTimer}>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onResetTimer}
+          >
             <TimerReset size={14} /> Reset
           </button>
           <span className="timer-badge">

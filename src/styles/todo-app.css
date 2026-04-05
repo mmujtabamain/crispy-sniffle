@@ -62,7 +62,7 @@
   padding: 0.2rem;
 }
 
-body[data-theme='dark'] .view-switch {
+body[data-theme="dark"] .view-switch {
   background: color-mix(in oklch, var(--surface), black 18%);
 }
 
@@ -75,7 +75,9 @@ body[data-theme='dark'] .view-switch {
   font-size: 0.8rem;
   color: var(--ink-soft);
   cursor: pointer;
-  transition: background-color 180ms ease, color 180ms ease;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 .view-toggle-button:hover {
@@ -99,7 +101,9 @@ body[data-theme='dark'] .view-switch {
   background: var(--surface);
   border-radius: 0.72rem;
   cursor: pointer;
-  transition: transform 180ms ease, background-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease;
 }
 
 .icon-button:hover {
@@ -158,9 +162,9 @@ body[data-theme='dark'] .view-switch {
   align-items: center;
 }
 
-.graph-tool-group input[type='number'],
-.graph-tool-group input[type='text'],
-.graph-tool-group input[type='color'],
+.graph-tool-group input[type="number"],
+.graph-tool-group input[type="text"],
+.graph-tool-group input[type="color"],
 .graph-tool-group select {
   min-height: 2.2rem;
 }
@@ -176,7 +180,7 @@ body[data-theme='dark'] .view-switch {
   background: color-mix(in oklch, var(--surface), white 10%);
 }
 
-body[data-theme='dark'] .graph-search-wrap {
+body[data-theme="dark"] .graph-search-wrap {
   background: color-mix(in oklch, var(--surface), black 16%);
 }
 
@@ -219,7 +223,7 @@ body[data-theme='dark'] .graph-search-wrap {
   background: color-mix(in oklch, var(--surface), white 8%);
 }
 
-body[data-theme='dark'] .graph-canvas-panel .react-flow__minimap {
+body[data-theme="dark"] .graph-canvas-panel .react-flow__minimap {
   background: color-mix(in oklch, var(--surface), black 14%);
 }
 
@@ -235,14 +239,16 @@ body[data-theme='dark'] .graph-canvas-panel .react-flow__minimap {
   background: var(--node-bg);
   opacity: var(--node-opacity);
   border-radius: 0.9rem;
-  box-shadow: 0 10px 24px color-mix(in oklch, var(--node-border), transparent 75%);
+  box-shadow: 0 10px 24px
+    color-mix(in oklch, var(--node-border), transparent 75%);
   padding: 0.4rem;
   display: grid;
   gap: 0.36rem;
 }
 
 .graph-node-card.selected {
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent), transparent 15%),
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--accent), transparent 15%),
     0 16px 26px color-mix(in oklch, var(--node-border), transparent 74%);
 }
 
@@ -251,7 +257,8 @@ body[data-theme='dark'] .graph-canvas-panel .react-flow__minimap {
 }
 
 .graph-node-card.related {
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-soft), transparent 18%),
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--accent-soft), transparent 18%),
     0 12px 22px color-mix(in oklch, var(--node-border), transparent 74%);
 }
 
@@ -260,7 +267,8 @@ body[data-theme='dark'] .graph-canvas-panel .react-flow__minimap {
 }
 
 .graph-node-card.search-match {
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--warning), transparent 12%),
+  box-shadow:
+    0 0 0 2px color-mix(in oklch, var(--warning), transparent 12%),
     0 15px 28px color-mix(in oklch, var(--warning), transparent 76%);
 }
 
@@ -422,12 +430,12 @@ body[data-theme='dark'] .graph-canvas-panel .react-flow__minimap {
   display: grid;
 }
 
-body[data-theme='dark'] .graph-quick-stats > div {
+body[data-theme="dark"] .graph-quick-stats > div {
   background: color-mix(in oklch, var(--surface), black 18%);
 }
 
 .graph-quick-stats strong {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-size: 1.1rem;
 }
 
@@ -501,9 +509,9 @@ label {
   color: var(--ink-soft);
 }
 
-body[data-theme='dark'] select,
-body[data-theme='dark'] input,
-body[data-theme='dark'] textarea {
+body[data-theme="dark"] select,
+body[data-theme="dark"] input,
+body[data-theme="dark"] textarea {
   background: color-mix(in oklch, var(--surface), black 16%);
 }
 
@@ -673,7 +681,7 @@ body[data-theme='dark'] textarea {
   font-size: 0.76rem;
 }
 
-body[data-theme='dark'] .chip-button {
+body[data-theme="dark"] .chip-button {
   background: color-mix(in oklch, var(--surface), black 18%);
 }
 
@@ -696,12 +704,12 @@ body[data-theme='dark'] .chip-button {
   display: grid;
 }
 
-body[data-theme='dark'] .stats-row > div {
+body[data-theme="dark"] .stats-row > div {
   background: color-mix(in oklch, var(--surface), black 20%);
 }
 
 .stats-row strong {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-size: 1.2rem;
 }
 
@@ -804,7 +812,7 @@ body[data-theme='dark'] .stats-row > div {
   cursor: pointer;
 }
 
-body[data-theme='dark'] .todo-check-wrap input {
+body[data-theme="dark"] .todo-check-wrap input {
   background: color-mix(in oklch, var(--surface), black 15%);
 }
 
@@ -821,7 +829,9 @@ body[data-theme='dark'] .todo-check-wrap input {
   opacity: 0;
   color: var(--bg-0);
   transform: scale(0.9);
-  transition: opacity 170ms ease, transform 170ms ease;
+  transition:
+    opacity 170ms ease,
+    transform 170ms ease;
 }
 
 .todo-check-wrap input:checked + .todo-check-mark {
@@ -890,12 +900,12 @@ body[data-theme='dark'] .todo-check-wrap input {
   background: color-mix(in oklch, var(--surface), white 8%);
 }
 
-body[data-theme='dark'] .status-todo,
-body[data-theme='dark'] .status-doing,
-body[data-theme='dark'] .status-done,
-body[data-theme='dark'] .status-blocked,
-body[data-theme='dark'] .due-pill,
-body[data-theme='dark'] .tag-pill {
+body[data-theme="dark"] .status-todo,
+body[data-theme="dark"] .status-doing,
+body[data-theme="dark"] .status-done,
+body[data-theme="dark"] .status-blocked,
+body[data-theme="dark"] .due-pill,
+body[data-theme="dark"] .tag-pill {
   background: color-mix(in oklch, var(--surface), black 18%);
 }
 
@@ -949,7 +959,7 @@ body[data-theme='dark'] .tag-pill {
   font-size: 0.85rem;
 }
 
-body[data-theme='dark'] .markdown-preview {
+body[data-theme="dark"] .markdown-preview {
   background: color-mix(in oklch, var(--surface), black 15%);
 }
 
@@ -1046,7 +1056,9 @@ body[data-theme='dark'] .markdown-preview {
   cursor: pointer;
   padding-inline: 0.75rem;
   font-weight: 600;
-  transition: transform 180ms ease, background-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease;
 }
 
 .ghost-button {
@@ -1092,7 +1104,7 @@ body[data-theme='dark'] .markdown-preview {
   color: var(--ink-1);
 }
 
-body[data-theme='dark'] .empty-state {
+body[data-theme="dark"] .empty-state {
   background: color-mix(in oklch, var(--surface), black 16%);
 }
 
@@ -1114,7 +1126,7 @@ kbd {
   color: var(--ink-1);
 }
 
-body[data-theme='dark'] kbd {
+body[data-theme="dark"] kbd {
   background: color-mix(in oklch, var(--surface), black 15%);
 }
 
@@ -1273,8 +1285,8 @@ body[data-theme='dark'] kbd {
   .todo-item {
     grid-template-columns: auto auto auto 1fr;
     grid-template-areas:
-      'select drag check text'
-      'actions actions actions actions';
+      "select drag check text"
+      "actions actions actions actions";
     align-items: start;
   }
 

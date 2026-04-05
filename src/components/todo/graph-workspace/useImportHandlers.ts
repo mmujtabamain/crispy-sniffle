@@ -1,14 +1,10 @@
-import { useCallback } from 'react';
-import type { ChangeEvent } from 'react';
-import type { GraphEdge, GraphNode } from '../../../lib/workspace';
-import { createEdge, createNode } from '../../../lib/workspace';
-import { normalizeGraph } from '../../../lib/graph-layout';
-import type {
-  GraphChangeOptions,
-  GraphUpdater,
-  NotifyKind
-} from './types';
-import { nowIso } from './utils';
+import { useCallback } from "react";
+import type { ChangeEvent } from "react";
+import type { GraphEdge, GraphNode } from "../../../lib/workspace";
+import { createEdge, createNode } from "../../../lib/workspace";
+import { normalizeGraph } from "../../../lib/graph-layout";
+import type { GraphChangeOptions, GraphUpdater, NotifyKind } from "./types";
+import { nowIso } from "./utils";
 
 interface ImportHandlerDeps {
   nodes: GraphNode[];
@@ -31,7 +27,7 @@ export function useImportHandlers({
   setSelectedNodeIds,
   setSelectedEdgeIds,
   commitGraph,
-  notify
+  notify,
 }: ImportHandlerDeps) {
   const handleImportGraph = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -47,18 +43,24 @@ export function useImportHandlers({
         const incoming = normalizeGraph(input);
 
         if (incoming.nodes.length === 0) {
-          notify('warning', 'Imported graph file had no nodes.');
-          event.target.value = '';
+          notify("warning", "Imported graph file had no nodes.");
+          event.target.value = "";
           return;
         }
 
-        const replace = window.confirm('Replace current graph? Click Cancel to merge.');
+        const replace = window.confirm(
+          "Replace current graph? Click Cancel to merge.",
+        );
 
         if (replace) {
           commitGraph(incoming, { recordHistory: true });
         } else {
-          const existingNodeIds: Set<string> = new Set(nodes.map((node) => node.id));
-          const existingEdgeIds: Set<string> = new Set(edges.map((edge) => edge.id));
+          const existingNodeIds: Set<string> = new Set(
+            nodes.map((node) => node.id),
+          );
+          const existingEdgeIds: Set<string> = new Set(
+            edges.map((edge) => edge.id),
+          );
           const nodeIdMap: Map<string, string> = new Map();
 
           const remappedNodes = incoming.nodes.map((node) => {
@@ -74,7 +76,7 @@ export function useImportHandlers({
               ...node,
               id: nextId,
               createdAt: nowIso(),
-              updatedAt: nowIso()
+              updatedAt: nowIso(),
             };
           });
 
@@ -88,7 +90,7 @@ export function useImportHandlers({
 
               let nextEdgeId = edge.id;
               if (existingEdgeIds.has(nextEdgeId)) {
-                nextEdgeId = createEdge('', '').id;
+                nextEdgeId = createEdge("", "").id;
               }
               existingEdgeIds.add(nextEdgeId);
 
@@ -98,7 +100,7 @@ export function useImportHandlers({
                 from,
                 to,
                 createdAt: nowIso(),
-                updatedAt: nowIso()
+                updatedAt: nowIso(),
               };
             })
             .filter((edge): edge is GraphEdge => edge !== null);
@@ -106,20 +108,23 @@ export function useImportHandlers({
           commitGraph(
             (prev) => ({
               nodes: [...prev.nodes, ...remappedNodes],
-              edges: [...prev.edges, ...remappedEdges]
+              edges: [...prev.edges, ...remappedEdges],
             }),
-            { recordHistory: true }
+            { recordHistory: true },
           );
         }
 
-        notify('success', `Imported ${incoming.nodes.length} node(s).`);
+        notify("success", `Imported ${incoming.nodes.length} node(s).`);
       } catch (error) {
-        notify('error', error instanceof Error ? error.message : 'Graph import failed.');
+        notify(
+          "error",
+          error instanceof Error ? error.message : "Graph import failed.",
+        );
       } finally {
-        event.target.value = '';
+        event.target.value = "";
       }
     },
-    [nodes, edges, commitGraph, notify]
+    [nodes, edges, commitGraph, notify],
   );
 
   const handleClearGraph = useCallback(() => {
@@ -127,7 +132,9 @@ export function useImportHandlers({
       return;
     }
 
-    const confirmed = window.confirm('Clear all nodes and connections in graph mode?');
+    const confirmed = window.confirm(
+      "Clear all nodes and connections in graph mode?",
+    );
     if (!confirmed) {
       return;
     }
@@ -135,18 +142,24 @@ export function useImportHandlers({
     commitGraph(
       {
         nodes: [],
-        edges: []
+        edges: [],
       },
-      { recordHistory: true }
+      { recordHistory: true },
     );
 
     setSelectedNodeIds([]);
     setSelectedEdgeIds([]);
-    notify('success', 'Graph cleared.');
-  }, [nodes.length, commitGraph, setSelectedNodeIds, setSelectedEdgeIds, notify]);
+    notify("success", "Graph cleared.");
+  }, [
+    nodes.length,
+    commitGraph,
+    setSelectedNodeIds,
+    setSelectedEdgeIds,
+    notify,
+  ]);
 
   return {
     handleImportGraph,
-    handleClearGraph
+    handleClearGraph,
   };
 }

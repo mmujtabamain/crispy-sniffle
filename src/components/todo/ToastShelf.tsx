@@ -1,8 +1,8 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion";
 
 interface ToastItem {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info' | string;
+  type: "success" | "error" | "warning" | "info" | string;
   message: string;
 }
 
@@ -25,7 +25,11 @@ export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
             <span>{toast.message}</span>
-            <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
+            <button
+              type="button"
+              onClick={() => onDismiss(toast.id)}
+              aria-label="Dismiss notification"
+            >
               ×
             </button>
           </motion.div>

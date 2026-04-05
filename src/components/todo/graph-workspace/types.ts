@@ -1,9 +1,15 @@
-import type { Graph, GraphEdge, Todo } from '../../../lib/workspace';
+import type { Graph, GraphEdge, Todo } from "../../../lib/workspace";
 
-export type NotifyKind = 'success' | 'warning' | 'error';
-export type AlignMode = 'left' | 'right' | 'hcenter' | 'top' | 'bottom' | 'vcenter';
-export type LayoutKind = 'hierarchical' | 'force';
-export type ExportImageFormat = 'png' | 'jpg';
+export type NotifyKind = "success" | "warning" | "error";
+export type AlignMode =
+  | "left"
+  | "right"
+  | "hcenter"
+  | "top"
+  | "bottom"
+  | "vcenter";
+export type LayoutKind = "hierarchical" | "force";
+export type ExportImageFormat = "png" | "jpg";
 
 export interface GraphChangeOptions {
   recordHistory?: boolean;
@@ -14,13 +20,16 @@ export type GraphUpdater = Graph | ((currentGraph: Graph) => Graph);
 export interface GraphWorkspaceProps {
   graph: Graph | unknown;
   todos: Todo[];
-  onGraphChange?: (nextGraphOrUpdater: GraphUpdater, options?: GraphChangeOptions) => void;
+  onGraphChange?: (
+    nextGraphOrUpdater: GraphUpdater,
+    options?: GraphChangeOptions,
+  ) => void;
   onNotify?: (type: NotifyKind, message: string) => void;
   onJumpToTodo?: (todoId: string) => void;
 }
 
 export interface EdgeTypeOption {
-  value: GraphEdge['type'];
+  value: GraphEdge["type"];
   label: string;
 }
 

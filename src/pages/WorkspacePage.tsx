@@ -1,17 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import type { DragEndEvent } from '@dnd-kit/core';
-import type { TodoFilters } from '../lib/todo-filters.js';
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
+import {
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import type { DragEndEvent } from "@dnd-kit/core";
+import type { TodoFilters } from "../lib/todo-filters.js";
 import {
   GraphWorkspace,
   ToastShelf,
   WorkspaceHeader,
   WorkspaceMain,
-  WorkspaceSidebar
-} from '../components/todo';
-import { formatBytes, formatRelativeDate } from '../lib/formatters';
+  WorkspaceSidebar,
+} from "../components/todo";
+import { formatBytes, formatRelativeDate } from "../lib/formatters";
 import {
   DEFAULT_EXPORT_FILE_STEM,
   DEFAULT_TIMER_SECONDS,
@@ -19,19 +24,27 @@ import {
   fileToAttachment,
   mergeListTodos,
   parseTagInput,
-  stampWorkspace
-} from '../lib/workspace-page-helpers';
-import { applyFiltersAndSort, collectTags, createDefaultFilters } from '../lib/todo-filters.js';
+  stampWorkspace,
+} from "../lib/workspace-page-helpers";
+import {
+  applyFiltersAndSort,
+  collectTags,
+  createDefaultFilters,
+} from "../lib/todo-filters.js";
 import {
   importTodosFromCsv,
   parseImportFile,
   todosToCsv,
   todosToJson,
   todosToMarkdown,
-  todosToText
-} from '../lib/todo-formats.js';
-import type { ImportPreview } from '../lib/todo-formats.js';
-import { exportTodosToImages, exportTodosToPdf, printTodos } from '../lib/todo-export';
+  todosToText,
+} from "../lib/todo-formats.js";
+import type { ImportPreview } from "../lib/todo-formats.js";
+import {
+  exportTodosToImages,
+  exportTodosToPdf,
+  printTodos,
+} from "../lib/todo-export";
 import {
   clearAllLocalData,
   createBackupSnapshot,
@@ -52,17 +65,17 @@ import {
   saveWorkspaceWithHandle,
   supportsFileSystemAccessApi,
   validateWorkspace,
-  writeSettings
-} from '../lib/workspace';
-import type { Graph, List, Todo, Workspace } from '../lib/workspace';
+  writeSettings,
+} from "../lib/workspace";
+import type { Graph, List, Todo, Workspace } from "../lib/workspace";
 
 const HISTORY_LIMIT = 150;
 const TOAST_LIFETIME_MS = 3400;
-const DEFAULT_FILE_NAME = 'workspace.todo.json';
+const DEFAULT_FILE_NAME = "workspace.todo.json";
 
-type ViewMode = 'list' | 'graph';
-type ImportMode = 'merge' | 'replace';
-type ContextAction = 'select' | 'duplicate' | 'archive' | 'restore' | 'delete';
+type ViewMode = "list" | "graph";
+type ImportMode = "merge" | "replace";
+type ContextAction = "select" | "duplicate" | "archive" | "restore" | "delete";
 
 interface QuotaStatus {
   usedBytes: number;
@@ -89,12 +102,12 @@ interface ContextMenuState {
 }
 
 interface ExportConfig {
-  scope: 'list' | 'all' | 'selected';
+  scope: "list" | "all" | "selected";
   fileName: string;
   pdfHeader: string;
   pdfFooter: string;
-  imageMode: 'single' | 'gallery';
-  imageFormat: 'png' | 'jpg' | 'both';
+  imageMode: "single" | "gallery";
+  imageFormat: "png" | "jpg" | "both";
   imageWidth: number;
   imageHeight: number;
   imageFontSize: number;
@@ -121,17 +134,19 @@ export default function WorkspacePage() {
     const settings = readSettings();
 
     const nextTheme =
-      settings.theme === 'light' || settings.theme === 'dark'
+      settings.theme === "light" || settings.theme === "dark"
         ? settings.theme
         : loaded.workspace.preferences.theme;
     const nextAutosaveMinutes =
-      typeof settings.autosaveMinutes === 'number' && Number.isFinite(settings.autosaveMinutes)
+      typeof settings.autosaveMinutes === "number" &&
+      Number.isFinite(settings.autosaveMinutes)
         ? settings.autosaveMinutes
         : loaded.workspace.preferences.autosaveMinutes;
     const nextActiveListId =
-      typeof settings.activeListId === 'string' && settings.activeListId
+      typeof settings.activeListId === "string" && settings.activeListId
         ? settings.activeListId
-        : loaded.workspace.preferences.activeListId || loaded.workspace.lists[0]?.id;
+        : loaded.workspace.preferences.activeListId ||
+          loaded.workspace.lists[0]?.id;
 
     const patchedWorkspace: Workspace = {
       ...loaded.workspace,
@@ -139,8 +154,8 @@ export default function WorkspacePage() {
         ...loaded.workspace.preferences,
         theme: nextTheme,
         autosaveMinutes: nextAutosaveMinutes,
-        activeListId: nextActiveListId
-      }
+        activeListId: nextActiveListId,
+      },
     };
 
     const validated = validateWorkspace(patchedWorkspace).workspace;
@@ -153,61 +168,66 @@ export default function WorkspacePage() {
         : [],
       recentFiles: getRecentFiles(),
       backups: listBackups(),
-      quotaStatus: getStorageQuotaStatus() as QuotaStatus
+      quotaStatus: getStorageQuotaStatus() as QuotaStatus,
     };
   }, []);
 
   const [workspace, setWorkspace] = useState(boot.workspace);
   const [activeListId, setActiveListId] = useState(
-    boot.workspace.preferences.activeListId || boot.workspace.lists[0]?.id
+    boot.workspace.preferences.activeListId || boot.workspace.lists[0]?.id,
   );
   const [recentFiles, setRecentFiles] = useState(boot.recentFiles);
   const [backups, setBackups] = useState(boot.backups);
   const [quotaStatus, setQuotaStatus] = useState(boot.quotaStatus);
 
-  const [newTodoText, setNewTodoText] = useState('');
-  const [quickPriority, setQuickPriority] = useState<Todo['priority']>('medium');
-  const [quickDueDate, setQuickDueDate] = useState('');
-  const [quickTags, setQuickTags] = useState('');
+  const [newTodoText, setNewTodoText] = useState("");
+  const [quickPriority, setQuickPriority] =
+    useState<Todo["priority"]>("medium");
+  const [quickDueDate, setQuickDueDate] = useState("");
+  const [quickTags, setQuickTags] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingDraft, setEditingDraft] = useState('');
+  const [editingDraft, setEditingDraft] = useState("");
   const [selectedTodoIds, setSelectedTodoIds] = useState<string[]>([]);
   const [focusedTodoId, setFocusedTodoId] = useState<string | null>(null);
 
   const [filters, setFilters] = useState<TodoFilters>(createDefaultFilters());
-  const [savedFilters, setSavedFilters] = useState<SavedFilterPreset[]>(boot.savedFilters);
+  const [savedFilters, setSavedFilters] = useState<SavedFilterPreset[]>(
+    boot.savedFilters,
+  );
 
   const [showArchivedLists, setShowArchivedLists] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [importMode, setImportMode] = useState<ImportMode>('merge');
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [importMode, setImportMode] = useState<ImportMode>("merge");
   const [importPreviews, setImportPreviews] = useState<ImportPreviewItem[]>([]);
 
-  const [busyAction, setBusyAction] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [busyAction, setBusyAction] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [fileName, setFileName] = useState(DEFAULT_FILE_NAME);
-  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(null);
+  const [fileHandle, setFileHandle] = useState<FileSystemFileHandle | null>(
+    null,
+  );
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
 
   const [exportConfig, setExportConfig] = useState<ExportConfig>({
-    scope: 'list',
+    scope: "list",
     fileName: DEFAULT_EXPORT_FILE_STEM,
-    pdfHeader: '',
-    pdfFooter: '',
-    imageMode: 'single',
-    imageFormat: 'png',
+    pdfHeader: "",
+    pdfFooter: "",
+    imageMode: "single",
+    imageFormat: "png",
     imageWidth: 1400,
     imageHeight: 1800,
     imageFontSize: 28,
     todosPerImage: 12,
-    imageBackground: '#f6efe9'
+    imageBackground: "#f6efe9",
   });
 
   const [timer, setTimer] = useState<TimerState>({
     todoId: null,
     running: false,
-    remainingSec: DEFAULT_TIMER_SECONDS
+    remainingSec: DEFAULT_TIMER_SECONDS,
   });
 
   const pastRef = useRef<Workspace[]>([]);
@@ -218,7 +238,10 @@ export default function WorkspacePage() {
   const workspaceRef = useRef(workspace);
   const previousQuotaWarningRef = useRef(boot.quotaStatus.warning);
 
-  const lists = useMemo(() => [...workspace.lists].sort((a, b) => a.order - b.order), [workspace.lists]);
+  const lists = useMemo(
+    () => [...workspace.lists].sort((a, b) => a.order - b.order),
+    [workspace.lists],
+  );
   const activeList = lists.find((list) => list.id === activeListId) || lists[0];
 
   const listTodos = useMemo(
@@ -226,42 +249,48 @@ export default function WorkspacePage() {
       workspace.todos
         .filter((todo) => todo.listId === activeList?.id)
         .sort((a, b) => a.order - b.order),
-    [workspace.todos, activeList?.id]
+    [workspace.todos, activeList?.id],
   );
 
-  const filteredTodos : Todo[] = useMemo(() => applyFiltersAndSort(listTodos, filters), [listTodos, filters]);
+  const filteredTodos: Todo[] = useMemo(
+    () => applyFiltersAndSort(listTodos, filters),
+    [listTodos, filters],
+  );
   const availableTags = useMemo(() => collectTags(listTodos), [listTodos]);
 
   const completedCount = filteredTodos.filter((todo) => todo.completed).length;
-  const pendingCount = filteredTodos.filter((todo) => !todo.completed && !todo.archived).length;
+  const pendingCount = filteredTodos.filter(
+    (todo) => !todo.completed && !todo.archived,
+  ).length;
   const archivedCount = listTodos.filter((todo) => todo.archived).length;
 
-  const focusedTodo = workspace.todos.find((todo) => todo.id === focusedTodoId) || null;
+  const focusedTodo =
+    workspace.todos.find((todo) => todo.id === focusedTodoId) || null;
 
   const dragDisabled = Boolean(
-    filters.sortBy !== 'manual' ||
-    filters.completion !== 'active' ||
-    filters.priority !== 'all' ||
-    filters.status !== 'all' ||
+    filters.sortBy !== "manual" ||
+    filters.completion !== "active" ||
+    filters.priority !== "all" ||
+    filters.status !== "all" ||
     filters.startDate ||
     filters.endDate ||
     filters.tags.length > 0 ||
     filters.searchText ||
     filters.searchTag ||
-    filters.smartFilter !== 'none'
+    filters.smartFilter !== "none",
   );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 4 }
+      activationConstraint: { distance: 4 },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates
-    })
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   function notify(type: string, message: string): void {
-    const id = makeId('toast');
+    const id = makeId("toast");
     setToasts((prev) => [...prev, { id, type, message }]);
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -279,24 +308,32 @@ export default function WorkspacePage() {
    */
   function commitWorkspace(
     nextWorkspaceOrUpdater: Workspace | ((prev: Workspace) => Workspace),
-    { recordHistory = true }: CommitOptions = {}
+    { recordHistory = true }: CommitOptions = {},
   ): void {
     setWorkspace((prevWorkspace) => {
       const nextWorkspace =
-        typeof nextWorkspaceOrUpdater === 'function'
+        typeof nextWorkspaceOrUpdater === "function"
           ? nextWorkspaceOrUpdater(prevWorkspace)
           : nextWorkspaceOrUpdater;
 
-      const validated = validateWorkspace(stampWorkspace(nextWorkspace)).workspace;
+      const validated = validateWorkspace(
+        stampWorkspace(nextWorkspace),
+      ).workspace;
       if (recordHistory) {
-        pastRef.current = [...pastRef.current.slice(-(HISTORY_LIMIT - 1)), prevWorkspace];
+        pastRef.current = [
+          ...pastRef.current.slice(-(HISTORY_LIMIT - 1)),
+          prevWorkspace,
+        ];
         futureRef.current = [];
       }
       return validated;
     });
   }
 
-  function replaceActiveListTodos(nextListTodos: Todo[], options?: CommitOptions): void {
+  function replaceActiveListTodos(
+    nextListTodos: Todo[],
+    options?: CommitOptions,
+  ): void {
     if (!activeList?.id) {
       return;
     }
@@ -304,9 +341,13 @@ export default function WorkspacePage() {
     commitWorkspace(
       (prevWorkspace) => ({
         ...prevWorkspace,
-        todos: mergeListTodos(prevWorkspace.todos, activeList.id, nextListTodos)
+        todos: mergeListTodos(
+          prevWorkspace.todos,
+          activeList.id,
+          nextListTodos,
+        ),
       }),
-      options
+      options,
     );
   }
 
@@ -317,8 +358,8 @@ export default function WorkspacePage() {
 
     const trimmed = newTodoText.trim();
     if (!trimmed) {
-      setErrorMessage('Type a task before adding it.');
-      notify('error', 'Cannot add an empty todo.');
+      setErrorMessage("Type a task before adding it.");
+      notify("error", "Cannot add an empty todo.");
       return;
     }
 
@@ -326,14 +367,14 @@ export default function WorkspacePage() {
       order: listTodos.length,
       priority: quickPriority,
       dueDate: quickDueDate || null,
-      tags: parseTagInput(quickTags)
+      tags: parseTagInput(quickTags),
     });
 
     replaceActiveListTodos([...listTodos, todo]);
-    setNewTodoText('');
-    setQuickTags('');
-    setErrorMessage('');
-    notify('success', 'Todo added.');
+    setNewTodoText("");
+    setQuickTags("");
+    setErrorMessage("");
+    notify("success", "Todo added.");
   }
 
   function handleToggleTodo(todoId: string): void {
@@ -342,10 +383,10 @@ export default function WorkspacePage() {
         ? {
             ...todo,
             completed: !todo.completed,
-            status: (!todo.completed ? 'done' : 'todo') as Todo['status'],
-            updatedAt: new Date().toISOString()
+            status: (!todo.completed ? "done" : "todo") as Todo["status"],
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
   }
@@ -357,7 +398,7 @@ export default function WorkspacePage() {
     if (focusedTodoId === todoId) {
       setFocusedTodoId(null);
     }
-    notify('success', 'Todo removed.');
+    notify("success", "Todo removed.");
   }
 
   function handleDuplicateTodo(todoId: string): void {
@@ -369,17 +410,21 @@ export default function WorkspacePage() {
     const original = listTodos[index];
     const duplicate: Todo = {
       ...original,
-      id: makeId('todo'),
+      id: makeId("todo"),
       text: `${original.text} (copy)`,
       completed: false,
-      status: 'todo',
+      status: "todo",
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
-    const updatedTodos: Todo[] = [...listTodos.slice(0, index + 1), duplicate, ...listTodos.slice(index + 1)];
+    const updatedTodos: Todo[] = [
+      ...listTodos.slice(0, index + 1),
+      duplicate,
+      ...listTodos.slice(index + 1),
+    ];
     replaceActiveListTodos(updatedTodos);
-    notify('success', 'Todo duplicated.');
+    notify("success", "Todo duplicated.");
   }
 
   function handleArchiveTodo(todoId: string): void {
@@ -389,9 +434,9 @@ export default function WorkspacePage() {
             ...todo,
             archived: true,
             archivedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
   }
@@ -403,9 +448,9 @@ export default function WorkspacePage() {
             ...todo,
             archived: false,
             archivedAt: null,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
   }
@@ -423,24 +468,26 @@ export default function WorkspacePage() {
 
     const trimmed = editingDraft.trim();
     if (!trimmed) {
-      setErrorMessage('Todo text cannot be empty.');
-      notify('error', 'Edit cancelled because text was empty.');
+      setErrorMessage("Todo text cannot be empty.");
+      notify("error", "Edit cancelled because text was empty.");
       setEditingId(null);
-      setEditingDraft('');
+      setEditingDraft("");
       return;
     }
 
     const updatedTodos = listTodos.map((todo) =>
-      todo.id === editingId ? { ...todo, text: trimmed, updatedAt: new Date().toISOString() } : todo
+      todo.id === editingId
+        ? { ...todo, text: trimmed, updatedAt: new Date().toISOString() }
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
     setEditingId(null);
-    setEditingDraft('');
+    setEditingDraft("");
   }
 
   function handleCancelEdit() {
     setEditingId(null);
-    setEditingDraft('');
+    setEditingDraft("");
   }
 
   /**
@@ -454,12 +501,13 @@ export default function WorkspacePage() {
         return todo;
       }
 
-      const nextText = typeof patch.text === 'string' ? patch.text.trim() : todo.text;
+      const nextText =
+        typeof patch.text === "string" ? patch.text.trim() : todo.text;
       return {
         ...todo,
         ...patch,
         text: nextText || todo.text,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
     });
 
@@ -476,10 +524,13 @@ export default function WorkspacePage() {
       todo.id === todoId
         ? {
             ...todo,
-            subtasks: [...(todo.subtasks || []), { id: makeId('subtask'), text: trimmed, completed: false }],
-            updatedAt: new Date().toISOString()
+            subtasks: [
+              ...(todo.subtasks || []),
+              { id: makeId("subtask"), text: trimmed, completed: false },
+            ],
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
 
     replaceActiveListTodos(updatedTodos);
@@ -494,9 +545,11 @@ export default function WorkspacePage() {
       return {
         ...todo,
         subtasks: (todo.subtasks || []).map((subtask) =>
-          subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask
+          subtask.id === subtaskId
+            ? { ...subtask, completed: !subtask.completed }
+            : subtask,
         ),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
     });
 
@@ -511,30 +564,40 @@ export default function WorkspacePage() {
 
       return {
         ...todo,
-        subtasks: (todo.subtasks || []).filter((subtask) => subtask.id !== subtaskId),
-        updatedAt: new Date().toISOString()
+        subtasks: (todo.subtasks || []).filter(
+          (subtask) => subtask.id !== subtaskId,
+        ),
+        updatedAt: new Date().toISOString(),
       };
     });
 
     replaceActiveListTodos(updatedTodos);
   }
 
-  async function handleAttachFiles(todoId: string, files: File[]): Promise<void> {
+  async function handleAttachFiles(
+    todoId: string,
+    files: File[],
+  ): Promise<void> {
     try {
-      const attachments = await Promise.all(files.map((file: File) => fileToAttachment(file)));
+      const attachments = await Promise.all(
+        files.map((file: File) => fileToAttachment(file)),
+      );
       const updatedTodos = listTodos.map((todo) =>
         todo.id === todoId
           ? {
               ...todo,
               attachments: [...(todo.attachments || []), ...attachments],
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             }
-          : todo
+          : todo,
       );
       replaceActiveListTodos(updatedTodos);
-      notify('success', `${attachments.length} file(s) attached.`);
+      notify("success", `${attachments.length} file(s) attached.`);
     } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'Could not attach files.');
+      notify(
+        "error",
+        error instanceof Error ? error.message : "Could not attach files.",
+      );
     }
   }
 
@@ -547,10 +610,13 @@ export default function WorkspacePage() {
       todo.id === todoId
         ? {
             ...todo,
-            actualMinutes: Math.max(0, Number(todo.actualMinutes || 0) + minutes),
-            updatedAt: new Date().toISOString()
+            actualMinutes: Math.max(
+              0,
+              Number(todo.actualMinutes || 0) + minutes,
+            ),
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
 
     replaceActiveListTodos(updatedTodos, { recordHistory: false });
@@ -560,7 +626,7 @@ export default function WorkspacePage() {
     setTimer({
       todoId,
       running: true,
-      remainingSec: DEFAULT_TIMER_SECONDS
+      remainingSec: DEFAULT_TIMER_SECONDS,
     });
   }
 
@@ -572,10 +638,10 @@ export default function WorkspacePage() {
       const spentSec = DEFAULT_TIMER_SECONDS - prev.remainingSec;
       const trackedMinutes = Math.max(1, Math.round(spentSec / 60));
       applyTrackedMinutes(prev.todoId, trackedMinutes);
-      notify('success', `${trackedMinutes} minute(s) tracked.`);
+      notify("success", `${trackedMinutes} minute(s) tracked.`);
       return {
         ...prev,
-        running: false
+        running: false,
       };
     });
   }
@@ -584,12 +650,16 @@ export default function WorkspacePage() {
     setTimer({
       todoId: null,
       running: false,
-      remainingSec: DEFAULT_TIMER_SECONDS
+      remainingSec: DEFAULT_TIMER_SECONDS,
     });
   }
 
   function handleToggleSelect(todoId: string) {
-    setSelectedTodoIds((prev) => (prev.includes(todoId) ? prev.filter((id) => id !== todoId) : [...prev, todoId]));
+    setSelectedTodoIds((prev) =>
+      prev.includes(todoId)
+        ? prev.filter((id) => id !== todoId)
+        : [...prev, todoId],
+    );
   }
 
   function handleSelectAllFiltered() {
@@ -600,19 +670,19 @@ export default function WorkspacePage() {
     setSelectedTodoIds([]);
   }
 
-  function handleBulkSetPriority(priority: Todo['priority']) {
+  function handleBulkSetPriority(priority: Todo["priority"]) {
     const ids: Set<string> = new Set(selectedTodoIds);
     const updatedTodos = listTodos.map((todo) =>
       ids.has(todo.id)
         ? {
             ...todo,
             priority,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
-    notify('success', `Priority updated for ${selectedTodoIds.length} todos.`);
+    notify("success", `Priority updated for ${selectedTodoIds.length} todos.`);
   }
 
   function handleBulkArchive() {
@@ -623,12 +693,12 @@ export default function WorkspacePage() {
             ...todo,
             archived: true,
             archivedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
-    notify('success', `${selectedTodoIds.length} todos archived.`);
+    notify("success", `${selectedTodoIds.length} todos archived.`);
   }
 
   function handleBulkDelete() {
@@ -636,19 +706,22 @@ export default function WorkspacePage() {
     const updatedTodos = listTodos.filter((todo) => !ids.has(todo.id));
     replaceActiveListTodos(updatedTodos);
     setSelectedTodoIds([]);
-    notify('success', 'Selected todos deleted.');
+    notify("success", "Selected todos deleted.");
   }
 
   function handleUndo() {
     if (pastRef.current.length === 0) {
-      notify('warning', 'Nothing to undo.');
+      notify("warning", "Nothing to undo.");
       return;
     }
 
     setWorkspace((currentWorkspace) => {
       const previous = pastRef.current[pastRef.current.length - 1];
       pastRef.current = pastRef.current.slice(0, -1);
-      futureRef.current = [currentWorkspace, ...futureRef.current.slice(0, HISTORY_LIMIT - 1)];
+      futureRef.current = [
+        currentWorkspace,
+        ...futureRef.current.slice(0, HISTORY_LIMIT - 1),
+      ];
       return previous;
     });
     setEditingId(null);
@@ -656,14 +729,17 @@ export default function WorkspacePage() {
 
   function handleRedo() {
     if (futureRef.current.length === 0) {
-      notify('warning', 'Nothing to redo.');
+      notify("warning", "Nothing to redo.");
       return;
     }
 
     setWorkspace((currentWorkspace) => {
       const next = futureRef.current[0];
       futureRef.current = futureRef.current.slice(1);
-      pastRef.current = [...pastRef.current.slice(-(HISTORY_LIMIT - 1)), currentWorkspace];
+      pastRef.current = [
+        ...pastRef.current.slice(-(HISTORY_LIMIT - 1)),
+        currentWorkspace,
+      ];
       return next;
     });
     setEditingId(null);
@@ -672,17 +748,19 @@ export default function WorkspacePage() {
   function handleClearCompleted() {
     const updatedTodos = listTodos.filter((todo) => !todo.completed);
     if (updatedTodos.length === listTodos.length) {
-      notify('warning', 'There are no completed todos to clear.');
+      notify("warning", "There are no completed todos to clear.");
       return;
     }
     replaceActiveListTodos(updatedTodos);
-    notify('success', 'Completed todos cleared.');
+    notify("success", "Completed todos cleared.");
   }
 
   function handleArchiveCompleted() {
-    const changed = listTodos.filter((todo) => todo.completed && !todo.archived).length;
+    const changed = listTodos.filter(
+      (todo) => todo.completed && !todo.archived,
+    ).length;
     if (changed === 0) {
-      notify('warning', 'There are no completed unarchived todos.');
+      notify("warning", "There are no completed unarchived todos.");
       return;
     }
 
@@ -692,25 +770,25 @@ export default function WorkspacePage() {
             ...todo,
             archived: true,
             archivedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }
-        : todo
+        : todo,
     );
     replaceActiveListTodos(updatedTodos);
-    notify('success', `${changed} completed todos archived.`);
+    notify("success", `${changed} completed todos archived.`);
   }
 
   function handleClearAll() {
     if (!listTodos.length) {
       return;
     }
-    const confirmed = window.confirm('Clear every todo in this list?');
+    const confirmed = window.confirm("Clear every todo in this list?");
     if (!confirmed) {
       return;
     }
     replaceActiveListTodos([]);
     setSelectedTodoIds([]);
-    notify('success', 'All list todos cleared.');
+    notify("success", "All list todos cleared.");
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -738,23 +816,27 @@ export default function WorkspacePage() {
    * @param {string} [payload.icon] - Emoji or icon glyph.
    * @param {string} [payload.color] - CSS color string.
    */
-  function handleCreateList(payload: { name: string; icon?: string; color?: string }) {
+  function handleCreateList(payload: {
+    name: string;
+    icon?: string;
+    color?: string;
+  }) {
     const name = payload.name.trim();
     if (!name) {
       return;
     }
 
     const list = createList(name);
-    list.icon = payload.icon || '🗂️';
-    list.color = payload.color || '#b08968';
+    list.icon = payload.icon || "🗂️";
+    list.color = payload.color || "#b08968";
     list.order = lists.length;
 
     commitWorkspace((prevWorkspace) => ({
       ...prevWorkspace,
-      lists: [...prevWorkspace.lists, list]
+      lists: [...prevWorkspace.lists, list],
     }));
     setActiveListId(list.id);
-    notify('success', `List "${name}" created.`);
+    notify("success", `List "${name}" created.`);
   }
 
   function handleRenameList(listId: string) {
@@ -763,13 +845,15 @@ export default function WorkspacePage() {
       return;
     }
 
-    const name = window.prompt('Rename list', list.name);
+    const name = window.prompt("Rename list", list.name);
     if (!name) {
       return;
     }
 
-    const icon = window.prompt('List icon or emoji', list.icon || '📋') || list.icon;
-    const color = window.prompt('List color (hex)', list.color || '#b08968') || list.color;
+    const icon =
+      window.prompt("List icon or emoji", list.icon || "📋") || list.icon;
+    const color =
+      window.prompt("List color (hex)", list.color || "#b08968") || list.color;
 
     commitWorkspace((prevWorkspace) => ({
       ...prevWorkspace,
@@ -780,21 +864,23 @@ export default function WorkspacePage() {
               name,
               icon,
               color,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             }
-          : entry
-      )
+          : entry,
+      ),
     }));
   }
 
   function handleDeleteList(listId: string) {
     if (lists.length <= 1) {
-      notify('warning', 'At least one list must remain.');
+      notify("warning", "At least one list must remain.");
       return;
     }
 
     const list = lists.find((entry) => entry.id === listId);
-    const confirmed = window.confirm(`Delete list "${list?.name || 'Untitled'}" and move its todos to another list?`);
+    const confirmed = window.confirm(
+      `Delete list "${list?.name || "Untitled"}" and move its todos to another list?`,
+    );
     if (!confirmed) {
       return;
     }
@@ -810,18 +896,24 @@ export default function WorkspacePage() {
         .filter((entry) => entry.id !== listId)
         .map((entry, index) => ({
           ...entry,
-          order: index
+          order: index,
         })),
       todos: prevWorkspace.todos.map((todo) =>
-        todo.listId === listId ? { ...todo, listId: fallback.id, updatedAt: new Date().toISOString() } : todo
-      )
+        todo.listId === listId
+          ? {
+              ...todo,
+              listId: fallback.id,
+              updatedAt: new Date().toISOString(),
+            }
+          : todo,
+      ),
     }));
 
     if (activeListId === listId) {
       setActiveListId(fallback.id);
     }
 
-    notify('success', 'List deleted.');
+    notify("success", "List deleted.");
   }
 
   function handleMoveList(listId: string, direction: number) {
@@ -833,15 +925,20 @@ export default function WorkspacePage() {
       return;
     }
 
-    const reordered = arrayMove(ordered, fromIndex, toIndex).map((entry, index) => ({
-      ...entry,
-      order: index,
-      updatedAt: new Date().toISOString()
-    }));
+    const reordered = arrayMove(ordered, fromIndex, toIndex).map(
+      (entry, index) => ({
+        ...entry,
+        order: index,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
 
     commitWorkspace((prevWorkspace) => ({
       ...prevWorkspace,
-      lists: prevWorkspace.lists.map((entry) => reordered.find((candidate) => candidate.id === entry.id) || entry)
+      lists: prevWorkspace.lists.map(
+        (entry) =>
+          reordered.find((candidate) => candidate.id === entry.id) || entry,
+      ),
     }));
   }
 
@@ -854,14 +951,16 @@ export default function WorkspacePage() {
               ...entry,
               archived: true,
               archivedAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             }
-          : entry
-      )
+          : entry,
+      ),
     }));
 
     if (activeListId === listId) {
-      const nextActive = lists.find((entry) => entry.id !== listId && !entry.archived) || lists.find((entry) => entry.id !== listId);
+      const nextActive =
+        lists.find((entry) => entry.id !== listId && !entry.archived) ||
+        lists.find((entry) => entry.id !== listId);
       if (nextActive) {
         setActiveListId(nextActive.id);
       }
@@ -877,39 +976,45 @@ export default function WorkspacePage() {
               ...entry,
               archived: false,
               archivedAt: null,
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             }
-          : entry
-      )
+          : entry,
+      ),
     }));
   }
 
-  function handleFilterChange(key: keyof TodoFilters, value: TodoFilters[keyof TodoFilters]) {
+  function handleFilterChange(
+    key: keyof TodoFilters,
+    value: TodoFilters[keyof TodoFilters],
+  ) {
     setFilters((prev: TodoFilters) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   }
 
   function handleClearFilters() {
     setFilters(createDefaultFilters());
-    notify('success', 'Filters reset.');
+    notify("success", "Filters reset.");
   }
 
   function handleSaveCurrentFilters() {
-    const name = window.prompt('Save current filter preset as', `Preset ${savedFilters.length + 1}`);
+    const name = window.prompt(
+      "Save current filter preset as",
+      `Preset ${savedFilters.length + 1}`,
+    );
     if (!name) {
       return;
     }
 
     const nextPreset: SavedFilterPreset = {
-      id: makeId('preset'),
+      id: makeId("preset"),
       name,
-      filters
+      filters,
     };
 
     setSavedFilters((prev) => [...prev, nextPreset]);
-    notify('success', `Saved preset "${name}".`);
+    notify("success", `Saved preset "${name}".`);
   }
 
   function handleApplySavedFilter(presetId: string) {
@@ -918,24 +1023,24 @@ export default function WorkspacePage() {
       return;
     }
     setFilters({ ...createDefaultFilters(), ...preset.filters });
-    notify('success', `Applied preset "${preset.name}".`);
+    notify("success", `Applied preset "${preset.name}".`);
   }
 
   function handleDeleteSavedFilter(presetId: string) {
     const preset = savedFilters.find((entry) => entry.id === presetId);
     setSavedFilters((prev) => prev.filter((entry) => entry.id !== presetId));
     if (preset) {
-      notify('success', `Deleted preset "${preset.name}".`);
+      notify("success", `Deleted preset "${preset.name}".`);
     }
   }
 
-  function getScopedTodos(scope: ExportConfig['scope']): Todo[] {
-    if (scope === 'selected') {
+  function getScopedTodos(scope: ExportConfig["scope"]): Todo[] {
+    if (scope === "selected") {
       const selected: Set<string> = new Set(selectedTodoIds);
       return workspace.todos.filter((todo) => selected.has(todo.id));
     }
 
-    if (scope === 'all') {
+    if (scope === "all") {
       return [...workspace.todos].sort((a, b) => a.order - b.order);
     }
 
@@ -946,104 +1051,109 @@ export default function WorkspacePage() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToJson(todos);
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.json`;
-    downloadTextFile(output, exportName, 'application/json;charset=utf-8');
-    registerRecentFile({ name: exportName, source: 'export-json' });
-    notify('success', `Exported ${todos.length} todos as JSON.`);
+    downloadTextFile(output, exportName, "application/json;charset=utf-8");
+    registerRecentFile({ name: exportName, source: "export-json" });
+    notify("success", `Exported ${todos.length} todos as JSON.`);
   }
 
   function handleExportCsv() {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToCsv(todos);
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.csv`;
-    downloadTextFile(output, exportName, 'text/csv;charset=utf-8');
-    registerRecentFile({ name: exportName, source: 'export-csv' });
-    notify('success', `Exported ${todos.length} todos as CSV.`);
+    downloadTextFile(output, exportName, "text/csv;charset=utf-8");
+    registerRecentFile({ name: exportName, source: "export-csv" });
+    notify("success", `Exported ${todos.length} todos as CSV.`);
   }
 
   function handleExportMarkdown() {
     const todos = getScopedTodos(exportConfig.scope);
-    const output = todosToMarkdown(todos, `${activeList?.name || 'Todos'} export`);
+    const output = todosToMarkdown(
+      todos,
+      `${activeList?.name || "Todos"} export`,
+    );
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.md`;
-    downloadTextFile(output, exportName, 'text/markdown;charset=utf-8');
-    registerRecentFile({ name: exportName, source: 'export-md' });
-    notify('success', `Exported ${todos.length} todos as Markdown.`);
+    downloadTextFile(output, exportName, "text/markdown;charset=utf-8");
+    registerRecentFile({ name: exportName, source: "export-md" });
+    notify("success", `Exported ${todos.length} todos as Markdown.`);
   }
 
   function handleExportTxt() {
     const todos = getScopedTodos(exportConfig.scope);
-    const output = todosToText(todos, `${activeList?.name || 'Todos'} export`);
+    const output = todosToText(todos, `${activeList?.name || "Todos"} export`);
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.txt`;
-    downloadTextFile(output, exportName, 'text/plain;charset=utf-8');
-    registerRecentFile({ name: exportName, source: 'export-txt' });
-    notify('success', `Exported ${todos.length} todos as TXT.`);
+    downloadTextFile(output, exportName, "text/plain;charset=utf-8");
+    registerRecentFile({ name: exportName, source: "export-txt" });
+    notify("success", `Exported ${todos.length} todos as TXT.`);
   }
 
   function handleExportPdf() {
     const todos = getScopedTodos(exportConfig.scope);
     if (todos.length === 0) {
-      notify('warning', 'No todos available for PDF export.');
+      notify("warning", "No todos available for PDF export.");
       return;
     }
 
     exportTodosToPdf(todos, {
       fileName: `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.pdf`,
-      title: activeList?.name || 'Todo export',
+      title: activeList?.name || "Todo export",
       headerText: exportConfig.pdfHeader,
       footerText: exportConfig.pdfFooter,
       includeCheckbox: true,
       includeCompletion: true,
       includeDue: true,
       includePriority: true,
-      includeTags: true
+      includeTags: true,
     });
 
-    notify('success', `Exported ${todos.length} todos to PDF.`);
+    notify("success", `Exported ${todos.length} todos to PDF.`);
   }
 
   function handlePrint() {
     const todos = getScopedTodos(exportConfig.scope);
     if (todos.length === 0) {
-      notify('warning', 'No todos available for print.');
+      notify("warning", "No todos available for print.");
       return;
     }
 
     try {
       printTodos(todos, {
-        title: activeList?.name || 'Todo print view',
+        title: activeList?.name || "Todo print view",
         includeCheckbox: true,
         includeCompletion: true,
         includeDue: true,
         includePriority: true,
-        includeTags: true
+        includeTags: true,
       });
     } catch (error) {
-      notify('error', error instanceof Error ? error.message : 'Print failed.');
+      notify("error", error instanceof Error ? error.message : "Print failed.");
     }
   }
 
   function handleExportImages() {
     const todos = getScopedTodos(exportConfig.scope);
     if (todos.length === 0) {
-      notify('warning', 'No todos available for image export.');
+      notify("warning", "No todos available for image export.");
       return;
     }
 
     const formats =
-      exportConfig.imageFormat === 'both' ? ['png', 'jpg'] : [exportConfig.imageFormat];
+      exportConfig.imageFormat === "both"
+        ? ["png", "jpg"]
+        : [exportConfig.imageFormat];
 
     exportTodosToImages(todos, {
       fileNameBase: exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM,
-      title: activeList?.name || 'Todo export',
+      title: activeList?.name || "Todo export",
       mode: exportConfig.imageMode,
       width: exportConfig.imageWidth,
       height: exportConfig.imageHeight,
       fontSize: exportConfig.imageFontSize,
       todosPerImage: exportConfig.todosPerImage,
       backgroundColor: exportConfig.imageBackground,
-      formats
+      formats,
     });
 
-    notify('success', `Exported ${todos.length} todos as image assets.`);
+    notify("success", `Exported ${todos.length} todos as image assets.`);
   }
 
   async function handleImportFiles(files: File[]) {
@@ -1052,17 +1162,25 @@ export default function WorkspacePage() {
     }
 
     try {
-      setBusyAction('import');
-      setErrorMessage('');
-      const parsed : ImportPreview[] = await Promise.all(files.map((file) => parseImportFile(file, activeList.id)));
-      setImportPreviews(parsed.map((entry) => ({ ...entry, id: makeId('import') })));
-      notify('success', `${parsed.length} file(s) prepared for import preview.`);
+      setBusyAction("import");
+      setErrorMessage("");
+      const parsed: ImportPreview[] = await Promise.all(
+        files.map((file) => parseImportFile(file, activeList.id)),
+      );
+      setImportPreviews(
+        parsed.map((entry) => ({ ...entry, id: makeId("import") })),
+      );
+      notify(
+        "success",
+        `${parsed.length} file(s) prepared for import preview.`,
+      );
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Import parse failed.';
+      const message =
+        error instanceof Error ? error.message : "Import parse failed.";
       setErrorMessage(message);
-      notify('error', message);
+      notify("error", message);
     } finally {
-      setBusyAction('');
+      setBusyAction("");
     }
   }
 
@@ -1078,10 +1196,10 @@ export default function WorkspacePage() {
       let nextTodos: Todo[] = [...prevWorkspace.todos];
 
       importPreviews.forEach((preview) => {
-        if (preview.kind === 'workspace') {
+        if (preview.kind === "workspace") {
           const validWorkspace = validateWorkspace(preview.payload).workspace;
 
-          if (importMode === 'replace') {
+          if (importMode === "replace") {
             nextWorkspace = validWorkspace;
             nextTodos = [...validWorkspace.todos];
             return;
@@ -1089,38 +1207,46 @@ export default function WorkspacePage() {
 
           const importedTodos = (validWorkspace.todos || []).map((todo) => ({
             ...todo,
-            id: makeId('todo'),
+            id: makeId("todo"),
             listId: scopeListId,
             order: 0,
             createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           }));
 
           nextTodos = [...nextTodos, ...importedTodos];
 
-          const mergedNodes = [...(nextWorkspace.graph?.nodes || []), ...(validWorkspace.graph?.nodes || [])];
-          const mergedEdges = [...(nextWorkspace.graph?.edges || []), ...(validWorkspace.graph?.edges || [])];
+          const mergedNodes = [
+            ...(nextWorkspace.graph?.nodes || []),
+            ...(validWorkspace.graph?.nodes || []),
+          ];
+          const mergedEdges = [
+            ...(nextWorkspace.graph?.edges || []),
+            ...(validWorkspace.graph?.edges || []),
+          ];
           nextWorkspace = {
             ...nextWorkspace,
             graph: {
               nodes: mergedNodes,
-              edges: mergedEdges
-            }
+              edges: mergedEdges,
+            },
           };
           return;
         }
 
-        if (preview.kind === 'todos') {
-          const importedTodos : Todo[] = (preview.todos || []).map((todo: Todo) => ({
-            ...todo,
-            id: makeId('todo'),
-            listId: scopeListId,
-            order: 0,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }));
+        if (preview.kind === "todos") {
+          const importedTodos: Todo[] = (preview.todos || []).map(
+            (todo: Todo) => ({
+              ...todo,
+              id: makeId("todo"),
+              listId: scopeListId,
+              order: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            }),
+          );
 
-          if (importMode === 'replace') {
+          if (importMode === "replace") {
             nextTodos = nextTodos.filter((todo) => todo.listId !== scopeListId);
           }
 
@@ -1128,24 +1254,34 @@ export default function WorkspacePage() {
           return;
         }
 
-        if (preview.kind === 'graph') {
+        if (preview.kind === "graph") {
           nextWorkspace = {
             ...nextWorkspace,
             graph: {
               nodes:
-                importMode === 'replace'
+                importMode === "replace"
                   ? [...(preview.payload?.nodes || [])]
-                  : [...(nextWorkspace.graph?.nodes || []), ...(preview.payload?.nodes || [])],
+                  : [
+                      ...(nextWorkspace.graph?.nodes || []),
+                      ...(preview.payload?.nodes || []),
+                    ],
               edges:
-                importMode === 'replace'
+                importMode === "replace"
                   ? [...(preview.payload?.edges || [])]
-                  : [...(nextWorkspace.graph?.edges || []), ...(preview.payload?.edges || [])]
-            }
+                  : [
+                      ...(nextWorkspace.graph?.edges || []),
+                      ...(preview.payload?.edges || []),
+                    ],
+            },
           };
         }
       });
 
-      if (nextWorkspace !== prevWorkspace && importMode === 'replace' && importPreviews.some((entry) => entry.kind === 'workspace')) {
+      if (
+        nextWorkspace !== prevWorkspace &&
+        importMode === "replace" &&
+        importPreviews.some((entry) => entry.kind === "workspace")
+      ) {
         return nextWorkspace;
       }
 
@@ -1167,20 +1303,29 @@ export default function WorkspacePage() {
 
       return {
         ...nextWorkspace,
-        todos: normalizedTodos
+        todos: normalizedTodos,
       };
     });
 
-    if (importMode === 'replace' && importPreviews.some((entry) => entry.kind === 'workspace')) {
-      const workspacePreview = importPreviews.find((entry) => entry.kind === 'workspace');
-      const nextWorkspace = workspacePreview ? validateWorkspace(workspacePreview.payload).workspace : null;
+    if (
+      importMode === "replace" &&
+      importPreviews.some((entry) => entry.kind === "workspace")
+    ) {
+      const workspacePreview = importPreviews.find(
+        (entry) => entry.kind === "workspace",
+      );
+      const nextWorkspace = workspacePreview
+        ? validateWorkspace(workspacePreview.payload).workspace
+        : null;
       if (nextWorkspace?.lists?.[0]?.id) {
-        setActiveListId(nextWorkspace.preferences?.activeListId || nextWorkspace.lists[0].id);
+        setActiveListId(
+          nextWorkspace.preferences?.activeListId || nextWorkspace.lists[0].id,
+        );
       }
     }
 
     setImportPreviews([]);
-    notify('success', 'Import applied.');
+    notify("success", "Import applied.");
   }
 
   function handleClearImportPreview() {
@@ -1188,8 +1333,8 @@ export default function WorkspacePage() {
   }
 
   async function handleOpenWorkspace() {
-    setBusyAction('open');
-    setErrorMessage('');
+    setBusyAction("open");
+    setErrorMessage("");
 
     try {
       if (supportsFileSystemAccessApi()) {
@@ -1202,32 +1347,37 @@ export default function WorkspacePage() {
             meta: {
               ...normalized.meta,
               title: result.fileName || normalized.meta.title,
-              lastOpenedAt: new Date().toISOString()
-            }
+              lastOpenedAt: new Date().toISOString(),
+            },
           },
-          { recordHistory: true }
+          { recordHistory: true },
         );
 
-        setActiveListId(normalized.preferences?.activeListId || normalized.lists[0]?.id);
+        setActiveListId(
+          normalized.preferences?.activeListId || normalized.lists[0]?.id,
+        );
         setFileHandle(result.fileHandle);
         setFileName(result.fileName || fileName);
         setRecentFiles(getRecentFiles());
 
         if (result.warnings.length > 0) {
-          notify('warning', `Loaded with repairs: ${result.warnings.join(' ')}`);
+          notify(
+            "warning",
+            `Loaded with repairs: ${result.warnings.join(" ")}`,
+          );
         } else {
-          notify('success', 'Workspace file loaded.');
+          notify("success", "Workspace file loaded.");
         }
         return;
       }
 
       openInputRef.current?.click();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Open failed.';
+      const message = error instanceof Error ? error.message : "Open failed.";
       setErrorMessage(message);
-      notify('error', message);
+      notify("error", message);
     } finally {
-      setBusyAction('');
+      setBusyAction("");
     }
   }
 
@@ -1237,24 +1387,30 @@ export default function WorkspacePage() {
       return;
     }
 
-    setBusyAction('open');
-    setErrorMessage('');
+    setBusyAction("open");
+    setErrorMessage("");
 
     try {
       const lowerName = file.name.toLowerCase();
 
-      if (lowerName.endsWith('.csv')) {
+      if (lowerName.endsWith(".csv")) {
         const text = await file.text();
-        const importedTodos : Todo[] = importTodosFromCsv(text, activeList.id).map((todo: Todo, index: number) => ({
+        const importedTodos: Todo[] = importTodosFromCsv(
+          text,
+          activeList.id,
+        ).map((todo: Todo, index: number) => ({
           ...todo,
-          id: makeId('todo'),
+          id: makeId("todo"),
           listId: activeList.id,
           order: index,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         }));
         replaceActiveListTodos(importedTodos);
-        notify('success', `Opened CSV and replaced current list with ${importedTodos.length} todos.`);
+        notify(
+          "success",
+          `Opened CSV and replaced current list with ${importedTodos.length} todos.`,
+        );
         return;
       }
 
@@ -1266,50 +1422,56 @@ export default function WorkspacePage() {
           meta: {
             ...normalized.meta,
             title: file.name,
-            lastOpenedAt: new Date().toISOString()
-          }
+            lastOpenedAt: new Date().toISOString(),
+          },
         },
-        { recordHistory: true }
+        { recordHistory: true },
       );
 
-      setActiveListId(normalized.preferences?.activeListId || normalized.lists[0]?.id);
+      setActiveListId(
+        normalized.preferences?.activeListId || normalized.lists[0]?.id,
+      );
       setFileName(file.name);
       setFileHandle(null);
       setRecentFiles(getRecentFiles());
 
       if (result.warnings.length > 0) {
-        notify('warning', `Loaded with repairs: ${result.warnings.join(' ')}`);
+        notify("warning", `Loaded with repairs: ${result.warnings.join(" ")}`);
       } else {
-        notify('success', 'Workspace imported from local file.');
+        notify("success", "Workspace imported from local file.");
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not import file.';
+      const message =
+        error instanceof Error ? error.message : "Could not import file.";
       setErrorMessage(message);
-      notify('error', message);
+      notify("error", message);
     } finally {
-      setBusyAction('');
-      event.target.value = '';
+      setBusyAction("");
+      event.target.value = "";
     }
   }
 
   async function handleSaveWorkspace() {
-    setBusyAction('save');
-    setErrorMessage('');
+    setBusyAction("save");
+    setErrorMessage("");
 
     try {
       const workspaceWithPrefs: Workspace = {
         ...workspace,
         preferences: {
           ...workspace.preferences,
-          activeListId
-        }
+          activeListId,
+        },
       };
 
       if (fileHandle) {
         await saveWorkspaceWithHandle(workspaceWithPrefs, fileHandle);
-        registerRecentFile({ name: fileName, source: 'save' });
+        registerRecentFile({ name: fileName, source: "save" });
       } else if (supportsFileSystemAccessApi()) {
-        const saveResult = await saveWorkspaceAsViaPicker(workspaceWithPrefs, fileName);
+        const saveResult = await saveWorkspaceAsViaPicker(
+          workspaceWithPrefs,
+          fileName,
+        );
         setFileHandle(saveResult.fileHandle);
         setFileName(saveResult.fileName || fileName);
       } else {
@@ -1318,60 +1480,70 @@ export default function WorkspacePage() {
       }
 
       setRecentFiles(getRecentFiles());
-      notify('success', 'Workspace saved.');
+      notify("success", "Workspace saved.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Save failed.';
+      const message = error instanceof Error ? error.message : "Save failed.";
       setErrorMessage(message);
-      notify('error', message);
+      notify("error", message);
     } finally {
-      setBusyAction('');
+      setBusyAction("");
     }
   }
 
   async function handleSaveWorkspaceAs() {
-    setBusyAction('saveAs');
-    setErrorMessage('');
+    setBusyAction("saveAs");
+    setErrorMessage("");
 
     try {
       const workspaceWithPrefs: Workspace = {
         ...workspace,
         preferences: {
           ...workspace.preferences,
-          activeListId
-        }
+          activeListId,
+        },
       };
 
       if (supportsFileSystemAccessApi()) {
         const suggestedName = fileName || DEFAULT_FILE_NAME;
-        const saveResult = await saveWorkspaceAsViaPicker(workspaceWithPrefs, suggestedName);
+        const saveResult = await saveWorkspaceAsViaPicker(
+          workspaceWithPrefs,
+          suggestedName,
+        );
         setFileHandle(saveResult.fileHandle);
         setFileName(saveResult.fileName || suggestedName);
       } else {
-        const requestedName = window.prompt('Save as filename', fileName || DEFAULT_FILE_NAME);
+        const requestedName = window.prompt(
+          "Save as filename",
+          fileName || DEFAULT_FILE_NAME,
+        );
         if (!requestedName) {
-          setBusyAction('');
+          setBusyAction("");
           return;
         }
-        const normalizedName = requestedName.endsWith('.json') || requestedName.endsWith('.todo')
-          ? requestedName
-          : `${requestedName}.todo.json`;
+        const normalizedName =
+          requestedName.endsWith(".json") || requestedName.endsWith(".todo")
+            ? requestedName
+            : `${requestedName}.todo.json`;
         downloadWorkspaceFile(workspaceWithPrefs, normalizedName);
         setFileName(normalizedName);
       }
 
       setRecentFiles(getRecentFiles());
-      notify('success', 'Workspace saved with a new filename.');
+      notify("success", "Workspace saved with a new filename.");
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Save As failed.';
+      const message =
+        error instanceof Error ? error.message : "Save As failed.";
       setErrorMessage(message);
-      notify('error', message);
+      notify("error", message);
     } finally {
-      setBusyAction('');
+      setBusyAction("");
     }
   }
 
   function handleClearLocalData() {
-    const confirmed = window.confirm('Clear all local workspace data, backups, and recent files?');
+    const confirmed = window.confirm(
+      "Clear all local workspace data, backups, and recent files?",
+    );
     if (!confirmed) {
       return;
     }
@@ -1391,20 +1563,20 @@ export default function WorkspacePage() {
     setQuotaStatus(getStorageQuotaStatus());
     setSavedFilters([]);
     setFilters(createDefaultFilters());
-    notify('success', 'Local data was cleared.');
+    notify("success", "Local data was cleared.");
   }
 
   function handleThemeToggle() {
-    const nextTheme = workspace.preferences.theme === 'dark' ? 'light' : 'dark';
+    const nextTheme = workspace.preferences.theme === "dark" ? "light" : "dark";
     commitWorkspace(
       (prevWorkspace) => ({
         ...prevWorkspace,
         preferences: {
           ...prevWorkspace.preferences,
-          theme: nextTheme
-        }
+          theme: nextTheme,
+        },
       }),
-      { recordHistory: false }
+      { recordHistory: false },
     );
   }
 
@@ -1414,12 +1586,15 @@ export default function WorkspacePage() {
         ...prevWorkspace,
         preferences: {
           ...prevWorkspace.preferences,
-          autosaveMinutes: nextMinutes
-        }
+          autosaveMinutes: nextMinutes,
+        },
       }),
-      { recordHistory: false }
+      { recordHistory: false },
     );
-    notify('success', `Backup interval set to ${nextMinutes} minute${nextMinutes === 1 ? '' : 's'}.`);
+    notify(
+      "success",
+      `Backup interval set to ${nextMinutes} minute${nextMinutes === 1 ? "" : "s"}.`,
+    );
   }
 
   function handleExportConfigChange(key: string, value: unknown) {
@@ -1429,7 +1604,7 @@ export default function WorkspacePage() {
 
     setExportConfig((prev) => ({
       ...prev,
-      [key]: value as ExportConfig[keyof ExportConfig]
+      [key]: value as ExportConfig[keyof ExportConfig],
     }));
   }
 
@@ -1437,30 +1612,35 @@ export default function WorkspacePage() {
     setContextMenu({ todoId, x, y });
   }
 
-  function handleGraphChange(nextGraphOrUpdater: GraphUpdater, { recordHistory = true }: CommitOptions = {}) {
+  function handleGraphChange(
+    nextGraphOrUpdater: GraphUpdater,
+    { recordHistory = true }: CommitOptions = {},
+  ) {
     commitWorkspace(
       (prevWorkspace) => {
         const currentGraph = prevWorkspace.graph || { nodes: [], edges: [] };
         const nextGraph =
-          typeof nextGraphOrUpdater === 'function' ? nextGraphOrUpdater(currentGraph) : nextGraphOrUpdater;
+          typeof nextGraphOrUpdater === "function"
+            ? nextGraphOrUpdater(currentGraph)
+            : nextGraphOrUpdater;
 
         return {
           ...prevWorkspace,
-          graph: nextGraph
+          graph: nextGraph,
         };
       },
-      { recordHistory }
+      { recordHistory },
     );
   }
 
   function handleJumpToTodo(todoId: string) {
     const todo = workspace.todos.find((entry) => entry.id === todoId);
     if (!todo) {
-      notify('warning', 'Linked todo could not be found.');
+      notify("warning", "Linked todo could not be found.");
       return;
     }
 
-    setViewMode('list');
+    setViewMode("list");
     setActiveListId(todo.listId);
     setFocusedTodoId(todo.id);
     setSelectedTodoIds([todo.id]);
@@ -1469,23 +1649,23 @@ export default function WorkspacePage() {
   function handleContextAction(action: ContextAction, todoId: string) {
     setContextMenu(null);
 
-    if (action === 'duplicate') {
+    if (action === "duplicate") {
       handleDuplicateTodo(todoId);
       return;
     }
-    if (action === 'archive') {
+    if (action === "archive") {
       handleArchiveTodo(todoId);
       return;
     }
-    if (action === 'restore') {
+    if (action === "restore") {
       handleRestoreTodo(todoId);
       return;
     }
-    if (action === 'delete') {
+    if (action === "delete") {
       handleDeleteTodo(todoId);
       return;
     }
-    if (action === 'select') {
+    if (action === "select") {
       handleToggleSelect(todoId);
     }
   }
@@ -1496,8 +1676,8 @@ export default function WorkspacePage() {
       ...workspace,
       preferences: {
         ...workspace.preferences,
-        activeListId
-      }
+        activeListId,
+      },
     };
 
     saveWorkspaceToStorage(workspaceWithPrefs);
@@ -1509,11 +1689,14 @@ export default function WorkspacePage() {
       theme: workspace.preferences.theme,
       autosaveMinutes: workspace.preferences.autosaveMinutes,
       activeListId,
-      savedFilters
+      savedFilters,
     });
 
     if (nextQuotaStatus.warning && !previousQuotaWarningRef.current) {
-      notify('warning', 'Local storage is almost full. Consider clearing data or exporting backups.');
+      notify(
+        "warning",
+        "Local storage is almost full. Consider clearing data or exporting backups.",
+      );
     }
     previousQuotaWarningRef.current = nextQuotaStatus.warning;
   }, [workspace, activeListId, savedFilters]);
@@ -1524,18 +1707,22 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     if (boot.errors.length > 0) {
-      notify('warning', `Workspace was repaired on load: ${boot.errors.join(' ')}`);
+      notify(
+        "warning",
+        `Workspace was repaired on load: ${boot.errors.join(" ")}`,
+      );
     }
   }, [boot.errors]);
 
   useEffect(() => {
     if (!workspace.lists.some((list) => list.id === activeListId)) {
-      setActiveListId(workspace.lists[0]?.id || '');
+      setActiveListId(workspace.lists[0]?.id || "");
     }
   }, [workspace.lists, activeListId]);
 
   useEffect(() => {
-    const backupIntervalMs = Number(workspace.preferences.autosaveMinutes) * 60 * 1000;
+    const backupIntervalMs =
+      Number(workspace.preferences.autosaveMinutes) * 60 * 1000;
     if (!Number.isFinite(backupIntervalMs) || backupIntervalMs < 60 * 1000) {
       return undefined;
     }
@@ -1561,17 +1748,17 @@ export default function WorkspacePage() {
 
         if (prev.remainingSec <= 1) {
           applyTrackedMinutes(prev.todoId, 25);
-          notify('success', 'Pomodoro complete. Added 25 tracked minutes.');
+          notify("success", "Pomodoro complete. Added 25 tracked minutes.");
           return {
             todoId: null,
             running: false,
-            remainingSec: DEFAULT_TIMER_SECONDS
+            remainingSec: DEFAULT_TIMER_SECONDS,
           };
         }
 
         return {
           ...prev,
-          remainingSec: prev.remainingSec - 1
+          remainingSec: prev.remainingSec - 1,
         };
       });
     }, 1000);
@@ -1587,7 +1774,7 @@ export default function WorkspacePage() {
       }
 
       const key = event.key.toLowerCase();
-      if (key === 's') {
+      if (key === "s") {
         event.preventDefault();
         if (event.shiftKey) {
           void handleSaveWorkspaceAs();
@@ -1596,17 +1783,17 @@ export default function WorkspacePage() {
         }
       }
 
-      if (key === 'o') {
+      if (key === "o") {
         event.preventDefault();
         void handleOpenWorkspace();
       }
 
-      if (key === 'n') {
+      if (key === "n") {
         event.preventDefault();
         addInputRef.current?.focus();
       }
 
-      if (key === 'z') {
+      if (key === "z") {
         event.preventDefault();
         if (event.shiftKey) {
           handleRedo();
@@ -1615,14 +1802,14 @@ export default function WorkspacePage() {
         }
       }
 
-      if (key === 'y') {
+      if (key === "y") {
         event.preventDefault();
         handleRedo();
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   });
 
   useEffect(() => {
@@ -1631,19 +1818,19 @@ export default function WorkspacePage() {
     }
 
     function onEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setContextMenu(null);
       }
     }
 
-    window.addEventListener('click', closeContextMenu);
-    window.addEventListener('contextmenu', closeContextMenu);
-    window.addEventListener('keydown', onEscape);
+    window.addEventListener("click", closeContextMenu);
+    window.addEventListener("contextmenu", closeContextMenu);
+    window.addEventListener("keydown", onEscape);
 
     return () => {
-      window.removeEventListener('click', closeContextMenu);
-      window.removeEventListener('contextmenu', closeContextMenu);
-      window.removeEventListener('keydown', onEscape);
+      window.removeEventListener("click", closeContextMenu);
+      window.removeEventListener("contextmenu", closeContextMenu);
+      window.removeEventListener("keydown", onEscape);
     };
   }, []);
 
@@ -1655,7 +1842,9 @@ export default function WorkspacePage() {
       }}
       onDrop={(event) => {
         event.preventDefault();
-        const files = event.dataTransfer?.files ? [...event.dataTransfer.files] : [];
+        const files = event.dataTransfer?.files
+          ? [...event.dataTransfer.files]
+          : [];
         void handleImportFiles(files);
       }}
     >
@@ -1678,7 +1867,7 @@ export default function WorkspacePage() {
         onChange={(event) => {
           const files = event.target.files ? [...event.target.files] : [];
           void handleImportFiles(files);
-          event.target.value = '';
+          event.target.value = "";
         }}
       />
 
@@ -1693,7 +1882,7 @@ export default function WorkspacePage() {
         onUndo={handleUndo}
         onRedo={handleRedo}
         onViewModeChange={setViewMode}
-        activeListName={activeList?.name || 'Untitled list'}
+        activeListName={activeList?.name || "Untitled list"}
         visibleTodoCount={filteredTodos.length}
         totalListTodos={listTodos.length}
       />
@@ -1744,7 +1933,7 @@ export default function WorkspacePage() {
           onExportImages={handleExportImages}
         />
 
-        {viewMode === 'graph' ? (
+        {viewMode === "graph" ? (
           <GraphWorkspace
             graph={workspace.graph}
             todos={workspace.todos}
@@ -1756,9 +1945,8 @@ export default function WorkspacePage() {
           <WorkspaceMain
             composerInputRef={addInputRef}
             quotaStatus={quotaStatus}
-            formatBytes={formatBytes}
             errorMessage={errorMessage}
-            activeListName={activeList?.name || 'Current list'}
+            activeListName={activeList?.name || "Current list"}
             newTodoText={newTodoText}
             onNewTodoTextChange={setNewTodoText}
             onComposerEnter={handleAddTodo}
@@ -1823,20 +2011,38 @@ export default function WorkspacePage() {
       </div>
 
       {contextMenu && (
-        <div className="context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
-          <button type="button" onClick={() => handleContextAction('select', contextMenu.todoId)}>
+        <div
+          className="context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            type="button"
+            onClick={() => handleContextAction("select", contextMenu.todoId)}
+          >
             Select / Unselect
           </button>
-          <button type="button" onClick={() => handleContextAction('duplicate', contextMenu.todoId)}>
+          <button
+            type="button"
+            onClick={() => handleContextAction("duplicate", contextMenu.todoId)}
+          >
             Duplicate
           </button>
-          <button type="button" onClick={() => handleContextAction('archive', contextMenu.todoId)}>
+          <button
+            type="button"
+            onClick={() => handleContextAction("archive", contextMenu.todoId)}
+          >
             Archive
           </button>
-          <button type="button" onClick={() => handleContextAction('restore', contextMenu.todoId)}>
+          <button
+            type="button"
+            onClick={() => handleContextAction("restore", contextMenu.todoId)}
+          >
             Restore
           </button>
-          <button type="button" onClick={() => handleContextAction('delete', contextMenu.todoId)}>
+          <button
+            type="button"
+            onClick={() => handleContextAction("delete", contextMenu.todoId)}
+          >
             Delete
           </button>
         </div>

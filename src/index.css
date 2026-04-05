@@ -1,44 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700&display=swap');
-@import './styles/tokens.css';
-@import './styles/todo-app.css';
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Manrope:wght@400;500;600;700&display=swap");
+@import "./styles/tokens.css";
+@import "./styles/todo-app.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer components {
-	.workspace-shell {
-		@apply mx-auto grid;
-	}
+  .workspace-shell {
+    @apply mx-auto grid;
+  }
 
-	.panel {
-		@apply grid gap-2 rounded-2xl p-3;
-	}
+  .panel {
+    @apply grid gap-2 rounded-2xl p-3;
+  }
 
-	.button-stack {
-		@apply grid gap-2;
-	}
+  .button-stack {
+    @apply grid gap-2;
+  }
 
-	.inline-row {
-		@apply flex flex-wrap gap-2;
-	}
+  .inline-row {
+    @apply flex flex-wrap gap-2;
+  }
 
-	.ghost-button,
-	.secondary-button,
-	.primary-button,
-	.danger-button {
-		@apply inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold;
-	}
+  .ghost-button,
+  .secondary-button,
+  .primary-button,
+  .danger-button {
+    @apply inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold;
+  }
 
-	.ghost-button {
-		@apply min-w-9 px-2;
-	}
+  .ghost-button {
+    @apply min-w-9 px-2;
+  }
 
-	.list-actions {
-		@apply flex flex-wrap gap-1;
-	}
+  .list-actions {
+    @apply flex flex-wrap gap-1;
+  }
 
-	.todo-actions {
-		@apply inline-flex gap-2;
-	}
+  .todo-actions {
+    @apply inline-flex gap-2;
+  }
 }

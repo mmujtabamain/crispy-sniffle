@@ -1,22 +1,22 @@
-import { useCallback } from 'react';
-import { useReactFlow } from '@xyflow/react';
-import type { GraphEdge, GraphNode } from '../../../lib/workspace';
-import { createEdge, createNode } from '../../../lib/workspace';
-import { wouldCreateCycle } from '../../../lib/graph-layout';
+import { useCallback } from "react";
+import { useReactFlow } from "@xyflow/react";
+import type { GraphEdge, GraphNode } from "../../../lib/workspace";
+import { createEdge, createNode } from "../../../lib/workspace";
+import { wouldCreateCycle } from "../../../lib/graph-layout";
 import type {
   ConnectParams,
   GraphChangeOptions,
   GraphUpdater,
   NodeChangeLike,
   NodePosition,
-  NotifyKind
-} from './types';
-import { nowIso } from './utils';
+  NotifyKind,
+} from "./types";
+import { nowIso } from "./utils";
 
 interface EdgeHandlerDeps {
   edges: GraphEdge[];
   nodes: GraphNode[];
-  defaultEdgeType: GraphEdge['type'];
+  defaultEdgeType: GraphEdge["type"];
   selectedEdgeIds: string[];
   setSelectedEdgeIds: (ids: string[]) => void;
   commitGraph: (updater: GraphUpdater, options?: GraphChangeOptions) => void;
@@ -34,7 +34,7 @@ export function useEdgeHandlers({
   selectedEdgeIds,
   setSelectedEdgeIds,
   commitGraph,
-  notify
+  notify,
 }: EdgeHandlerDeps) {
   const flow = useReactFlow();
 
@@ -47,18 +47,23 @@ export function useEdgeHandlers({
       }
 
       if (source === target) {
-        notify('warning', 'Cannot connect a node to itself.');
+        notify("warning", "Cannot connect a node to itself.");
         return;
       }
 
       if (wouldCreateCycle(edges, source, target)) {
-        notify('error', 'Connection rejected to prevent a circular dependency.');
+        notify(
+          "error",
+          "Connection rejected to prevent a circular dependency.",
+        );
         return;
       }
 
-      const duplicate = edges.some((edge) => edge.from === source && edge.to === target);
+      const duplicate = edges.some(
+        (edge) => edge.from === source && edge.to === target,
+      );
       if (duplicate) {
-        notify('warning', 'That connection already exists.');
+        notify("warning", "That connection already exists.");
         return;
       }
 
@@ -68,17 +73,17 @@ export function useEdgeHandlers({
       commitGraph(
         (prev) => ({
           ...prev,
-          edges: [...prev.edges, edge]
+          edges: [...prev.edges, edge],
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
     },
-    [edges, defaultEdgeType, commitGraph, notify]
+    [edges, defaultEdgeType, commitGraph, notify],
   );
 
   const handleEdgesChange = useCallback(
     (changes: NodeChangeLike[]) => {
-      const removals = changes.filter((change) => change.type === 'remove');
+      const removals = changes.filter((change) => change.type === "remove");
       if (removals.length === 0) {
         return;
       }
@@ -86,23 +91,23 @@ export function useEdgeHandlers({
       const ids: Set<string> = new Set(
         removals
           .map((change) => change.id)
-          .filter((id): id is string => typeof id === 'string')
+          .filter((id): id is string => typeof id === "string"),
       );
       commitGraph(
         (prev) => ({
           ...prev,
-          edges: prev.edges.filter((edge) => !ids.has(edge.id))
+          edges: prev.edges.filter((edge) => !ids.has(edge.id)),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
     },
-    [commitGraph]
+    [commitGraph],
   );
 
   const applyEdgeType = useCallback(
-    (type: GraphEdge['type']) => {
+    (type: GraphEdge["type"]) => {
       if (selectedEdgeIds.length === 0) {
-        notify('success', `New connections will use ${type} style.`);
+        notify("success", `New connections will use ${type} style.`);
         return;
       }
 
@@ -115,22 +120,22 @@ export function useEdgeHandlers({
               ? {
                   ...edge,
                   type,
-                  updatedAt: nowIso()
+                  updatedAt: nowIso(),
                 }
-              : edge
-          )
+              : edge,
+          ),
         }),
-        { recordHistory: true }
+        { recordHistory: true },
       );
 
-      notify('success', 'Edge style updated for selection.');
+      notify("success", "Edge style updated for selection.");
     },
-    [selectedEdgeIds, commitGraph, notify]
+    [selectedEdgeIds, commitGraph, notify],
   );
 
   return {
     handleConnect,
     handleEdgesChange,
-    applyEdgeType
+    applyEdgeType,
   };
 }
