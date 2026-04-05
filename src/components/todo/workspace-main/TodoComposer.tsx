@@ -1,0 +1,68 @@
+import type { ChangeEvent, KeyboardEvent } from "react";
+import { Sparkles } from "lucide-react";
+import type { Todo } from "../../../lib/workspace";
+import type { TodoComposerProps } from "./types";
+
+export default function TodoComposer({
+  inputRef,
+  value,
+  onChange,
+  onSubmit,
+}: TodoComposerProps) {
+  return (
+    <div className="composer-row">
+      <label htmlFor="todo-input" className="sr-only">
+        New todo
+      </label>
+      <div className="composer-input-grid">
+        <input
+          id="todo-input"
+          ref={inputRef}
+          value={value.text}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChange({ text: event.target.value })
+          }
+          onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+            if (event.key === "Enter") {
+              onSubmit();
+            }
+          }}
+          placeholder="Add a focused task, then press Enter"
+        />
+
+        <select
+          value={value.priority}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            onChange({ priority: event.target.value as Todo["priority"] })
+          }
+        >
+          <option value="low">Low priority</option>
+          <option value="medium">Medium priority</option>
+          <option value="high">High priority</option>
+          <option value="critical">Critical priority</option>
+        </select>
+
+        <input
+          type="date"
+          value={value.dueDate}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChange({ dueDate: event.target.value })
+          }
+          aria-label="Due date"
+        />
+
+        <input
+          value={value.tags}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            onChange({ tags: event.target.value })
+          }
+          placeholder="tags: launch, inbox"
+          aria-label="Quick tags"
+        />
+      </div>
+      <button type="button" className="primary-button" onClick={onSubmit}>
+        <Sparkles size={16} /> Add
+      </button>
+    </div>
+  );
+}

@@ -6,7 +6,7 @@ interface ToastItem {
   message: string;
 }
 
-interface ToastShelfProps {
+export interface ToastShelfProps {
   toasts: ToastItem[];
   onDismiss: (toastId: string) => void;
 }

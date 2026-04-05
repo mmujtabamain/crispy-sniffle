@@ -79,6 +79,9 @@ import { useEdgeHandlers } from "./graph-workspace/useEdgeHandlers";
 import { useViewportHandlers } from "./graph-workspace/useViewportHandlers";
 import { useImportHandlers } from "./graph-workspace/useImportHandlers";
 import { useGraphExport } from "./graph-workspace/useGraphExport";
+import GraphCanvas from "./graph-workspace/ui/GraphCanvas";
+import GraphInspector from "./graph-workspace/ui/GraphInspector";
+import GraphToolbar from "./graph-workspace/ui/GraphToolbar";
 
 function GraphWorkspaceInner({
   graph,
@@ -747,714 +750,94 @@ function GraphWorkspaceInner({
         }}
       />
 
-      <section className="panel graph-toolbar-panel">
-        <div className="graph-toolbar-row">
-          <div className="graph-tool-group">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleAddNodeAtCenter}
-            >
-              <Sparkles size={14} /> Add node
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleDuplicateSelection}
-            >
-              <CopyPlus size={14} /> Duplicate
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleDuplicateSubtree}
-            >
-              <Workflow size={14} /> Duplicate subtree
-            </button>
-            <button
-              type="button"
-              className="danger-button"
-              onClick={handleDeleteSelection}
-            >
-              <Trash2 size={14} /> Delete selected
-            </button>
-          </div>
-
-          <div className="graph-tool-group">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleSelectAll}
-            >
-              <BringToFront size={14} /> Select all
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleClearSelection}
-            >
-              <Minimize size={14} /> Deselect
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleToggleCollapse}
-            >
-              <Network size={14} /> Collapse/Expand branch
-            </button>
-          </div>
-        </div>
-
-        <div className="graph-toolbar-row">
-          <div className="graph-tool-group">
-            <label>
-              Edge style
-              <select
-                value={defaultEdgeType}
-                onChange={(event) =>
-                  setDefaultEdgeType(event.target.value as GraphEdge["type"])
-                }
-              >
-                {EDGE_TYPES.map((entry) => (
-                  <option key={entry.value} value={entry.value}>
-                    {entry.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => applyEdgeType(defaultEdgeType)}
-            >
-              <Link2 size={14} /> Apply edge style
-            </button>
-
-            <label>
-              Grid size
-              <input
-                type="number"
-                min={8}
-                max={120}
-                value={gridSize}
-                onChange={(event) =>
-                  setGridSize(clamp(Number(event.target.value) || 28, 8, 120))
-                }
-              />
-            </label>
-
-            <label className="inline-toggle">
-              <input
-                type="checkbox"
-                checked={snapToGrid}
-                onChange={(event) => setSnapToGrid(event.target.checked)}
-              />
-              <span>Snap to grid</span>
-            </label>
-
-            <label className="inline-toggle">
-              <input
-                type="checkbox"
-                checked={showMiniMap}
-                onChange={(event) => setShowMiniMap(event.target.checked)}
-              />
-              <span>Minimap</span>
-            </label>
-
-            <label className="inline-toggle">
-              <input
-                type="checkbox"
-                checked={focusMode}
-                onChange={(event) => setFocusMode(event.target.checked)}
-              />
-              <span>Focus mode</span>
-            </label>
-
-            <label className="inline-toggle">
-              <input
-                type="checkbox"
-                checked={showCriticalPath}
-                onChange={(event) => setShowCriticalPath(event.target.checked)}
-              />
-              <span>Critical path</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="graph-toolbar-row">
-          <div className="graph-tool-group">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("left")}
-            >
-              <AlignCenterVertical size={14} /> Align left
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("right")}
-            >
-              <AlignCenterVertical size={14} /> Align right
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("hcenter")}
-            >
-              <AlignHorizontalJustifyCenter size={14} /> Align center
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("top")}
-            >
-              <AlignCenterVertical size={14} /> Align top
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("bottom")}
-            >
-              <AlignCenterVertical size={14} /> Align bottom
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => alignSelected("vcenter")}
-            >
-              <AlignVerticalJustifyCenter size={14} /> Align middle
-            </button>
-          </div>
-        </div>
-
-        <div className="graph-toolbar-row">
-          <div className="graph-tool-group">
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => handleAutoLayout("hierarchical")}
-            >
-              <Workflow size={14} /> Auto-layout (hierarchy)
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => handleAutoLayout("force")}
-            >
-              <Sparkles size={14} /> Auto-layout (force)
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetPositions}
-            >
-              <Grid2x2 size={14} /> Reset positions
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleSavePositions}
-            >
-              <FileDown size={14} /> Save positions
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleLoadPositions}
-            >
-              <FileUp size={14} /> Load positions
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleFitView}
-            >
-              <Maximize size={14} /> Fit graph
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleResetView}
-            >
-              <RotateCcw size={14} /> Reset view
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => {
-                if (selectedNodeIds[0]) {
-                  handleCenterOnNode(selectedNodeIds[0]);
-                }
-              }}
-            >
-              <Focus size={14} /> Center on selected
-            </button>
-          </div>
-        </div>
-
-        <div className="graph-toolbar-row">
-          <div className="graph-search-wrap">
-            <Search size={14} />
-            <input
-              ref={searchInputRef}
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Find nodes by name, tag, description"
-            />
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => handleFindFirstMatch(searchMatches)}
-            >
-              Find next
-            </button>
-          </div>
-
-          <div className="graph-tool-group">
-            <input
-              value={exportName}
-              onChange={(event) => setExportName(event.target.value)}
-              placeholder="graph-export"
-              aria-label="Graph export file name"
-            />
-            <label>
-              Scale
-              <input
-                type="number"
-                min={1}
-                max={5}
-                value={exportScale}
-                onChange={(event) =>
-                  setExportScale(clamp(Number(event.target.value) || 2, 1, 5))
-                }
-              />
-            </label>
-            <label className="inline-toggle">
-              <input
-                type="checkbox"
-                checked={transparentExport}
-                onChange={(event) => setTransparentExport(event.target.checked)}
-              />
-              <span>Transparent export</span>
-            </label>
-            <input
-              type="color"
-              value={exportBackground}
-              onChange={(event) => setExportBackground(event.target.value)}
-              title="Export background"
-            />
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleExportGraphJson}
-            >
-              <FileJson size={14} /> Graph JSON
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => importGraphRef.current?.click()}
-            >
-              <FileUp size={14} /> Import graph
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handleExportSvg}
-            >
-              <FileDown size={14} /> SVG
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void handleExportImage("png")}
-            >
-              <FileImage size={14} /> PNG
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void handleExportImage("jpg")}
-            >
-              <FileImage size={14} /> JPG
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={() => void handleExportPdf()}
-            >
-              <FileDown size={14} /> PDF
-            </button>
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={handlePrintGraph}
-            >
-              <FileDown size={14} /> Print
-            </button>
-            <button
-              type="button"
-              className="danger-button"
-              onClick={handleClearGraph}
-            >
-              <Trash2 size={14} /> Clear graph
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <div className="panel graph-canvas-panel" ref={canvasRef}>
-        <ReactFlow
-          nodes={flowNodes}
-          edges={flowEdges}
-          nodeTypes={NODE_TYPES}
-          onNodesChange={handleNodesChange}
-          onNodeDragStop={handleNodeDragStop}
-          onEdgesChange={handleEdgesChange}
-          onConnect={handleConnect}
-          onSelectionChange={handleSelectionChange}
-          onPaneClick={(event) => {
-            if (event?.detail === 2) {
-              handlePaneDoubleClick(event);
-            }
-          }}
-          onNodeMouseEnter={(_event, node: FlowNodeLike) =>
-            setHoveredNodeId(node.id)
+      <GraphToolbar
+        importGraphRef={importGraphRef}
+        searchInputRef={searchInputRef}
+        defaultEdgeType={defaultEdgeType}
+        onDefaultEdgeTypeChange={setDefaultEdgeType}
+        onApplyEdgeType={() => applyEdgeType(defaultEdgeType)}
+        gridSize={gridSize}
+        onGridSizeChange={setGridSize}
+        snapToGrid={snapToGrid}
+        onSnapToGridChange={setSnapToGrid}
+        showMiniMap={showMiniMap}
+        onShowMiniMapChange={setShowMiniMap}
+        focusMode={focusMode}
+        onFocusModeChange={setFocusMode}
+        showCriticalPath={showCriticalPath}
+        onShowCriticalPathChange={setShowCriticalPath}
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        onFindNext={() => handleFindFirstMatch(searchMatches)}
+        exportName={exportName}
+        onExportNameChange={setExportName}
+        exportScale={exportScale}
+        onExportScaleChange={setExportScale}
+        transparentExport={transparentExport}
+        onTransparentExportChange={setTransparentExport}
+        exportBackground={exportBackground}
+        onExportBackgroundChange={setExportBackground}
+        selectedNodeId={selectedNodeIds[0] || null}
+        onAddNodeAtCenter={handleAddNodeAtCenter}
+        onDuplicateSelection={handleDuplicateSelection}
+        onDuplicateSubtree={handleDuplicateSubtree}
+        onDeleteSelection={handleDeleteSelection}
+        onSelectAll={handleSelectAll}
+        onClearSelection={handleClearSelection}
+        onToggleCollapse={handleToggleCollapse}
+        onAlignSelected={alignSelected}
+        onAutoLayout={handleAutoLayout}
+        onResetPositions={handleResetPositions}
+        onSavePositions={handleSavePositions}
+        onLoadPositions={handleLoadPositions}
+        onFitView={handleFitView}
+        onResetView={handleResetView}
+        onCenterOnSelected={() => {
+          if (selectedNodeIds[0]) {
+            handleCenterOnNode(selectedNodeIds[0]);
           }
-          onNodeMouseLeave={() => setHoveredNodeId(null)}
-          snapToGrid={snapToGrid}
-          snapGrid={[gridSize, gridSize]}
-          deleteKeyCode={null}
-          panOnDrag
-          selectionOnDrag
-          selectionMode={SelectionMode.Partial}
-          fitView
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background
-            gap={gridSize}
-            size={1}
-            variant={BackgroundVariant.Lines}
-            color="var(--line)"
-          />
-          <Controls />
-          {showMiniMap && (
-            <MiniMap
-              pannable
-              zoomable
-              nodeColor={(node) => {
-                const matched = searchMatches.has(node.id);
-                if (matched) {
-                  return "#9f3027";
-                }
-                return typeof node.data?.color === "string"
-                  ? node.data.color
-                  : "#b08968";
-              }}
-            />
-          )}
-        </ReactFlow>
-      </div>
+        }}
+        onExportGraphJson={handleExportGraphJson}
+        onExportSvg={handleExportSvg}
+        onExportImage={(format) => void handleExportImage(format)}
+        onExportPdf={() => void handleExportPdf()}
+        onPrintGraph={handlePrintGraph}
+        onClearGraph={handleClearGraph}
+      />
 
-      <section className="panel graph-inspector-panel">
-        <h3>Graph Inspector</h3>
-        <p className="meta-line">
-          {nodes.length} nodes, {edges.length} connections,{" "}
-          {selectedNodeIds.length} selected node(s), {selectedEdgeIds.length}{" "}
-          selected edge(s)
-        </p>
+      <GraphCanvas
+        canvasRef={canvasRef}
+        nodeTypes={NODE_TYPES}
+        nodes={flowNodes}
+        edges={flowEdges}
+        onNodesChange={handleNodesChange}
+        onNodeDragStop={handleNodeDragStop}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onSelectionChange={handleSelectionChange}
+        onPaneDoubleClick={handlePaneDoubleClick}
+        onNodeMouseEnter={(_event, node: FlowNodeLike) => setHoveredNodeId(node.id)}
+        onNodeMouseLeave={() => setHoveredNodeId(null)}
+        snapToGrid={snapToGrid}
+        gridSize={gridSize}
+        showMiniMap={showMiniMap}
+        searchMatches={searchMatches}
+      />
 
-        {activeNode ? (
-          <div className="graph-editor-form">
-            <div className="inspector-row two">
-              <label>
-                Label
-                <input
-                  value={activeNode.label}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      label: event.target.value || activeNode.label,
-                    })
-                  }
-                />
-              </label>
-              <label>
-                Icon/emoji
-                <input
-                  value={activeNode.icon || ""}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      icon: event.target.value.slice(0, 2) || "◉",
-                    })
-                  }
-                />
-              </label>
-            </div>
-
-            <label>
-              Description
-              <textarea
-                rows={3}
-                value={activeNode.description || ""}
-                onChange={(event) =>
-                  handlePatchActiveNode({ description: event.target.value })
-                }
-              />
-            </label>
-
-            <div className="inspector-row two">
-              <label>
-                Shape
-                <select
-                  value={activeNode.shape}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      shape: event.target.value as GraphNode["shape"],
-                    })
-                  }
-                >
-                  {SHAPES.map((shape) => (
-                    <option key={shape} value={shape}>
-                      {shape}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Size
-                <select
-                  value={activeNode.size}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      size: event.target.value as GraphNode["size"],
-                    })
-                  }
-                >
-                  {SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="inspector-row two">
-              <label>
-                Priority
-                <select
-                  value={activeNode.priority}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      priority: event.target.value as GraphNode["priority"],
-                    })
-                  }
-                >
-                  {PRIORITIES.map((priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Status
-                <select
-                  value={activeNode.status}
-                  onChange={(event) =>
-                    handlePatchActiveNode({
-                      status: event.target.value as GraphNode["status"],
-                    })
-                  }
-                >
-                  {STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="inspector-row three">
-              <label>
-                Fill
-                <input
-                  type="color"
-                  value={activeNode.color}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ color: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Text
-                <input
-                  type="color"
-                  value={activeNode.textColor}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ textColor: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Border
-                <input
-                  type="color"
-                  value={activeNode.borderColor}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ borderColor: event.target.value })
-                  }
-                />
-              </label>
-            </div>
-
-            <label>
-              Opacity
-              <input
-                type="range"
-                min={0.15}
-                max={1}
-                step={0.05}
-                value={activeNode.opacity ?? 1}
-                onChange={(event) =>
-                  handlePatchActiveNode({ opacity: Number(event.target.value) })
-                }
-              />
-            </label>
-
-            <div className="inspector-row two">
-              <label>
-                Alias
-                <input
-                  value={activeNode.alias || ""}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ alias: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Owner
-                <input
-                  value={activeNode.owner || ""}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ owner: event.target.value })
-                  }
-                />
-              </label>
-            </div>
-
-            <label>
-              Tags
-              <input
-                value={(activeNode.tags || []).join(", ")}
-                onChange={(event) =>
-                  handlePatchActiveNode({ tags: parseTags(event.target.value) })
-                }
-                placeholder="planning, release"
-              />
-            </label>
-
-            <label>
-              Link to todo
-              <select
-                value={activeNode.todoId || ""}
-                onChange={(event) =>
-                  handlePatchActiveNode({ todoId: event.target.value || null })
-                }
-              >
-                <option value="">None</option>
-                {todos.map((todo) => (
-                  <option key={todo.id} value={todo.id}>
-                    {todo.text}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="inline-row">
-              <label className="inline-toggle">
-                <input
-                  type="checkbox"
-                  checked={Boolean(activeNode.completed)}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ completed: event.target.checked })
-                  }
-                />
-                <span>Completed</span>
-              </label>
-
-              <label className="inline-toggle">
-                <input
-                  type="checkbox"
-                  checked={Boolean(activeNode.collapsed)}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ collapsed: event.target.checked })
-                  }
-                />
-                <span>Collapsed</span>
-              </label>
-
-              <label className="inline-toggle">
-                <input
-                  type="checkbox"
-                  checked={Boolean(activeNode.shadow)}
-                  onChange={(event) =>
-                    handlePatchActiveNode({ shadow: event.target.checked })
-                  }
-                />
-                <span>Shadow</span>
-              </label>
-            </div>
-
-            <div className="inline-row">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => {
-                  const descendants = getDescendantNodeIds(
-                    activeNode.id,
-                    edges,
-                  );
-                  notify(
-                    "success",
-                    `${descendants.size} downstream node(s) in this branch.`,
-                  );
-                }}
-              >
-                <Network size={14} /> Branch stats
-              </button>
-              {selectedLinkedTodo && (
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => onJumpToTodo?.(selectedLinkedTodo.id)}
-                >
-                  <Focus size={14} /> Open linked todo
-                </button>
-              )}
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => handleCenterOnNode(activeNode.id)}
-              >
-                <Focus size={14} /> Center on node
-              </button>
-            </div>
-
-            <p className="meta-line">
-              Created: {new Date(activeNode.createdAt).toLocaleString()} ·
-              Updated: {new Date(activeNode.updatedAt).toLocaleString()}
-            </p>
-          </div>
-        ) : (
-          <p className="meta-line">
-            Select a node to edit shape, metadata, colors, links, and branch
-            controls.
-          </p>
-        )}
-      </section>
+      <GraphInspector
+        nodeCount={nodes.length}
+        edgeCount={edges.length}
+        selectedNodeCount={selectedNodeIds.length}
+        selectedEdgeCount={selectedEdgeIds.length}
+        activeNode={activeNode}
+        edges={edges}
+        todos={todos}
+        linkedTodo={selectedLinkedTodo}
+        onPatchActiveNode={handlePatchActiveNode}
+        onJumpToTodo={onJumpToTodo}
+        onCenterOnNode={handleCenterOnNode}
+        onNotify={notify}
+      />
     </main>
   );
 }

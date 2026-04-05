@@ -1,6 +1,6 @@
 import { Moon, Redo2, Sun, Undo2 } from "lucide-react";
 
-interface WorkspaceHeaderProps {
+export interface WorkspaceHeaderProps {
   theme: "light" | "dark";
   undoCount: number;
   redoCount: number;
