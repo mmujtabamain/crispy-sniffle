@@ -7,8 +7,8 @@ export default function WorkspaceSummaryPanel({
 }: WorkspaceSummaryPanelProps) {
   return (
     <PanelSection title="Workspace">
-      <p className="panel-copy">{title}</p>
-      <p className="meta-line">Updated {updatedAtLabel}</p>
+      <p className="text-sm text-[var(--ink-1)]">{title}</p>
+      <p className="text-sm text-[var(--ink-1)]">Updated {updatedAtLabel}</p>
     </PanelSection>
   );
 }

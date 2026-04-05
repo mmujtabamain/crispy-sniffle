@@ -25,7 +25,7 @@ export default function GraphInspector({
   onNotify,
 }: GraphInspectorProps) {
   return (
-    <section className="panel graph-inspector-panel">
+    <section className="grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)]">
       <h3>Graph Inspector</h3>
       <p className="meta-line">
         {nodeCount} nodes, {edgeCount} connections, {selectedNodeCount} selected
@@ -33,7 +33,7 @@ export default function GraphInspector({
       </p>
 
       {activeNode ? (
-        <div className="graph-editor-form">
+        <div className="grid gap-2">
           <div className="inspector-row two">
             <label>
               Label

@@ -10,11 +10,11 @@ export default function TodoComposer({
   onSubmit,
 }: TodoComposerProps) {
   return (
-    <div className="composer-row">
+    <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-3 grid grid-cols-[1fr_auto] gap-2">
       <label htmlFor="todo-input" className="sr-only">
         New todo
       </label>
-      <div className="composer-input-grid">
+      <div className="grid grid-cols-[minmax(220px,1fr)_repeat(3,minmax(0,180px))] gap-2">
         <input
           id="todo-input"
           ref={inputRef}

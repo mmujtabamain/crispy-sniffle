@@ -20,7 +20,7 @@ export default function AutoBackupPanel({
         <option value={5}>5 minutes</option>
         <option value={10}>10 minutes</option>
       </select>
-      <p className="meta-line">{backupsCount} local snapshots retained</p>
+      <p className="text-sm text-[var(--ink-1)]">{backupsCount} local snapshots retained</p>
     </PanelSection>
   );
 }

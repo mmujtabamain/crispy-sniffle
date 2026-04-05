@@ -21,7 +21,7 @@ export default function WorkspaceSidebar({
   dangerZonePanel,
 }: WorkspaceSidebarProps) {
   return (
-    <aside className="workspace-aside">
+    <aside className="grid gap-2 sticky top-3">
       <ListsPanel {...listsPanel} />
       <WorkspaceSummaryPanel {...workspaceSummary} />
       <PersistencePanel {...persistencePanel} />

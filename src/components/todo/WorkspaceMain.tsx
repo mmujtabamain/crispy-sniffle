@@ -22,7 +22,7 @@ export default function WorkspaceMain({
   inspector,
 }: WorkspaceMainProps) {
   return (
-    <main className="workspace-main">
+    <main className="grid gap-2">
       <WorkspaceAlerts {...alerts} />
       <TodoComposer {...composer} />
       <TodoFiltersPanel {...filtersPanel} />

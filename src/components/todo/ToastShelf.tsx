@@ -13,12 +13,12 @@ export interface ToastShelfProps {
 
 export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
   return (
-    <div className="toast-shelf" aria-live="polite" aria-atomic="true">
+    <div className="fixed right-4 top-4 w-min(340px,calc(100vw-2rem)) z-80 grid gap-3" aria-live="polite" aria-atomic="true">
       <AnimatePresence>
         {toasts.map((toast: ToastItem) => (
           <motion.div
             key={toast.id}
-            className={`toast toast-${toast.type}`}
+            className={`border rounded-[0.75rem] bg-[var(--surface)] shadow-[var(--shadow)] p-2 flex items-center justify-between gap-3 text-sm toast-${toast.type}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

@@ -117,7 +117,7 @@ export default function TodoListPanel({
   if (todos.length === 0) {
     return (
       <motion.div
-        className="empty-state"
+        className="border border-dashed border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_5%)] rounded-2xl min-h-[230px] grid place-content-center text-center gap-2 text-[var(--ink-1)]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -134,7 +134,7 @@ export default function TodoListPanel({
   return (
     <>
       {dragDisabled ? (
-        <p className="meta-line">
+        <p className="text-sm text-[var(--ink-1)]">
           Manual sorting is disabled because another sort mode is active.
         </p>
       ) : null}
@@ -148,7 +148,7 @@ export default function TodoListPanel({
           items={todos.map((todo) => todo.id)}
           strategy={verticalListSortingStrategy}
         >
-          <motion.ul className="todo-list" layout>
+          <motion.ul className="list-none grid gap-2" layout>
             <AnimatePresence>
               {todos.map((todo) => (
                 <SortableTodoItem

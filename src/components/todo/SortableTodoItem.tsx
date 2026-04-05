@@ -71,14 +71,14 @@ export default function SortableTodoItem({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.96 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`todo-item ${todo.completed ? "todo-complete" : ""} ${todo.archived ? "todo-archived" : ""} ${isSelected ? "todo-selected" : ""}`}
+      className={`grid grid-cols-[auto_auto_auto_1fr_auto] items-center gap-2 bg-[var(--surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow)] p-2 ${todo.completed ? "opacity-62" : ""} ${todo.archived ? "opacity-62" : ""} ${isSelected ? "border-[color-mix(in_oklch,var(--accent)_55%,var(--line))]" : ""}`}
       onClick={() => onFocus(todo.id)}
       onContextMenu={(event: MouseEvent<HTMLLIElement>) => {
         event.preventDefault();
         onOpenContextMenu(todo.id, event.clientX, event.clientY);
       }}
     >
-      <label className="select-wrap" title="Select todo">
+      <label className="grid place-items-center" title="Select todo">
         <input
           type="checkbox"
           checked={isSelected}
@@ -89,7 +89,7 @@ export default function SortableTodoItem({
 
       <button
         type="button"
-        className="grab-handle"
+        className="border-none bg-transparent cursor-grab text-[var(--ink-soft)] p-1 disabled:opacity-45 disabled:cursor-not-allowed active:cursor-grabbing"
         aria-label="Reorder todo"
         title={
           dragDisabled
@@ -103,22 +103,22 @@ export default function SortableTodoItem({
         ⋮⋮
       </button>
 
-      <label className="todo-check-wrap" title="Toggle complete">
+      <label className="relative inline-flex items-center justify-center w-[1.34rem] h-[1.34rem]" title="Toggle complete">
         <input
           type="checkbox"
           checked={todo.completed}
           onChange={() => onToggle(todo.id)}
           aria-label={`Mark ${todo.text} as ${todo.completed ? "incomplete" : "complete"}`}
         />
-        <span className="todo-check-mark" aria-hidden="true">
+        <span className="absolute grid place-items-center pointer-events-none opacity-0 text-[var(--bg-0)] scale-90 transition-all [.todo-check-wrap_input:checked+&]:opacity-100 [.todo-check-wrap_input:checked+&]:scale-100" aria-hidden="true">
           <Check size={14} />
         </span>
       </label>
 
-      <div className="todo-main" onDoubleClick={() => onBeginEdit(todo)}>
+      <div className="min-w-0 grid gap-1" onDoubleClick={() => onBeginEdit(todo)}>
         {isEditing ? (
           <input
-            className="todo-edit-input"
+            className="w-full"
             value={editDraft}
             onChange={(event) => onDraftChange(event.target.value)}
             onBlur={onCommitEdit}
@@ -136,36 +136,36 @@ export default function SortableTodoItem({
         ) : (
           <button
             type="button"
-            className="todo-text-button"
+            className="block border-none bg-transparent w-full text-left cursor-text min-w-0"
             onClick={() => onBeginEdit(todo)}
           >
-            <span className="todo-text">{todo.text}</span>
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">{todo.text}</span>
           </button>
         )}
 
-        <div className="todo-meta">
-          <span className={`pill priority-${todo.priority}`}>
+        <div className="flex gap-1 flex-wrap">
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] priority-${todo.priority}`}>
             {todo.priority}
           </span>
-          <span className={`pill status-${todo.status}`}>{todo.status}</span>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] status-${todo.status}`}>{todo.status}</span>
           {todo.dueDate && (
-            <span className="pill due-pill">Due {todo.dueDate}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] due-pill">Due {todo.dueDate}</span>
           )}
           {todo.tags.slice(0, 3).map((tag: string) => (
-            <span key={`${todo.id}-${tag}`} className="pill tag-pill">
+            <span key={`${todo.id}-${tag}`} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] tag-pill">
               #{tag}
             </span>
           ))}
           {todo.tags?.length > 3 && (
-            <span className="pill tag-pill">+{todo.tags.length - 3}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] tag-pill">+{todo.tags.length - 3}</span>
           )}
         </div>
       </div>
 
-      <div className="todo-actions">
+      <div className="inline-flex gap-2">
         <button
           type="button"
-          className="ghost-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => onDuplicate(todo.id)}
           aria-label="Duplicate todo"
         >
@@ -175,7 +175,7 @@ export default function SortableTodoItem({
         {todo.archived ? (
           <button
             type="button"
-            className="ghost-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onRestore(todo.id)}
             aria-label="Restore todo"
           >
@@ -184,7 +184,7 @@ export default function SortableTodoItem({
         ) : (
           <button
             type="button"
-            className="ghost-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onArchive(todo.id)}
             aria-label="Archive todo"
           >
@@ -194,7 +194,7 @@ export default function SortableTodoItem({
 
         <button
           type="button"
-          className="ghost-button danger"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => onDelete(todo.id)}
           aria-label="Delete todo"
         >
@@ -203,7 +203,7 @@ export default function SortableTodoItem({
 
         <button
           type="button"
-          className="ghost-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
             const rect = event.currentTarget.getBoundingClientRect();
             onOpenContextMenu(

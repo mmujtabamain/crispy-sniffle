@@ -18,16 +18,16 @@ export default function TodoTimerSection({
   onResetTimer,
 }: TodoTimerSectionProps) {
   return (
-    <section className="inspector-block">
-      <div className="inspector-block-header">
+    <section className="border-t border-dashed border-[color-mix(in_oklch,var(--line),transparent_22%)] pt-2 grid gap-2">
+      <div className="flex justify-between items-center gap-2">
         <h4>Pomodoro Timer</h4>
-        <span className="meta-line">
+        <span className="text-sm text-[var(--ink-1)]">
           {timer.todoId === todo.id
             ? `${Math.ceil(timer.remainingSec / 60)}m left`
             : "idle"}
         </span>
       </div>
-      <div className="timer-row">
+      <div className="flex flex-wrap gap-2 items-center">
         <button
           type="button"
           className="secondary-button"
@@ -49,7 +49,7 @@ export default function TodoTimerSection({
         >
           <TimerReset size={14} /> Reset
         </button>
-        <span className="timer-badge">
+        <span className="inline-flex items-center gap-1 text-[var(--ink-soft)] text-sm">
           <Clock3 size={13} /> {todo.actualMinutes || 0}m tracked
         </span>
       </div>

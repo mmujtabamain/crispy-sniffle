@@ -11,7 +11,7 @@ export default function PanelSection({
   className = "",
   children,
 }: PanelSectionProps) {
-  const classes = ["panel", className].filter(Boolean).join(" ");
+  const classes = ["grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)]", className].filter(Boolean).join(" ");
 
   return (
     <section className={classes}>

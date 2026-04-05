@@ -28,21 +28,21 @@ export default function WorkspaceHeader({
   totalListTodos,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="workspace-header">
-      <div className="headline-wrap">
-        <p className="kicker">Multi List Planner</p>
-        <h1 className="headline">TaskScape</h1>
-        <p className="header-meta-line">
+    <header className="flex justify-between items-start gap-4 border-b border-[color-mix(in_oklch,var(--line),transparent_20%)] pb-3">
+      <div className="max-w-[80ch]">
+        <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--ink-soft)]">Multi List Planner</p>
+        <h1 className="mt-1 text-[clamp(1.7rem,2.8vw,3rem)] leading-[1.2] tracking-[-0.02em] [text-wrap:balance]">TaskScape</h1>
+        <p className="mt-2 text-[var(--ink-1)] max-w-[72ch]">
           Active list: <strong>{activeListName || "Untitled list"}</strong> ·
           Showing {visibleTodoCount} of {totalListTodos} todos
         </p>
       </div>
 
-      <div className="header-controls">
-        <div className="view-switch" role="group" aria-label="Workspace view">
+      <div className="flex items-center gap-2">
+        <div className="inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-3xl bg-[color-mix(in_oklch,var(--surface),white_8%)] p-1" role="group" aria-label="Workspace view">
           <button
             type="button"
-            className={`view-toggle-button ${viewMode === "list" ? "active" : ""}`}
+            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors ${viewMode === "list" ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]" : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"}`}
             onClick={() => onViewModeChange("list")}
             aria-pressed={viewMode === "list"}
           >
@@ -50,7 +50,7 @@ export default function WorkspaceHeader({
           </button>
           <button
             type="button"
-            className={`view-toggle-button ${viewMode === "graph" ? "active" : ""}`}
+            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors ${viewMode === "graph" ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]" : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"}`}
             onClick={() => onViewModeChange("graph")}
             aria-pressed={viewMode === "graph"}
           >
@@ -59,7 +59,7 @@ export default function WorkspaceHeader({
         </div>
         <button
           type="button"
-          className="icon-button"
+          className="inline-flex items-center justify-center gap-2 min-h-[2.35rem] min-w-[2.35rem] border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[var(--surface)] rounded-[0.72rem] cursor-pointer transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_34%)] active:translate-y-0"
           onClick={onThemeToggle}
           aria-label="Toggle theme"
         >
@@ -67,7 +67,7 @@ export default function WorkspaceHeader({
         </button>
         <button
           type="button"
-          className="icon-button px-2"
+          className="inline-flex items-center justify-center gap-2 min-h-[2.35rem] min-w-[2.35rem] border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[var(--surface)] rounded-[0.72rem] px-2 cursor-pointer transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_34%)] active:translate-y-0"
           onClick={onUndo}
           aria-label="Undo"
         >
@@ -76,7 +76,7 @@ export default function WorkspaceHeader({
         </button>
         <button
           type="button"
-          className="icon-button px-2"
+          className="inline-flex items-center justify-center gap-2 min-h-[2.35rem] min-w-[2.35rem] border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[var(--surface)] rounded-[0.72rem] px-2 cursor-pointer transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_34%)] active:translate-y-0"
           onClick={onRedo}
           aria-label="Redo"
         >

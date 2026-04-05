@@ -15,14 +15,14 @@ export default function PersistencePanel({
 }: PersistencePanelProps) {
   return (
     <PanelSection title="Persistence">
-      <div className="button-stack">
+      <div className="grid gap-2">
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => void onOpen()}
         >
           {busyAction === "open" ? (
-            <LoaderCircle size={16} className="spin" />
+            <LoaderCircle size={16} className="animate-spin" />
           ) : (
             <FileUp size={16} />
           )}{" "}
@@ -30,11 +30,11 @@ export default function PersistencePanel({
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => void onSave()}
         >
           {busyAction === "save" ? (
-            <LoaderCircle size={16} className="spin" />
+            <LoaderCircle size={16} className="animate-spin" />
           ) : (
             <Save size={16} />
           )}{" "}
@@ -42,11 +42,11 @@ export default function PersistencePanel({
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => void onSaveAs()}
         >
           {busyAction === "saveAs" ? (
-            <LoaderCircle size={16} className="spin" />
+            <LoaderCircle size={16} className="animate-spin" />
           ) : (
             <FileDown size={16} />
           )}{" "}

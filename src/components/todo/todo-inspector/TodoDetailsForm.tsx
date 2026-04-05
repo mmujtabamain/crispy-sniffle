@@ -21,7 +21,7 @@ export default function TodoDetailsForm({
         />
       </label>
 
-      <div className="inspector-row two">
+      <div className="grid grid-cols-2 gap-2">
         <label>
           Priority
           <select
@@ -55,7 +55,7 @@ export default function TodoDetailsForm({
         </label>
       </div>
 
-      <div className="inspector-row two">
+      <div className="grid grid-cols-2 gap-2">
         <label>
           Due date
           <input
@@ -85,7 +85,7 @@ export default function TodoDetailsForm({
         </label>
       </div>
 
-      <div className="inspector-row two">
+      <div className="grid grid-cols-2 gap-2">
         <label>
           Category
           <input

@@ -13,7 +13,7 @@ export default function TodoFiltersPanel({
   onDeleteSavedFilter,
 }: TodoFiltersPanelProps) {
   return (
-    <div className="filter-panel">
+    <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-2 grid gap-2">
       <div className="panel-headline-row">
         <h3>
           <Filter size={16} /> Filters & Sorting
@@ -36,7 +36,7 @@ export default function TodoFiltersPanel({
         </div>
       </div>
 
-      <div className="filter-grid">
+      <div className="grid grid-cols-3 gap-2">
         <label>
           Completion
           <select
@@ -204,7 +204,7 @@ export default function TodoFiltersPanel({
       </div>
 
       {savedFilters.length > 0 && (
-        <div className="saved-filter-row">
+        <div className="flex gap-2 flex-wrap">
           {savedFilters.map((preset) => (
             <button
               key={preset.id}

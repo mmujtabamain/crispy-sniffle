@@ -11,10 +11,10 @@ export default function TodoAttachmentsSection({
   onAttachFiles,
 }: TodoAttachmentsSectionProps) {
   return (
-    <section className="inspector-block">
-      <div className="inspector-block-header">
+    <section className="border-t border-dashed border-[color-mix(in_oklch,var(--line),transparent_22%)] pt-2 grid gap-2">
+      <div className="flex justify-between items-center gap-2">
         <h4>Attachments</h4>
-        <label className="secondary-button file-button">
+        <label className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 relative overflow-hidden">
           <Plus size={14} /> Attach files
           <input
             type="file"
@@ -31,7 +31,7 @@ export default function TodoAttachmentsSection({
         </label>
       </div>
 
-      <ul className="attachment-list">
+      <ul className="list-none grid gap-2">
         {(todo.attachments || []).map((attachment: Attachment) => (
           <li key={attachment.id}>
             <div>

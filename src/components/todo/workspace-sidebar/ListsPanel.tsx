@@ -30,7 +30,7 @@ export default function ListsPanel({
 
   return (
     <div className="panel">
-      <div className="panel-headline-row">
+      <div className="flex justify-between items-center gap-2">
         <h2>Lists</h2>
         <button
           type="button"
@@ -58,7 +58,7 @@ export default function ListsPanel({
         <span>Show archived lists</span>
       </label>
 
-      <ul className="list-stack">
+      <ul className="list-none grid gap-2">
         {visibleLists.map((list: List, index: number) => (
           <li
             key={list.id}
@@ -77,7 +77,7 @@ export default function ListsPanel({
                 {list.archived ? <small> archived</small> : null}
               </span>
             </button>
-            <div className="list-actions">
+            <div className="flex gap-1 flex-wrap">
               <button
                 type="button"
                 className="ghost-button"

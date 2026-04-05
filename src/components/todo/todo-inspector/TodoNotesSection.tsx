@@ -24,8 +24,8 @@ export default function TodoNotesSection({
       </label>
 
       {todo.notes ? (
-        <div className="markdown-preview">
-          <p className="meta-line">Preview</p>
+        <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-[0.7rem] p-2 bg-[color-mix(in_oklch,var(--surface),white_8%)] text-sm">
+          <p className="text-sm text-[var(--ink-1)]">Preview</p>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {todo.notes}
           </ReactMarkdown>

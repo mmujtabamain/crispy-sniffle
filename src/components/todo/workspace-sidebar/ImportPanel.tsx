@@ -13,18 +13,18 @@ export default function ImportPanel({
   const [importMode, setImportMode] = useState<ImportMode>("merge");
 
   return (
-    <PanelSection title="Import" className="dropzone-panel">
-      <div className="button-stack">
+    <PanelSection title="Import">
+      <div className="grid gap-2">
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={onPickImportFiles}
         >
           <UploadCloud size={16} /> Import files
         </button>
       </div>
 
-      <label htmlFor="import-mode" className="setting-label">
+      <label htmlFor="import-mode" className="text-xs text-[var(--ink-soft)]">
         Import strategy
       </label>
       <select
@@ -37,32 +37,34 @@ export default function ImportPanel({
       </select>
 
       {importPreviews.length === 0 ? (
-        <p className="meta-line">
+        <p className="text-sm text-[var(--ink-1)]">
           Drop JSON, CSV, Markdown, TXT, or OPML files to preview.
         </p>
       ) : (
         <>
-          <ul className="recent-list import-preview-list">
+          <ul className="list-none grid gap-2">
             {importPreviews.map((preview) => (
               <li key={preview.id}>
-                <span>
-                  {preview.fileName} <small>{preview.kind}</small>
-                </span>
-                <small>{preview.previewCount} items</small>
+                <div className="flex justify-between items-baseline gap-3 text-sm">
+                  <span>
+                    {preview.fileName} <small className="text-[0.62rem] uppercase tracking-[0.05em]">{preview.kind}</small>
+                  </span>
+                  <small className="text-[var(--ink-soft)]">{preview.previewCount} items</small>
+                </div>
               </li>
             ))}
           </ul>
-          <div className="button-stack inline-row">
+          <div className="grid gap-2 flex flex-wrap gap-2">
             <button
               type="button"
-              className="secondary-button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
               onClick={() => onApplyImports(importMode)}
             >
               Apply import
             </button>
             <button
               type="button"
-              className="secondary-button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
               onClick={onClearImportPreview}
             >
               Clear preview

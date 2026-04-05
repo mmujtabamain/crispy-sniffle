@@ -739,7 +739,7 @@ function GraphWorkspaceInner({
   }, []);
 
   return (
-    <main className="workspace-main graph-mode-main">
+    <main className="grid gap-2 grid-rows-[auto_minmax(420px,66vh)_auto]">
       <input
         ref={importGraphRef}
         type="file"

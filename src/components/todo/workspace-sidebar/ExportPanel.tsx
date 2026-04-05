@@ -22,7 +22,7 @@ export default function ExportPanel({
 }: ExportPanelProps) {
   return (
     <PanelSection title="Export">
-      <label htmlFor="export-scope" className="setting-label">
+      <label htmlFor="export-scope" className="text-xs text-[var(--ink-soft)]">
         Scope
       </label>
       <select
@@ -35,7 +35,7 @@ export default function ExportPanel({
         <option value="selected">Selected todos</option>
       </select>
 
-      <label htmlFor="export-filename" className="setting-label">
+      <label htmlFor="export-filename" className="text-xs text-[var(--ink-soft)]">
         Filename stem
       </label>
       <input
@@ -47,26 +47,26 @@ export default function ExportPanel({
         placeholder={DEFAULT_EXPORT_FILE_STEM}
       />
 
-      <div className="button-stack export-grid">
-        <button type="button" className="secondary-button" onClick={onExportJson}>
+      <div className="grid grid-cols-2 gap-2">
+        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportJson}>
           <FileDown size={15} /> JSON
         </button>
-        <button type="button" className="secondary-button" onClick={onExportCsv}>
+        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportCsv}>
           <FileSpreadsheet size={15} /> CSV
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={onExportMarkdown}
         >
           <FileText size={15} /> Markdown
         </button>
-        <button type="button" className="secondary-button" onClick={onExportTxt}>
+        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportTxt}>
           <FileText size={15} /> TXT
         </button>
       </div>
 
-      <label htmlFor="pdf-header" className="setting-label">
+      <label htmlFor="pdf-header" className="text-xs text-[var(--ink-soft)]">
         PDF header
       </label>
       <input

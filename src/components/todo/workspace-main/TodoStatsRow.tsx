@@ -10,30 +10,30 @@ export default function TodoStatsRow({
   storageUsedLabel,
 }: TodoStatsRowProps) {
   return (
-    <div className="stats-row" aria-label="Todo counters">
-      <div>
-        <strong>{visibleCount}</strong>
-        <span>Visible</span>
+    <div className="grid grid-cols-6 gap-2" aria-label="Todo counters">
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{visibleCount}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">Visible</span>
       </div>
-      <div>
-        <strong>{totalCount}</strong>
-        <span>In {activeListName || "list"}</span>
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{totalCount}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">In {activeListName || "list"}</span>
       </div>
-      <div>
-        <strong>{completedCount}</strong>
-        <span>Completed</span>
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{completedCount}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">Completed</span>
       </div>
-      <div>
-        <strong>{pendingCount}</strong>
-        <span>Open</span>
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{pendingCount}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">Open</span>
       </div>
-      <div>
-        <strong>{archivedCount}</strong>
-        <span>Archived</span>
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{archivedCount}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">Archived</span>
       </div>
-      <div>
-        <strong>{storageUsedLabel}</strong>
-        <span>Storage used</span>
+      <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
+        <strong className="font-serif text-[1.2rem]">{storageUsedLabel}</strong>
+        <span className="text-xs text-[var(--ink-soft)]">Storage used</span>
       </div>
     </div>
   );

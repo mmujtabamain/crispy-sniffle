@@ -59,16 +59,16 @@ export default function GraphNodeCard({
 
   return (
     <div
-      className={`graph-node-card ${shapeClass} ${sizeClass} ${stateClass} ${focusClass} ${criticalClass} ${searchClass} ${collapsedClass} ${selected ? "selected" : ""}`}
+      className={`w-full h-full border-2 border-[var(--node-border)] text-[var(--node-fg)] bg-[var(--node-bg)] opacity-[var(--node-opacity)] rounded-[0.9rem] shadow-[0_10px_24px_color-mix(in_oklch,var(--node-border),transparent_75%)] p-1 grid gap-1 ${shapeClass} ${sizeClass} ${stateClass} ${focusClass} ${criticalClass} ${searchClass} ${collapsedClass} ${selected ? "shadow-[0_0_0_2px_color-mix(in_oklch,var(--accent),transparent_15%),0_16px_26px_color-mix(in_oklch,var(--node-border),transparent_74%)]" : ""}`}
       style={nodeStyle}
       title={data.description || data.label}
     >
-      <Handle type="target" position={Position.Left} className="graph-handle" />
+      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 border border-[color-mix(in_oklch,var(--node-border),transparent_12%)] rounded bg-[color-mix(in_oklch,var(--node-bg),black_30%)]" />
 
-      <div className="graph-node-top">
+      <div className="flex items-center gap-2">
         <button
           type="button"
-          className={`graph-complete-toggle ${data.completed ? "checked" : ""}`}
+          className={`border border-[color-mix(in_oklch,var(--node-border),transparent_25%)] bg-[color-mix(in_oklch,var(--node-bg),white_20%)] w-[1.15rem] h-[1.15rem] rounded grid place-items-center text-[color-mix(in_oklch,var(--node-fg),black_28%)] cursor-pointer ${data.completed ? "bg-[color-mix(in_oklch,var(--success)_52%,var(--node-bg))]" : ""}`}
           onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onToggleCompleted?.(data.id);
@@ -80,27 +80,27 @@ export default function GraphNodeCard({
 
         <button
           type="button"
-          className="graph-node-label"
+          className="border-none bg-transparent inline-flex items-center gap-1 cursor-text min-w-0"
           onDoubleClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onRename?.(data.id);
           }}
           title="Double-click to rename"
         >
-          <span className="node-icon">{data.icon || "◉"}</span>
-          <span className="node-title-text">{data.label}</span>
+          <span className="text-[0.82rem]">{data.icon || "◉"}</span>
+          <span className="whitespace-nowrap overflow-hidden text-ellipsis font-[650]">{data.label}</span>
         </button>
       </div>
 
-      <div className="graph-node-meta">
-        <span className={`pill priority-${data.priority || "medium"}`}>
+      <div className="flex gap-1 flex-wrap">
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs priority-${data.priority || "medium"}`}>
           {data.priority || "medium"}
         </span>
-        <span className={`pill status-${data.status || "todo"}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs status-${data.status || "todo"}`}>
           {data.status || "todo"}
         </span>
         {typeof data.connectionCount === "number" && (
-          <span className="pill graph-link-pill">
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs graph-link-pill">
             <Link2 size={10} /> {data.connectionCount}
           </span>
         )}
@@ -108,18 +108,18 @@ export default function GraphNodeCard({
 
       {typeof progress === "number" && (
         <div
-          className="graph-progress"
+          className="w-full h-2 rounded-full bg-[color-mix(in_oklch,var(--node-bg),black_17%)] overflow-hidden"
           role="status"
           aria-label={`Branch progress ${progress}%`}
         >
-          <span style={{ width: `${progress}%` }} />
+          <span className="block h-full bg-[color-mix(in_oklch,var(--success),white_15%)]" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      <div className="graph-node-actions">
+      <div className="flex justify-end">
         <button
           type="button"
-          className="graph-mini-action"
+          className="border border-[color-mix(in_oklch,var(--node-border),transparent_20%)] bg-[color-mix(in_oklch,var(--node-bg),white_20%)] w-[1.25rem] h-[1.25rem] rounded grid place-items-center cursor-pointer"
           onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
             event.stopPropagation();
             data.onAddChild?.(data.id);
@@ -133,7 +133,7 @@ export default function GraphNodeCard({
       <Handle
         type="source"
         position={Position.Right}
-        className="graph-handle"
+        className="w-2.5 h-2.5 border border-[color-mix(in_oklch,var(--node-border),transparent_12%)] rounded bg-[color-mix(in_oklch,var(--node-bg),black_30%)]"
       />
     </div>
   );
