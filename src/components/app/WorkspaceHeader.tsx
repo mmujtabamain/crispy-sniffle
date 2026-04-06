@@ -50,7 +50,12 @@ export default function WorkspaceHeader({
         >
           <button
             type="button"
-            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors ${viewMode === "list" ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]" : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"}`}
+            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors 
+              ${
+                viewMode === "list"
+                  ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]"
+                  : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"
+              }`}
             onClick={() => onViewModeChange("list")}
             aria-pressed={viewMode === "list"}
           >
@@ -58,7 +63,12 @@ export default function WorkspaceHeader({
           </button>
           <button
             type="button"
-            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors ${viewMode === "graph" ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]" : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"}`}
+            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors 
+              ${
+                viewMode === "graph"
+                  ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]"
+                  : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"
+              }`}
             onClick={() => onViewModeChange("graph")}
             aria-pressed={viewMode === "graph"}
           >

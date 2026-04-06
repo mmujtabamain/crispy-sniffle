@@ -4,7 +4,7 @@ import {
   WorkspaceHeader,
   WorkspaceMain,
   WorkspaceSidebar,
-} from "../components/todo";
+} from "../components/app";
 import { useWorkspacePageController } from "../features/workspace/useWorkspacePageController";
 
 export default function WorkspacePage() {

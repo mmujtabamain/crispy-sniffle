@@ -8,11 +8,11 @@ import {
 } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import type { ToastShelfProps } from "../../components/todo/ToastShelf";
-import type { WorkspaceHeaderProps } from "../../components/todo/WorkspaceHeader";
-import type { WorkspaceMainProps } from "../../components/todo/WorkspaceMain";
-import type { WorkspaceSidebarProps } from "../../components/todo/WorkspaceSidebar";
-import type { GraphWorkspaceProps } from "../../components/todo/graph-workspace/types";
+import type { ToastShelfProps } from "../../components/app/ToastShelf";
+import type { WorkspaceHeaderProps } from "../../components/app/WorkspaceHeader";
+import type { WorkspaceMainProps } from "../../components/app/WorkspaceMain";
+import type { WorkspaceSidebarProps } from "../../components/app/WorkspaceSidebar";
+import type { GraphWorkspaceProps } from "../../components/app/graph-workspace/types";
 import { formatBytes, formatRelativeDate } from "../../lib/formatters";
 import type { TodoFilters } from "../../lib/todo-filters.js";
 import {

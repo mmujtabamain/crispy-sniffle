@@ -20,6 +20,7 @@
   }
 
   /* Text inputs, selects, textareas - base styles */
+  input,
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -31,12 +32,13 @@
   input[type="tel"],
   select,
   textarea {
-    @apply border border-[var(--line)] rounded-xl bg-[var(--surface)] px-3 py-2 transition-colors focus:outline-none focus:ring-2 focus:ring-[color-mix(in_oklch,var(--accent)_65%,white)] focus:ring-offset-2;
+    @apply border border-[var(--line)] rounded-xl bg-[var(--surface)] px-3 py-2 transition-colors focus:outline-none;
     font: inherit;
     color: inherit;
   }
 
   /* Text inputs and selects - fixed height for alignment */
+  input,
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -58,6 +60,7 @@
     line-height: 1.5;
   }
 
+  input:disabled,
   input[type="text"]:disabled,
   input[type="email"]:disabled,
   input[type="password"]:disabled,
@@ -73,17 +76,18 @@
     cursor: not-allowed;
   }
 
-  input[type="text"]:hover:not(:disabled),
-  input[type="email"]:hover:not(:disabled),
-  input[type="password"]:hover:not(:disabled),
-  input[type="search"]:hover:not(:disabled),
-  input[type="date"]:hover:not(:disabled),
-  input[type="time"]:hover:not(:disabled),
-  input[type="number"]:hover:not(:disabled),
-  input[type="url"]:hover:not(:disabled),
-  input[type="tel"]:hover:not(:disabled),
-  select:hover:not(:disabled),
-  textarea:hover:not(:disabled) {
+  input:focus:not(:disabled),
+  input[type="text"]:focus:not(:disabled),
+  input[type="email"]:focus:not(:disabled),
+  input[type="password"]:focus:not(:disabled),
+  input[type="search"]:focus:not(:disabled),
+  input[type="date"]:focus:not(:disabled),
+  input[type="time"]:focus:not(:disabled),
+  input[type="number"]:focus:not(:disabled),
+  input[type="url"]:focus:not(:disabled),
+  input[type="tel"]:focus:not(:disabled),
+  select:focus:not(:disabled),
+  textarea:focus:not(:disabled) {
     border-color: var(--accent);
   }
 
