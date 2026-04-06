@@ -4,11 +4,9 @@ export interface WorkspaceHeaderProps {
   theme: "light" | "dark";
   undoCount: number;
   redoCount: number;
-  viewMode: "list" | "graph";
   onThemeToggle: () => void;
   onUndo: () => void;
   onRedo: () => void;
-  onViewModeChange: (mode: "list" | "graph") => void;
   activeListName: string;
   visibleTodoCount: number;
   totalListTodos: number;
@@ -18,11 +16,9 @@ export default function WorkspaceHeader({
   theme,
   undoCount,
   redoCount,
-  viewMode,
   onThemeToggle,
   onUndo,
   onRedo,
-  onViewModeChange,
   activeListName,
   visibleTodoCount,
   totalListTodos,
@@ -43,38 +39,6 @@ export default function WorkspaceHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div
-          className="inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-3xl bg-[color-mix(in_oklch,var(--surface),white_8%)] p-1"
-          role="group"
-          aria-label="Workspace view"
-        >
-          <button
-            type="button"
-            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors 
-              ${
-                viewMode === "list"
-                  ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]"
-                  : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"
-              }`}
-            onClick={() => onViewModeChange("list")}
-            aria-pressed={viewMode === "list"}
-          >
-            List View
-          </button>
-          <button
-            type="button"
-            className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors 
-              ${
-                viewMode === "graph"
-                  ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]"
-                  : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"
-              }`}
-            onClick={() => onViewModeChange("graph")}
-            aria-pressed={viewMode === "graph"}
-          >
-            Graph View
-          </button>
-        </div>
         <button
           type="button"
           className="inline-flex items-center justify-center gap-2 min-h-[2.35rem] min-w-[2.35rem] border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[var(--surface)] rounded-[0.72rem] cursor-pointer transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_34%)] active:translate-y-0"

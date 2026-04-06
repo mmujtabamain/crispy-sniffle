@@ -1,8 +1,7 @@
 import type { TodoFilters } from "../../lib/todo-filters";
 import type { ImportPreview } from "../../lib/todo-formats";
-import type { Graph, Workspace } from "../../lib/workspace";
+import type { Workspace } from "../../lib/workspace";
 
-export type ViewMode = "list" | "graph";
 export type ImportMode = "merge" | "replace";
 export type ContextAction =
   | "select"
@@ -59,7 +58,6 @@ export interface CommitOptions {
   recordHistory?: boolean;
 }
 
-export type GraphUpdater = Graph | ((currentGraph: Graph) => Graph);
 export type ImportPreviewItem = ImportPreview & { id: string };
 
 export interface RecentFileItem {

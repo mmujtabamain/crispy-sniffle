@@ -22,10 +22,21 @@ export default function WorkspaceMain({
   inspector,
 }: WorkspaceMainProps) {
   return (
-    <main className="grid gap-2">
+    <main className="grid min-w-0 gap-2">
       <WorkspaceAlerts {...alerts} />
       <TodoComposer {...composer} />
-      <TodoFiltersPanel {...filtersPanel} />
+      <div
+        className={`grid transition-[grid-template-rows,opacity,transform] duration-300 ease-out ${
+          filtersPanel.open
+            ? "grid-rows-[1fr] opacity-100 translate-y-0"
+            : "grid-rows-[0fr] opacity-0 -translate-y-2"
+        }`}
+        aria-hidden={!filtersPanel.open}
+      >
+        <div id="todo-filters-panel" className="min-h-0 overflow-hidden">
+          <TodoFiltersPanel {...filtersPanel} />
+        </div>
+      </div>
       <TodoStatsRow {...stats} />
       <TodoPrimaryActions {...primaryActions} />
       {bulkActions ? <TodoBulkBar {...bulkActions} /> : null}

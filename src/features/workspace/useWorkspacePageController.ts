@@ -12,7 +12,6 @@ import type { ToastShelfProps } from "../../components/app/ToastShelf";
 import type { WorkspaceHeaderProps } from "../../components/app/WorkspaceHeader";
 import type { WorkspaceMainProps } from "../../components/app/WorkspaceMain";
 import type { WorkspaceSidebarProps } from "../../components/app/WorkspaceSidebar";
-import type { GraphWorkspaceProps } from "../../components/app/graph-workspace/types";
 import { formatBytes, formatRelativeDate } from "../../lib/formatters";
 import type { TodoFilters } from "../../lib/todo-filters.js";
 import {
@@ -64,17 +63,15 @@ import {
   validateWorkspace,
   writeSettings,
 } from "../../lib/workspace";
-import type { Graph, List, Todo, Workspace } from "../../lib/workspace";
+import type { List, Todo, Workspace } from "../../lib/workspace";
 import { loadWorkspaceBootState } from "./loadWorkspaceBootState";
 import type {
   CommitOptions,
   ExportConfig,
-  GraphUpdater,
   ImportMode,
   ImportPreviewItem,
   SavedFilterPreset,
   TimerState,
-  ViewMode,
 } from "./types";
 import {
   createDefaultExportConfig,
@@ -84,7 +81,6 @@ import {
 } from "./types";
 
 interface WorkspacePageController {
-  viewMode: ViewMode;
   openInputRef: MutableRefObject<HTMLInputElement | null>;
   importInputRef: MutableRefObject<HTMLInputElement | null>;
   onOpenInputChange: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -93,8 +89,46 @@ interface WorkspacePageController {
   toastShelfProps: ToastShelfProps;
   headerProps: WorkspaceHeaderProps;
   sidebarProps: WorkspaceSidebarProps;
-  graphProps: GraphWorkspaceProps;
   mainProps: WorkspaceMainProps;
+}
+
+const DEFAULT_FILTERS = createDefaultFilters();
+
+function countActiveFilters(filters: TodoFilters) {
+  let count = 0;
+
+  if (filters.completion !== DEFAULT_FILTERS.completion) {
+    count += 1;
+  }
+  if (filters.priority !== DEFAULT_FILTERS.priority) {
+    count += 1;
+  }
+  if (filters.status !== DEFAULT_FILTERS.status) {
+    count += 1;
+  }
+  if (filters.smartFilter !== DEFAULT_FILTERS.smartFilter) {
+    count += 1;
+  }
+  if (filters.sortBy !== DEFAULT_FILTERS.sortBy) {
+    count += 1;
+  }
+  if (filters.startDate) {
+    count += 1;
+  }
+  if (filters.endDate) {
+    count += 1;
+  }
+  if (filters.tags.length > 0) {
+    count += 1;
+  }
+  if (filters.searchText.trim()) {
+    count += 1;
+  }
+  if (filters.searchTag.trim()) {
+    count += 1;
+  }
+
+  return count;
 }
 
 export function useWorkspacePageController(): WorkspacePageController {
@@ -122,7 +156,9 @@ export function useWorkspacePageController(): WorkspacePageController {
     boot.savedFilters,
   );
 
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [propertiesOpen, setPropertiesOpen] = useState(false);
   const [importPreviews, setImportPreviews] = useState<ImportPreviewItem[]>([]);
 
   const [busyAction, setBusyAction] = useState("");
@@ -170,6 +206,10 @@ export function useWorkspacePageController(): WorkspacePageController {
     [listTodos, filters],
   );
   const availableTags = useMemo(() => collectTags(listTodos), [listTodos]);
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filters),
+    [filters],
+  );
 
   const completedCount = filteredTodos.filter((todo) => todo.completed).length;
   const pendingCount = filteredTodos.filter(
@@ -1102,20 +1142,6 @@ export function useWorkspacePageController(): WorkspacePageController {
           }));
 
           nextTodos = [...nextTodos, ...importedTodos];
-
-          nextWorkspace = {
-            ...nextWorkspace,
-            graph: {
-              nodes: [
-                ...(nextWorkspace.graph?.nodes || []),
-                ...(validWorkspace.graph?.nodes || []),
-              ],
-              edges: [
-                ...(nextWorkspace.graph?.edges || []),
-                ...(validWorkspace.graph?.edges || []),
-              ],
-            },
-          };
           return;
         }
 
@@ -1135,28 +1161,6 @@ export function useWorkspacePageController(): WorkspacePageController {
 
           nextTodos = [...nextTodos, ...importedTodos];
           return;
-        }
-
-        if (preview.kind === "graph") {
-          nextWorkspace = {
-            ...nextWorkspace,
-            graph: {
-              nodes:
-                importMode === "replace"
-                  ? [...(preview.payload?.nodes || [])]
-                  : [
-                      ...(nextWorkspace.graph?.nodes || []),
-                      ...(preview.payload?.nodes || []),
-                    ],
-              edges:
-                importMode === "replace"
-                  ? [...(preview.payload?.edges || [])]
-                  : [
-                      ...(nextWorkspace.graph?.edges || []),
-                      ...(preview.payload?.edges || []),
-                    ],
-            },
-          };
         }
       });
 
@@ -1489,40 +1493,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     }));
   }
 
-  function handleGraphChange(
-    nextGraphOrUpdater: GraphUpdater,
-    { recordHistory = true }: CommitOptions = {},
-  ) {
-    commitWorkspace(
-      (prevWorkspace) => {
-        const currentGraph = prevWorkspace.graph || { nodes: [], edges: [] };
-        const nextGraph =
-          typeof nextGraphOrUpdater === "function"
-            ? nextGraphOrUpdater(currentGraph)
-            : nextGraphOrUpdater;
-
-        return {
-          ...prevWorkspace,
-          graph: nextGraph,
-        };
-      },
-      { recordHistory },
-    );
-  }
-
-  function handleJumpToTodo(todoId: string) {
-    const todo = workspace.todos.find((entry) => entry.id === todoId);
-    if (!todo) {
-      notify("warning", "Linked todo could not be found.");
-      return;
-    }
-
-    setViewMode("list");
-    setActiveListId(todo.listId);
-    setFocusedTodoId(todo.id);
-    setSelectedTodoIds([todo.id]);
-  }
-
   useEffect(() => {
     workspaceRef.current = workspace;
     const workspaceWithPrefs: Workspace = {
@@ -1688,17 +1658,26 @@ export function useWorkspacePageController(): WorkspacePageController {
     theme: workspace.preferences.theme,
     undoCount: pastRef.current.length,
     redoCount: futureRef.current.length,
-    viewMode,
     onThemeToggle: handleThemeToggle,
     onUndo: handleUndo,
     onRedo: handleRedo,
-    onViewModeChange: setViewMode,
     activeListName: activeList?.name || "Untitled list",
     visibleTodoCount: filteredTodos.length,
     totalListTodos: listTodos.length,
   };
 
   const sidebarProps: WorkspaceSidebarProps = {
+    rail: {
+      collapsed: sidebarCollapsed,
+      propertiesOpen,
+      activeListName: activeList?.name || "Untitled list",
+      visibleTodoCount: filteredTodos.length,
+      totalTodoCount: listTodos.length,
+      onToggleCollapsed: () =>
+        setSidebarCollapsed((current) => !current),
+      onOpenProperties: () => setPropertiesOpen(true),
+      onCloseProperties: () => setPropertiesOpen(false),
+    },
     listsPanel: {
       lists,
       activeListId: activeList?.id || "",
@@ -1750,14 +1729,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     },
   };
 
-  const graphProps: GraphWorkspaceProps = {
-    graph: workspace.graph,
-    todos: workspace.todos,
-    onGraphChange: handleGraphChange,
-    onNotify: notify,
-    onJumpToTodo: handleJumpToTodo,
-  };
-
   const mainProps: WorkspaceMainProps = {
     alerts: {
       quotaStatus,
@@ -1771,6 +1742,8 @@ export function useWorkspacePageController(): WorkspacePageController {
         dueDate: quickDueDate,
         tags: quickTags,
       },
+      filtersOpen,
+      activeFilterCount,
       onChange: (patch) => {
         if (typeof patch.text === "string") {
           setNewTodoText(patch.text);
@@ -1785,9 +1758,11 @@ export function useWorkspacePageController(): WorkspacePageController {
           setQuickTags(patch.tags);
         }
       },
+      onToggleFilters: () => setFiltersOpen((current) => !current),
       onSubmit: handleAddTodo,
     },
     filtersPanel: {
+      open: filtersOpen,
       filters,
       availableTags,
       savedFilters,
@@ -1852,7 +1827,6 @@ export function useWorkspacePageController(): WorkspacePageController {
   };
 
   return {
-    viewMode,
     openInputRef,
     importInputRef,
     onOpenInputChange: handleOpenFromInput,
@@ -1867,7 +1841,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     toastShelfProps,
     headerProps,
     sidebarProps,
-    graphProps,
     mainProps,
   };
 }

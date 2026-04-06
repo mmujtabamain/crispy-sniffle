@@ -1,11 +1,9 @@
 import {
-  createEdge,
-  createNode,
   createTodo,
   createWorkspace,
   makeId,
 } from "./workspace";
-import type { GraphEdge, GraphNode, Todo, Workspace } from "./workspace";
+import type { Todo, Workspace } from "./workspace";
 
 export type ImportPreview =
   | {
@@ -19,12 +17,6 @@ export type ImportPreview =
       fileName: string;
       format: "json" | "csv" | "markdown" | "text";
       todos: Todo[];
-      previewCount: number;
-    }
-  | {
-      kind: "graph";
-      fileName: string;
-      payload: { nodes: GraphNode[]; edges: GraphEdge[] };
       previewCount: number;
     };
 
@@ -379,54 +371,6 @@ export function importTodosFromText(text: string, listId: string): Todo[] {
     });
 }
 
-export function importOpmlToGraph(text: string): {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-} {
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(text, "text/xml");
-  const parserError = xml.querySelector("parsererror");
-  if (parserError) {
-    throw new Error("Could not parse OPML file.");
-  }
-
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
-
-  function walkOutline(element: Element, parentId: string | null = null): void {
-    const label =
-      element.getAttribute("text") || element.getAttribute("title") || "Node";
-    const node = createNode(label);
-    node.x = 0;
-    node.y = nodes.length * 40;
-    node.updatedAt = new Date().toISOString();
-    node.createdAt = new Date().toISOString();
-    nodes.push(node);
-
-    if (parentId) {
-      const edge = createEdge(parentId, node.id);
-      edge.updatedAt = new Date().toISOString();
-      edge.createdAt = new Date().toISOString();
-      edges.push(edge);
-    }
-
-    [...element.children]
-      .filter((child) => child.tagName.toLowerCase() === "outline")
-      .forEach((child) => walkOutline(child, node.id));
-  }
-
-  const body = xml.querySelector("body");
-  if (!body) {
-    return { nodes: [], edges: [] };
-  }
-
-  [...body.children]
-    .filter((child) => child.tagName.toLowerCase() === "outline")
-    .forEach((outline) => walkOutline(outline, null));
-
-  return { nodes, edges };
-}
-
 export async function parseImportFile(
   file: File,
   listId: string,
@@ -498,16 +442,6 @@ export async function parseImportFile(
       format: "text",
       todos,
       previewCount: todos.length,
-    };
-  }
-
-  if (ext === "opml") {
-    const graph = importOpmlToGraph(text);
-    return {
-      kind: "graph",
-      fileName: file.name,
-      payload: graph,
-      previewCount: graph.nodes.length,
     };
   }
 

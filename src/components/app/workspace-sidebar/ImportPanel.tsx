@@ -38,7 +38,7 @@ export default function ImportPanel({
 
       {importPreviews.length === 0 ? (
         <p className="text-sm text-[var(--ink-1)]">
-          Drop JSON, CSV, Markdown, TXT, or OPML files to preview.
+          Drop JSON, CSV, Markdown, or TXT files to preview.
         </p>
       ) : (
         <>

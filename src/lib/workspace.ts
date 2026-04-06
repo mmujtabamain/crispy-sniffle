@@ -1,9 +1,6 @@
 type Priority = "low" | "medium" | "high" | "critical";
 type Status = "todo" | "doing" | "done" | "blocked";
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
-type NodeShape = "circle" | "square" | "diamond" | "pill";
-type NodeSize = "sm" | "md" | "lg";
-type EdgeType = "curved" | "straight" | "orthogonal";
 type Theme = "light" | "dark";
 type ImportMode = "merge" | "replace";
 type FileSource =
@@ -69,47 +66,6 @@ export interface Todo {
   order: number;
 }
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  description: string;
-  tags: string[];
-  priority: Priority;
-  status: Status;
-  completed: boolean;
-  icon: string;
-  shape: NodeShape;
-  size: NodeSize;
-  color: string;
-  textColor: string;
-  borderColor: string;
-  shadow: boolean;
-  opacity: number;
-  alias: string;
-  todoId: string | null;
-  owner: string;
-  collapsed: boolean;
-  estimateMinutes: number | null;
-  x: number;
-  y: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GraphEdge {
-  id: string;
-  from: string;
-  to: string;
-  type: EdgeType;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Graph {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
 export interface WorkspaceMeta {
   id: string;
   title: string;
@@ -130,7 +86,6 @@ export interface Workspace {
   preferences: WorkspacePreferences;
   lists: List[];
   todos: Todo[];
-  graph: Graph;
 }
 
 interface BackupSnapshot {
@@ -262,48 +217,6 @@ export function createTodo(
   };
 }
 
-export function createNode(label: string = "Node"): GraphNode {
-  const timestamp = nowIso();
-  return {
-    id: makeId("node"),
-    label,
-    description: "",
-    tags: [],
-    priority: "medium",
-    status: "todo",
-    completed: false,
-    icon: "◉",
-    shape: "square",
-    size: "md",
-    color: "#b08968",
-    textColor: "#2e241f",
-    borderColor: "#8a6042",
-    shadow: true,
-    opacity: 1,
-    alias: "",
-    todoId: null,
-    owner: "",
-    collapsed: false,
-    estimateMinutes: null,
-    x: 0,
-    y: 0,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-}
-
-export function createEdge(from: string, to: string): GraphEdge {
-  const timestamp = nowIso();
-  return {
-    id: makeId("edge"),
-    from,
-    to,
-    type: "curved",
-    createdAt: timestamp,
-    updatedAt: timestamp,
-  };
-}
-
 export function createWorkspace(): Workspace {
   const timestamp = nowIso();
   const defaultList = createList("Inbox");
@@ -324,10 +237,6 @@ export function createWorkspace(): Workspace {
     },
     lists: [{ ...defaultList, order: 0 }],
     todos: [],
-    graph: {
-      nodes: [],
-      edges: [],
-    },
   };
 }
 
@@ -350,7 +259,6 @@ function migrateV0ToV1(raw: unknown): Workspace {
 
   const source = asRecord(raw);
   const seeded = createWorkspace();
-  const sourceGraph = asRecord(source.graph);
 
   return {
     ...seeded,
@@ -369,14 +277,6 @@ function migrateV0ToV1(raw: unknown): Workspace {
     todos: Array.isArray(source.todos)
       ? (source.todos as Todo[])
       : seeded.todos,
-    graph: {
-      nodes: Array.isArray(sourceGraph.nodes)
-        ? (sourceGraph.nodes as GraphNode[])
-        : [],
-      edges: Array.isArray(sourceGraph.edges)
-        ? (sourceGraph.edges as GraphEdge[])
-        : [],
-    },
   };
 }
 
@@ -451,58 +351,11 @@ function migrateV1ToV2(raw: unknown): Workspace {
 }
 
 function migrateV2ToV3(raw: unknown): Workspace {
-  const source = asRecord(raw);
-  const timestamp = nowIso();
-  const graph = asRecord(source.graph);
-  const graphNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
-  const graphEdges = Array.isArray(graph.edges) ? graph.edges : [];
   const seeded = migrateV1ToV2(raw);
 
   return {
     ...seeded,
     schemaVersion: 3,
-    graph: {
-      nodes: graphNodes.map((nodeValue: unknown) => {
-        const node = asRecord(nodeValue);
-        return {
-          ...createNode(typeof node.label === "string" ? node.label : "Node"),
-          ...node,
-          x: typeof node.x === "number" && Number.isFinite(node.x) ? node.x : 0,
-          y: typeof node.y === "number" && Number.isFinite(node.y) ? node.y : 0,
-          updatedAt:
-            typeof node.updatedAt === "string" ? node.updatedAt : timestamp,
-          createdAt:
-            typeof node.createdAt === "string" ? node.createdAt : timestamp,
-        };
-      }),
-      edges: graphEdges.map((edgeValue: unknown) => {
-        const edge = asRecord(edgeValue);
-        const from =
-          typeof edge.from === "string"
-            ? edge.from
-            : typeof edge.source === "string"
-              ? edge.source
-              : "";
-        const to =
-          typeof edge.to === "string"
-            ? edge.to
-            : typeof edge.target === "string"
-              ? edge.target
-              : "";
-
-        return {
-          ...createEdge(from, to),
-          ...edge,
-          from,
-          to,
-          type: normalizeEdgeType(edge.type),
-          updatedAt:
-            typeof edge.updatedAt === "string" ? edge.updatedAt : timestamp,
-          createdAt:
-            typeof edge.createdAt === "string" ? edge.createdAt : timestamp,
-        };
-      }),
-    },
   };
 }
 
@@ -574,32 +427,6 @@ function normalizeAttachments(value: unknown): Attachment[] {
     });
 }
 
-function normalizeNodeShape(value: unknown): NodeShape {
-  if (
-    value === "circle" ||
-    value === "square" ||
-    value === "diamond" ||
-    value === "pill"
-  ) {
-    return value;
-  }
-  return "square";
-}
-
-function normalizeNodeSize(value: unknown): NodeSize {
-  if (value === "sm" || value === "md" || value === "lg") {
-    return value;
-  }
-  return "md";
-}
-
-function normalizeEdgeType(value: unknown): EdgeType {
-  if (value === "curved" || value === "straight" || value === "orthogonal") {
-    return value;
-  }
-  return "curved";
-}
-
 export function validateWorkspace(workspace: unknown): ValidationResult {
   const errors: string[] = [];
   if (!workspace || typeof workspace !== "object") {
@@ -624,10 +451,6 @@ export function validateWorkspace(workspace: unknown): ValidationResult {
     preferences: {
       ...baselinePreferences,
       ...(migrated.preferences || {}),
-    },
-    graph: {
-      nodes: Array.isArray(migrated.graph?.nodes) ? migrated.graph.nodes : [],
-      edges: Array.isArray(migrated.graph?.edges) ? migrated.graph.edges : [],
     },
   };
 
@@ -724,75 +547,6 @@ export function validateWorkspace(workspace: unknown): ValidationResult {
   ) {
     safeWorkspace.preferences.activeListId = safeWorkspace.lists[0].id;
   }
-
-  safeWorkspace.graph.nodes = safeWorkspace.graph.nodes
-    .filter((node: GraphNode) => Boolean(node))
-    .map((node: GraphNode) => ({
-      id: typeof node.id === "string" ? node.id : makeId("node"),
-      label: typeof node.label === "string" ? node.label : "Node",
-      description: typeof node.description === "string" ? node.description : "",
-      tags: normalizeStringArray(node.tags),
-      priority: isPriority(node.priority) ? node.priority : "medium",
-      status: isStatus(node.status) ? node.status : "todo",
-      completed: Boolean(node.completed),
-      icon:
-        typeof node.icon === "string" && node.icon.trim()
-          ? node.icon.trim().slice(0, 2)
-          : "◉",
-      shape: normalizeNodeShape(node.shape),
-      size: normalizeNodeSize(node.size),
-      color:
-        typeof node.color === "string" && node.color.trim()
-          ? node.color.trim()
-          : "#b08968",
-      textColor:
-        typeof node.textColor === "string" && node.textColor.trim()
-          ? node.textColor.trim()
-          : "#2e241f",
-      borderColor:
-        typeof node.borderColor === "string" && node.borderColor.trim()
-          ? node.borderColor.trim()
-          : "#8a6042",
-      shadow: Boolean(node.shadow ?? true),
-      opacity: Number.isFinite(node.opacity)
-        ? Math.max(0.15, Math.min(1, Number(node.opacity)))
-        : 1,
-      alias: typeof node.alias === "string" ? node.alias : "",
-      todoId:
-        typeof node.todoId === "string" && node.todoId.trim()
-          ? node.todoId
-          : null,
-      owner: typeof node.owner === "string" ? node.owner : "",
-      collapsed: Boolean(node.collapsed),
-      estimateMinutes:
-        typeof node.estimateMinutes === "number" &&
-        Number.isFinite(node.estimateMinutes)
-          ? node.estimateMinutes
-          : null,
-      x: Number.isFinite(node.x) ? Number(node.x) : 0,
-      y: Number.isFinite(node.y) ? Number(node.y) : 0,
-      createdAt: typeof node.createdAt === "string" ? node.createdAt : nowIso(),
-      updatedAt: typeof node.updatedAt === "string" ? node.updatedAt : nowIso(),
-    }));
-
-  const validNodeIds: Set<string> = new Set(
-    safeWorkspace.graph.nodes.map((node: GraphNode) => node.id),
-  );
-
-  safeWorkspace.graph.edges = safeWorkspace.graph.edges
-    .filter((edge: GraphEdge) => Boolean(edge))
-    .map((edge: GraphEdge) => ({
-      id: typeof edge.id === "string" ? edge.id : makeId("edge"),
-      from: typeof edge.from === "string" ? edge.from : "",
-      to: typeof edge.to === "string" ? edge.to : "",
-      type: normalizeEdgeType(edge.type),
-      createdAt: typeof edge.createdAt === "string" ? edge.createdAt : nowIso(),
-      updatedAt: typeof edge.updatedAt === "string" ? edge.updatedAt : nowIso(),
-    }))
-    .filter(
-      (edge: GraphEdge) =>
-        validNodeIds.has(edge.from) && validNodeIds.has(edge.to),
-    );
 
   if (
     safeWorkspace.todos.length > 0 &&

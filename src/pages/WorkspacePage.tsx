@@ -1,5 +1,4 @@
 import {
-  GraphWorkspace,
   ToastShelf,
   WorkspaceHeader,
   WorkspaceMain,
@@ -9,7 +8,6 @@ import { useWorkspacePageController } from "../features/workspace/useWorkspacePa
 
 export default function WorkspacePage() {
   const {
-    viewMode,
     openInputRef,
     importInputRef,
     onOpenInputChange,
@@ -18,7 +16,6 @@ export default function WorkspacePage() {
     toastShelfProps,
     headerProps,
     sidebarProps,
-    graphProps,
     mainProps,
   } = useWorkspacePageController();
 
@@ -47,7 +44,7 @@ export default function WorkspacePage() {
       <input
         ref={importInputRef}
         type="file"
-        accept=".json,.todo,.csv,.md,.markdown,.txt,.opml"
+        accept=".json,.todo,.csv,.md,.markdown,.txt"
         hidden
         multiple
         onChange={onImportInputChange}
@@ -56,13 +53,9 @@ export default function WorkspacePage() {
       <ToastShelf {...toastShelfProps} />
       <WorkspaceHeader {...headerProps} />
 
-      <div className="grid grid-cols-[minmax(280px,360px)_1fr] items-start gap-[clamp(0.8rem,2vw,1.45rem)]">
+      <div className="grid items-start gap-[clamp(0.8rem,2vw,1.45rem)] lg:grid-cols-[auto_minmax(0,1fr)]">
         <WorkspaceSidebar {...sidebarProps} />
-        {viewMode === "graph" ? (
-          <GraphWorkspace {...graphProps} />
-        ) : (
-          <WorkspaceMain {...mainProps} />
-        )}
+        <WorkspaceMain {...mainProps} />
       </div>
     </section>
   );

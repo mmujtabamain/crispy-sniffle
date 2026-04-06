@@ -2,7 +2,7 @@
 
 ## Files
 
-- `tokens.css`: semantic color tokens, typographic defaults, global reset, and focus utility.
+- `tokens.css`: semantic color tokens, type defaults, global reset, and focus utility.
 - `todo-app.css`: layout/components for the Tier 1 todo workspace.
 
 ## Extraction Guidance

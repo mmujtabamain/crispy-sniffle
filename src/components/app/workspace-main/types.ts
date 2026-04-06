@@ -24,11 +24,15 @@ export interface TodoComposerDraft {
 export interface TodoComposerProps {
   inputRef: MutableRefObject<HTMLInputElement | null>;
   value: TodoComposerDraft;
+  filtersOpen: boolean;
+  activeFilterCount: number;
   onChange: (patch: Partial<TodoComposerDraft>) => void;
+  onToggleFilters: () => void;
   onSubmit: () => void;
 }
 
 export interface TodoFiltersPanelProps {
+  open: boolean;
   filters: TodoFilters;
   availableTags: string[];
   savedFilters: SavedFilterPreset[];

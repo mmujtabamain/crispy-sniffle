@@ -110,11 +110,7 @@
 
   input[type="checkbox"]:focus,
   input[type="radio"]:focus {
-    outline: none;
-    ring: 2px var(--accent);
-    box-shadow:
-      0 0 0 2px var(--surface),
-      0 0 0 4px var(--accent);
+    @apply outline-none ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--surface)];
   }
 
   input[type="checkbox"]:checked,

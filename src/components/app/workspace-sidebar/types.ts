@@ -6,6 +6,17 @@ import type {
   RecentFileListItem,
 } from "../../../features/workspace/types";
 
+export interface WorkspaceRailProps {
+  collapsed: boolean;
+  propertiesOpen: boolean;
+  activeListName: string;
+  visibleTodoCount: number;
+  totalTodoCount: number;
+  onToggleCollapsed: () => void;
+  onOpenProperties: () => void;
+  onCloseProperties: () => void;
+}
+
 export interface ListsPanelProps {
   lists: List[];
   activeListId: string;
@@ -64,6 +75,7 @@ export interface DangerZonePanelProps {
 }
 
 export interface WorkspaceSidebarProps {
+  rail: WorkspaceRailProps;
   listsPanel: ListsPanelProps;
   workspaceSummary: WorkspaceSummaryPanelProps;
   persistencePanel: PersistencePanelProps;
