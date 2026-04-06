@@ -78,7 +78,7 @@ export default function ExportPanel({
         placeholder="Sprint notes"
       />
 
-      <label htmlFor="pdf-footer" className="setting-label">
+      <label htmlFor="pdf-footer" className="text-[0.83rem] text-[var(--ink-soft)]">
         PDF footer
       </label>
       <input
@@ -90,11 +90,11 @@ export default function ExportPanel({
         placeholder="Confidential"
       />
 
-      <div className="button-stack inline-row">
-        <button type="button" className="secondary-button" onClick={onExportPdf}>
+      <div className="grid gap-2 flex flex-wrap gap-2">
+        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportPdf}>
           <FileDown size={15} /> PDF
         </button>
-        <button type="button" className="secondary-button" onClick={onPrint}>
+        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onPrint}>
           <Printer size={15} /> Print
         </button>
       </div>
@@ -189,7 +189,7 @@ export default function ExportPanel({
         </label>
       </div>
 
-      <label htmlFor="image-bg" className="setting-label">
+      <label htmlFor="image-bg" className="text-[0.83rem] text-[var(--ink-soft)]">
         Image background
       </label>
       <input
@@ -203,7 +203,7 @@ export default function ExportPanel({
 
       <button
         type="button"
-        className="secondary-button"
+        className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
         onClick={onExportImages}
       >
         <FileImage size={15} /> Export images

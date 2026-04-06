@@ -24,7 +24,7 @@ export default function WorkspacePage() {
 
   return (
     <section
-      className="workspace-shell"
+      className="mx-auto grid gap-[clamp(0.8rem,1.8vw,1.4rem)] p-[clamp(1rem,2.8vw,2.2rem)] w-[min(1320px,100%-clamp(1rem,3vw,2.25rem))]"
       onDragOver={(event) => {
         event.preventDefault();
       }}
@@ -54,7 +54,7 @@ export default function WorkspacePage() {
       <ToastShelf {...toastShelfProps} />
       <WorkspaceHeader {...headerProps} />
 
-      <div className="workspace-grid">
+      <div className="grid grid-cols-[minmax(280px,360px)_1fr] items-start gap-[clamp(0.8rem,2vw,1.45rem)]">
         <WorkspaceSidebar {...sidebarProps} />
         {viewMode === "graph" ? (
           <GraphWorkspace {...graphProps} />

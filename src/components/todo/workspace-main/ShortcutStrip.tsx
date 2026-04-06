@@ -1,6 +1,6 @@
 export default function ShortcutStrip() {
   return (
-    <footer className="shortcut-strip">
+    <footer className="flex items-center flex-wrap gap-2">
       <span>Shortcuts:</span>
       <kbd>Cmd/Ctrl + N</kbd>
       <kbd>Cmd/Ctrl + S</kbd>

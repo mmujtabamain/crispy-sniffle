@@ -30,21 +30,21 @@ export default function TodoTimerSection({
       <div className="flex flex-wrap gap-2 items-center">
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={() => onStartTimer(todo.id)}
         >
           <Play size={14} /> Start 25m
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={onStopTimer}
         >
           <Pause size={14} /> Stop
         </button>
         <button
           type="button"
-          className="secondary-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
           onClick={onResetTimer}
         >
           <TimerReset size={14} /> Reset

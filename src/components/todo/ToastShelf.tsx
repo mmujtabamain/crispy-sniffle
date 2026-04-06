@@ -18,7 +18,12 @@ export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
         {toasts.map((toast: ToastItem) => (
           <motion.div
             key={toast.id}
-            className={`border rounded-[0.75rem] bg-[var(--surface)] shadow-[var(--shadow)] p-2 flex items-center justify-between gap-3 text-sm toast-${toast.type}`}
+            className={`border rounded-[0.75rem] bg-[var(--surface)] shadow-[var(--shadow)] p-2 flex items-center justify-between gap-3 text-sm ${
+              toast.type === "success" ? "border-[color-mix(in_oklch,var(--success)_50%,var(--line))]" :
+              toast.type === "warning" ? "border-[color-mix(in_oklch,var(--warning)_55%,var(--line))]" :
+              toast.type === "error" ? "border-[color-mix(in_oklch,var(--error)_58%,var(--line))]" :
+              "border-[color-mix(in_oklch,var(--line),transparent_20%)]"
+            }`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}

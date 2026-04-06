@@ -75,53 +75,53 @@ export default function GraphToolbar({
   onClearGraph,
 }: GraphToolbarProps) {
   return (
-    <section className="panel graph-toolbar-panel">
-      <div className="graph-toolbar-row">
-        <div className="graph-tool-group">
+    <section className="grid gap-[0.55rem] rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)]">
+      <div className="flex justify-between items-center gap-[0.55rem] flex-wrap">
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onAddNodeAtCenter}
           >
             <Sparkles size={14} /> Add node
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onDuplicateSelection}
           >
             <CopyPlus size={14} /> Duplicate
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onDuplicateSubtree}
           >
             <Workflow size={14} /> Duplicate subtree
           </button>
           <button
             type="button"
-            className="danger-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onDeleteSelection}
           >
             <Trash2 size={14} /> Delete selected
           </button>
         </div>
 
-        <div className="graph-tool-group">
-          <button type="button" className="secondary-button" onClick={onSelectAll}>
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onSelectAll}>
             <BringToFront size={14} /> Select all
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onClearSelection}
           >
             <Minimize size={14} /> Deselect
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onToggleCollapse}
           >
             <Network size={14} /> Collapse/Expand branch
@@ -129,8 +129,8 @@ export default function GraphToolbar({
         </div>
       </div>
 
-      <div className="graph-toolbar-row">
-        <div className="graph-tool-group">
+      <div className="flex justify-between items-center gap-[0.55rem] flex-wrap">
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
           <label>
             Edge style
             <select
@@ -148,7 +148,7 @@ export default function GraphToolbar({
           </label>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onApplyEdgeType}
           >
             <Link2 size={14} /> Apply edge style
@@ -167,7 +167,7 @@ export default function GraphToolbar({
             />
           </label>
 
-          <label className="inline-toggle">
+          <label className="flex items-center gap-[0.45rem]">
             <input
               type="checkbox"
               checked={snapToGrid}
@@ -176,7 +176,7 @@ export default function GraphToolbar({
             <span>Snap to grid</span>
           </label>
 
-          <label className="inline-toggle">
+          <label className="flex items-center gap-[0.45rem]">
             <input
               type="checkbox"
               checked={showMiniMap}
@@ -185,7 +185,7 @@ export default function GraphToolbar({
             <span>Minimap</span>
           </label>
 
-          <label className="inline-toggle">
+          <label className="flex items-center gap-[0.45rem]">
             <input
               type="checkbox"
               checked={focusMode}
@@ -194,7 +194,7 @@ export default function GraphToolbar({
             <span>Focus mode</span>
           </label>
 
-          <label className="inline-toggle">
+          <label className="flex items-center gap-[0.45rem]">
             <input
               type="checkbox"
               checked={showCriticalPath}
@@ -205,46 +205,46 @@ export default function GraphToolbar({
         </div>
       </div>
 
-      <div className="graph-toolbar-row">
-        <div className="graph-tool-group">
+      <div className="flex justify-between items-center gap-[0.55rem] flex-wrap">
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("left")}
           >
             <AlignCenterVertical size={14} /> Align left
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("right")}
           >
             <AlignCenterVertical size={14} /> Align right
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("hcenter")}
           >
             <AlignHorizontalJustifyCenter size={14} /> Align center
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("top")}
           >
             <AlignCenterVertical size={14} /> Align top
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("bottom")}
           >
             <AlignCenterVertical size={14} /> Align bottom
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAlignSelected("vcenter")}
           >
             <AlignVerticalJustifyCenter size={14} /> Align middle
@@ -252,60 +252,60 @@ export default function GraphToolbar({
         </div>
       </div>
 
-      <div className="graph-toolbar-row">
-        <div className="graph-tool-group">
+      <div className="flex justify-between items-center gap-[0.55rem] flex-wrap">
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAutoLayout("hierarchical")}
           >
             <Workflow size={14} /> Auto-layout (hierarchy)
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onAutoLayout("force")}
           >
             <Sparkles size={14} /> Auto-layout (force)
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onResetPositions}
           >
             <Grid2x2 size={14} /> Reset positions
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onSavePositions}
           >
             <FileDown size={14} /> Save positions
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onLoadPositions}
           >
             <FileUp size={14} /> Load positions
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onFitView}
           >
             <Maximize size={14} /> Fit graph
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onResetView}
           >
             <RotateCcw size={14} /> Reset view
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onCenterOnSelected}
             disabled={!selectedNodeId}
           >
@@ -314,8 +314,8 @@ export default function GraphToolbar({
         </div>
       </div>
 
-      <div className="graph-toolbar-row">
-        <div className="graph-search-wrap">
+      <div className="flex justify-between items-center gap-[0.55rem] flex-wrap">
+        <div className="inline-flex items-center gap-[0.35rem] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-[0.7rem] px-[0.25rem] py-[0.2rem] pl-[0.45rem] min-w-[min(100%,620px)] bg-[color-mix(in_oklch,var(--surface),white_10%)]">
           <Search size={14} />
           <input
             ref={searchInputRef}
@@ -323,12 +323,12 @@ export default function GraphToolbar({
             onChange={(event) => onSearchTextChange(event.target.value)}
             placeholder="Find nodes by name, tag, description"
           />
-          <button type="button" className="secondary-button" onClick={onFindNext}>
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onFindNext}>
             Find next
           </button>
         </div>
 
-        <div className="graph-tool-group">
+        <div className="flex gap-[0.35rem] flex-wrap items-center">
           <input
             value={exportName}
             onChange={(event) => onExportNameChange(event.target.value)}
@@ -347,7 +347,7 @@ export default function GraphToolbar({
               }
             />
           </label>
-          <label className="inline-toggle">
+          <label className="flex items-center gap-[0.45rem]">
             <input
               type="checkbox"
               checked={transparentExport}
@@ -365,42 +365,42 @@ export default function GraphToolbar({
           />
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onExportGraphJson}
           >
             <FileJson size={14} /> Graph JSON
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => importGraphRef.current?.click()}
           >
             <FileUp size={14} /> Import graph
           </button>
-          <button type="button" className="secondary-button" onClick={onExportSvg}>
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportSvg}>
             <FileDown size={14} /> SVG
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onExportImage("png")}
           >
             <FileImage size={14} /> PNG
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={() => onExportImage("jpg")}
           >
             <FileImage size={14} /> JPG
           </button>
-          <button type="button" className="secondary-button" onClick={onExportPdf}>
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportPdf}>
             <FileDown size={14} /> PDF
           </button>
-          <button type="button" className="secondary-button" onClick={onPrintGraph}>
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onPrintGraph}>
             <FileDown size={14} /> Print
           </button>
-          <button type="button" className="danger-button" onClick={onClearGraph}>
+          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onClearGraph}>
             <Trash2 size={14} /> Clear graph
           </button>
         </div>

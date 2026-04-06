@@ -14,21 +14,21 @@ export default function TodoFiltersPanel({
 }: TodoFiltersPanelProps) {
   return (
     <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-2 grid gap-2">
-      <div className="panel-headline-row">
+      <div className="flex justify-between items-center gap-2">
         <h3>
           <Filter size={16} /> Filters & Sorting
         </h3>
-        <div className="inline-row">
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="secondary-button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onSaveCurrentFilters}
           >
             Save current filter
           </button>
           <button
             type="button"
-            className="secondary-button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onClearFilters}
           >
             <X size={14} /> Clear

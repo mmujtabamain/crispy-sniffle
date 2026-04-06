@@ -144,20 +144,26 @@ export default function SortableTodoItem({
         )}
 
         <div className="flex gap-1 flex-wrap">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] priority-${todo.priority}`}>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] ${
+            todo.priority === "low" ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]" :
+            todo.priority === "medium" ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]" :
+            todo.priority === "high" ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]" :
+            todo.priority === "critical" ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]" :
+            ""
+          }`}>
             {todo.priority}
           </span>
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] status-${todo.status}`}>{todo.status}</span>
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">{todo.status}</span>
           {todo.dueDate && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] due-pill">Due {todo.dueDate}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">Due {todo.dueDate}</span>
           )}
           {todo.tags.slice(0, 3).map((tag: string) => (
-            <span key={`${todo.id}-${tag}`} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] tag-pill">
+            <span key={`${todo.id}-${tag}`} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
               #{tag}
             </span>
           ))}
           {todo.tags?.length > 3 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] tag-pill">+{todo.tags.length - 3}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">+{todo.tags.length - 3}</span>
           )}
         </div>
       </div>

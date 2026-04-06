@@ -5,7 +5,7 @@ export default function RecentFilesPanel({ recentFiles }: RecentFilesPanelProps)
   return (
     <PanelSection title="Recent Files">
       {recentFiles.length === 0 ? (
-        <p className="meta-line">No recent files yet.</p>
+        <p className="text-sm text-[var(--ink-1)]">No recent files yet.</p>
       ) : (
         <ul className="recent-list">
           {recentFiles.slice(0, 5).map((entry) => (

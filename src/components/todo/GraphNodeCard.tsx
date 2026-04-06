@@ -93,14 +93,20 @@ export default function GraphNodeCard({
       </div>
 
       <div className="flex gap-1 flex-wrap">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs priority-${data.priority || "medium"}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs ${
+          (data.priority || "medium") === "low" ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]" :
+          (data.priority || "medium") === "medium" ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]" :
+          (data.priority || "medium") === "high" ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]" :
+          (data.priority || "medium") === "critical" ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]" :
+          ""
+        }`}>
           {data.priority || "medium"}
         </span>
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs status-${data.status || "todo"}`}>
+        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
           {data.status || "todo"}
         </span>
         {typeof data.connectionCount === "number" && (
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs graph-link-pill">
+          <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs">
             <Link2 size={10} /> {data.connectionCount}
           </span>
         )}

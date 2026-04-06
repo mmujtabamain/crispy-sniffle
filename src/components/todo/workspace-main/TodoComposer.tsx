@@ -60,7 +60,7 @@ export default function TodoComposer({
           aria-label="Quick tags"
         />
       </div>
-      <button type="button" className="primary-button" onClick={onSubmit}>
+      <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold bg-[var(--accent)] text-[var(--bg-0)] border border-[color-mix(in_oklch,var(--accent),black_20%)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onSubmit}>
         <Sparkles size={16} /> Add
       </button>
     </div>

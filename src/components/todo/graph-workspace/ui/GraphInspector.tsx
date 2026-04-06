@@ -27,7 +27,7 @@ export default function GraphInspector({
   return (
     <section className="grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)]">
       <h3>Graph Inspector</h3>
-      <p className="meta-line">
+      <p className="text-sm text-[var(--ink-1)]">
         {nodeCount} nodes, {edgeCount} connections, {selectedNodeCount} selected
         node(s), {selectedEdgeCount} selected edge(s)
       </p>
@@ -240,8 +240,8 @@ export default function GraphInspector({
             </select>
           </label>
 
-          <div className="inline-row">
-            <label className="inline-toggle">
+          <div className="flex flex-wrap gap-2">
+            <label className="flex items-center gap-[0.45rem]">
               <input
                 type="checkbox"
                 checked={Boolean(activeNode.completed)}
@@ -252,7 +252,7 @@ export default function GraphInspector({
               <span>Completed</span>
             </label>
 
-            <label className="inline-toggle">
+            <label className="flex items-center gap-[0.45rem]">
               <input
                 type="checkbox"
                 checked={Boolean(activeNode.collapsed)}
@@ -263,7 +263,7 @@ export default function GraphInspector({
               <span>Collapsed</span>
             </label>
 
-            <label className="inline-toggle">
+            <label className="flex items-center gap-[0.45rem]">
               <input
                 type="checkbox"
                 checked={Boolean(activeNode.shadow)}
@@ -275,10 +275,10 @@ export default function GraphInspector({
             </label>
           </div>
 
-          <div className="inline-row">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="secondary-button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
               onClick={() => {
                 const descendants = getDescendantNodeIds(activeNode.id, edges);
                 onNotify(
@@ -292,7 +292,7 @@ export default function GraphInspector({
             {linkedTodo ? (
               <button
                 type="button"
-                className="secondary-button"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
                 onClick={() => onJumpToTodo?.(linkedTodo.id)}
               >
                 <Focus size={14} /> Open linked todo
@@ -300,20 +300,20 @@ export default function GraphInspector({
             ) : null}
             <button
               type="button"
-              className="secondary-button"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
               onClick={() => onCenterOnNode(activeNode.id)}
             >
               <Focus size={14} /> Center on node
             </button>
           </div>
 
-          <p className="meta-line">
+          <p className="text-sm text-[var(--ink-1)]">
             Created: {new Date(activeNode.createdAt).toLocaleString()} · Updated:{" "}
             {new Date(activeNode.updatedAt).toLocaleString()}
           </p>
         </div>
       ) : (
-        <p className="meta-line">
+        <p className="text-sm text-[var(--ink-1)]">
           Select a node to edit shape, metadata, colors, links, and branch
           controls.
         </p>

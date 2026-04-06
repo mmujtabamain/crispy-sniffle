@@ -29,12 +29,12 @@ export default function ListsPanel({
   );
 
   return (
-    <div className="panel">
+    <div className="grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)]">
       <div className="flex justify-between items-center gap-2">
         <h2>Lists</h2>
         <button
           type="button"
-          className="ghost-button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
           onClick={() => {
             const name = window.prompt("New list name", "New list");
             if (!name) {
@@ -49,7 +49,7 @@ export default function ListsPanel({
         </button>
       </div>
 
-      <label className="inline-toggle">
+      <label className="flex items-center gap-[0.45rem]">
         <input
           type="checkbox"
           checked={showArchivedLists}
@@ -66,10 +66,14 @@ export default function ListsPanel({
           >
             <button
               type="button"
-              className="list-select"
+              className={`flex gap-2 items-center px-3 py-2 rounded-xl cursor-pointer transition-all ${
+                list.id === activeListId
+                  ? "bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_35%)]"
+                  : "hover:bg-[color-mix(in_oklch,var(--surface),white_8%)]"
+              }`}
               onClick={() => onSelectList(list.id)}
             >
-              <span className="list-icon" style={{ background: list.color }}>
+              <span className="inline-flex items-center justify-center w-[1.5rem] h-[1.5rem] rounded-[0.5rem] text-xs font-semibold text-white" style={{ background: list.color }}>
                 {list.icon}
               </span>
               <span>
@@ -80,7 +84,7 @@ export default function ListsPanel({
             <div className="flex gap-1 flex-wrap">
               <button
                 type="button"
-                className="ghost-button"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                 onClick={() => onMoveList(list.id, -1)}
                 disabled={index === 0}
               >
@@ -88,7 +92,7 @@ export default function ListsPanel({
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                 onClick={() => onMoveList(list.id, 1)}
                 disabled={index === visibleLists.length - 1}
               >
@@ -96,7 +100,7 @@ export default function ListsPanel({
               </button>
               <button
                 type="button"
-                className="ghost-button"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                 onClick={() => onRenameList(list.id)}
               >
                 <Star size={14} />
@@ -104,7 +108,7 @@ export default function ListsPanel({
               {list.archived ? (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                   onClick={() => onRestoreList(list.id)}
                 >
                   <Undo2 size={14} />
@@ -112,7 +116,7 @@ export default function ListsPanel({
               ) : (
                 <button
                   type="button"
-                  className="ghost-button"
+                  className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                   onClick={() => onArchiveList(list.id)}
                 >
                   <Archive size={14} />
@@ -120,7 +124,7 @@ export default function ListsPanel({
               )}
               <button
                 type="button"
-                className="ghost-button danger"
+                className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0 min-w-9 px-2"
                 onClick={() => onDeleteList(list.id)}
               >
                 <Trash2 size={14} />
