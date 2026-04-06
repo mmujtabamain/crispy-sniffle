@@ -21,7 +21,7 @@ export default function TodoFiltersPanel({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
             onClick={onSaveCurrentFilters}
           >
             Save current filter

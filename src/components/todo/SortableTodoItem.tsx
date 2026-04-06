@@ -103,19 +103,28 @@ export default function SortableTodoItem({
         ⋮⋮
       </button>
 
-      <label className="relative inline-flex items-center justify-center w-[1.34rem] h-[1.34rem]" title="Toggle complete">
+      <label
+        className="relative inline-flex items-center justify-center w-[1.34rem] h-[1.34rem]"
+        title="Toggle complete"
+      >
         <input
           type="checkbox"
           checked={todo.completed}
           onChange={() => onToggle(todo.id)}
           aria-label={`Mark ${todo.text} as ${todo.completed ? "incomplete" : "complete"}`}
         />
-        <span className="absolute grid place-items-center pointer-events-none opacity-0 text-[var(--bg-0)] scale-90 transition-all [.todo-check-wrap_input:checked+&]:opacity-100 [.todo-check-wrap_input:checked+&]:scale-100" aria-hidden="true">
+        <span
+          className="absolute grid place-items-center pointer-events-none opacity-0 text-[var(--bg-0)] scale-90 transition-all [.todo-check-wrap_input:checked+&]:opacity-100 [.todo-check-wrap_input:checked+&]:scale-100"
+          aria-hidden="true"
+        >
           <Check size={14} />
         </span>
       </label>
 
-      <div className="min-w-0 grid gap-1" onDoubleClick={() => onBeginEdit(todo)}>
+      <div
+        className="min-w-0 grid gap-1"
+        onDoubleClick={() => onBeginEdit(todo)}
+      >
         {isEditing ? (
           <input
             className="w-full"
@@ -139,31 +148,48 @@ export default function SortableTodoItem({
             className="block border-none bg-transparent w-full text-left cursor-text min-w-0"
             onClick={() => onBeginEdit(todo)}
           >
-            <span className="whitespace-nowrap overflow-hidden text-ellipsis">{todo.text}</span>
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis">
+              {todo.text}
+            </span>
           </button>
         )}
 
         <div className="flex gap-1 flex-wrap">
-          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] ${
-            todo.priority === "low" ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]" :
-            todo.priority === "medium" ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]" :
-            todo.priority === "high" ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]" :
-            todo.priority === "critical" ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]" :
-            ""
-          }`}>
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] ${
+              todo.priority === "low"
+                ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]"
+                : todo.priority === "medium"
+                  ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]"
+                  : todo.priority === "high"
+                    ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]"
+                    : todo.priority === "critical"
+                      ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]"
+                      : ""
+            }`}
+          >
             {todo.priority}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">{todo.status}</span>
+          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
+            {todo.status}
+          </span>
           {todo.dueDate && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">Due {todo.dueDate}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
+              Due {todo.dueDate}
+            </span>
           )}
           {todo.tags.slice(0, 3).map((tag: string) => (
-            <span key={`${todo.id}-${tag}`} className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
+            <span
+              key={`${todo.id}-${tag}`}
+              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]"
+            >
               #{tag}
             </span>
           ))}
           {todo.tags?.length > 3 && (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">+{todo.tags.length - 3}</span>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs text-[var(--ink-1)] bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
+              +{todo.tags.length - 3}
+            </span>
           )}
         </div>
       </div>

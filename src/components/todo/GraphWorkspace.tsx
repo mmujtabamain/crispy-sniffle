@@ -816,7 +816,9 @@ function GraphWorkspaceInner({
         onConnect={handleConnect}
         onSelectionChange={handleSelectionChange}
         onPaneDoubleClick={handlePaneDoubleClick}
-        onNodeMouseEnter={(_event, node: FlowNodeLike) => setHoveredNodeId(node.id)}
+        onNodeMouseEnter={(_event, node: FlowNodeLike) =>
+          setHoveredNodeId(node.id)
+        }
         onNodeMouseLeave={() => setHoveredNodeId(null)}
         snapToGrid={snapToGrid}
         gridSize={gridSize}

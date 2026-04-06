@@ -30,7 +30,9 @@ export default function WorkspacePage() {
       }}
       onDrop={(event) => {
         event.preventDefault();
-        const files = event.dataTransfer?.files ? [...event.dataTransfer.files] : [];
+        const files = event.dataTransfer?.files
+          ? [...event.dataTransfer.files]
+          : [];
         onDropFiles(files);
       }}
     >

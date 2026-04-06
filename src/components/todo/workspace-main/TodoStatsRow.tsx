@@ -17,7 +17,9 @@ export default function TodoStatsRow({
       </div>
       <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
         <strong className="font-serif text-[1.2rem]">{totalCount}</strong>
-        <span className="text-xs text-[var(--ink-soft)]">In {activeListName || "list"}</span>
+        <span className="text-xs text-[var(--ink-soft)]">
+          In {activeListName || "list"}
+        </span>
       </div>
       <div className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] bg-[color-mix(in_oklch,var(--surface),white_9%)] rounded-[0.8rem] p-2.5 grid">
         <strong className="font-serif text-[1.2rem]">{completedCount}</strong>

@@ -22,7 +22,11 @@ export default function TodoPrimaryActions({
       >
         <Archive size={15} /> Archive completed
       </button>
-      <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onClearAll}>
+      <button
+        type="button"
+        className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+        onClick={onClearAll}
+      >
         <Trash2 size={15} /> Clear all
       </button>
     </div>

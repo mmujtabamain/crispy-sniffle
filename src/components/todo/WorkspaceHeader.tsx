@@ -30,8 +30,12 @@ export default function WorkspaceHeader({
   return (
     <header className="flex justify-between items-start gap-4 border-b border-[color-mix(in_oklch,var(--line),transparent_20%)] pb-3">
       <div className="max-w-[80ch]">
-        <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--ink-soft)]">Multi List Planner</p>
-        <h1 className="mt-1 text-[clamp(1.7rem,2.8vw,3rem)] leading-[1.2] tracking-[-0.02em] [text-wrap:balance]">TaskScape</h1>
+        <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--ink-soft)]">
+          Multi List Planner
+        </p>
+        <h1 className="mt-1 text-[clamp(1.7rem,2.8vw,3rem)] leading-[1.2] tracking-[-0.02em] [text-wrap:balance]">
+          TaskScape
+        </h1>
         <p className="mt-2 text-[var(--ink-1)] max-w-[72ch]">
           Active list: <strong>{activeListName || "Untitled list"}</strong> ·
           Showing {visibleTodoCount} of {totalListTodos} todos
@@ -39,7 +43,11 @@ export default function WorkspaceHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-3xl bg-[color-mix(in_oklch,var(--surface),white_8%)] p-1" role="group" aria-label="Workspace view">
+        <div
+          className="inline-flex items-center gap-1 border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-3xl bg-[color-mix(in_oklch,var(--surface),white_8%)] p-1"
+          role="group"
+          aria-label="Workspace view"
+        >
           <button
             type="button"
             className={`border-none bg-transparent rounded-[0.58rem] min-h-[1.95rem] px-2.5 text-xs text-[var(--ink-soft)] cursor-pointer transition-colors ${viewMode === "list" ? "bg-[color-mix(in_oklch,var(--accent-soft)_58%,var(--surface))] text-[var(--ink-0)]" : "hover:bg-[color-mix(in_oklch,var(--surface),var(--accent-soft)_32%)] hover:text-[var(--ink-1)]"}`}

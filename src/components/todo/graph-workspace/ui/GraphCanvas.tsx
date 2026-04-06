@@ -27,7 +27,10 @@ export default function GraphCanvas({
   searchMatches,
 }: GraphCanvasProps) {
   return (
-    <div className="grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)] min-h-[clamp(420px,68vh,820px)] p-0 overflow-hidden" ref={canvasRef}>
+    <div
+      className="grid gap-2 rounded-2xl p-3 bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] shadow-[var(--shadow)] min-h-[clamp(420px,68vh,820px)] p-0 overflow-hidden"
+      ref={canvasRef}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}

@@ -25,7 +25,8 @@ export function loadWorkspaceBootState(): WorkspaceBootState {
   const nextActiveListId =
     typeof settings.activeListId === "string" && settings.activeListId
       ? settings.activeListId
-      : loaded.workspace.preferences.activeListId || loaded.workspace.lists[0]?.id;
+      : loaded.workspace.preferences.activeListId ||
+        loaded.workspace.lists[0]?.id;
 
   const patchedWorkspace: Workspace = {
     ...loaded.workspace,

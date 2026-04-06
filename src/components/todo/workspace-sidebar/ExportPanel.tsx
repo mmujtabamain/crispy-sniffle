@@ -35,7 +35,10 @@ export default function ExportPanel({
         <option value="selected">Selected todos</option>
       </select>
 
-      <label htmlFor="export-filename" className="text-xs text-[var(--ink-soft)]">
+      <label
+        htmlFor="export-filename"
+        className="text-xs text-[var(--ink-soft)]"
+      >
         Filename stem
       </label>
       <input
@@ -48,10 +51,18 @@ export default function ExportPanel({
       />
 
       <div className="grid grid-cols-2 gap-2">
-        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportJson}>
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+          onClick={onExportJson}
+        >
           <FileDown size={15} /> JSON
         </button>
-        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportCsv}>
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+          onClick={onExportCsv}
+        >
           <FileSpreadsheet size={15} /> CSV
         </button>
         <button
@@ -61,7 +72,11 @@ export default function ExportPanel({
         >
           <FileText size={15} /> Markdown
         </button>
-        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportTxt}>
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+          onClick={onExportTxt}
+        >
           <FileText size={15} /> TXT
         </button>
       </div>
@@ -78,7 +93,10 @@ export default function ExportPanel({
         placeholder="Sprint notes"
       />
 
-      <label htmlFor="pdf-footer" className="text-[0.83rem] text-[var(--ink-soft)]">
+      <label
+        htmlFor="pdf-footer"
+        className="text-[0.83rem] text-[var(--ink-soft)]"
+      >
         PDF footer
       </label>
       <input
@@ -90,11 +108,19 @@ export default function ExportPanel({
         placeholder="Confidential"
       />
 
-      <div className="grid gap-2 flex flex-wrap gap-2">
-        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportPdf}>
+      <div className="grid flex-wrap gap-2">
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+          onClick={onExportPdf}
+        >
           <FileDown size={15} /> PDF
         </button>
-        <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onPrint}>
+        <button
+          type="button"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+          onClick={onPrint}
+        >
           <Printer size={15} /> Print
         </button>
       </div>
@@ -189,7 +215,10 @@ export default function ExportPanel({
         </label>
       </div>
 
-      <label htmlFor="image-bg" className="text-[0.83rem] text-[var(--ink-soft)]">
+      <label
+        htmlFor="image-bg"
+        className="text-[0.83rem] text-[var(--ink-soft)]"
+      >
         Image background
       </label>
       <input

@@ -63,7 +63,11 @@ export default function GraphNodeCard({
       style={nodeStyle}
       title={data.description || data.label}
     >
-      <Handle type="target" position={Position.Left} className="w-2.5 h-2.5 border border-[color-mix(in_oklch,var(--node-border),transparent_12%)] rounded bg-[color-mix(in_oklch,var(--node-bg),black_30%)]" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="w-2.5 h-2.5 border border-[color-mix(in_oklch,var(--node-border),transparent_12%)] rounded bg-[color-mix(in_oklch,var(--node-bg),black_30%)]"
+      />
 
       <div className="flex items-center gap-2">
         <button
@@ -88,18 +92,26 @@ export default function GraphNodeCard({
           title="Double-click to rename"
         >
           <span className="text-[0.82rem]">{data.icon || "◉"}</span>
-          <span className="whitespace-nowrap overflow-hidden text-ellipsis font-[650]">{data.label}</span>
+          <span className="whitespace-nowrap overflow-hidden text-ellipsis font-[650]">
+            {data.label}
+          </span>
         </button>
       </div>
 
       <div className="flex gap-1 flex-wrap">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs ${
-          (data.priority || "medium") === "low" ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]" :
-          (data.priority || "medium") === "medium" ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]" :
-          (data.priority || "medium") === "high" ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]" :
-          (data.priority || "medium") === "critical" ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]" :
-          ""
-        }`}>
+        <span
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs ${
+            (data.priority || "medium") === "low"
+              ? "bg-[color-mix(in_oklch,var(--success)_15%,var(--surface))]"
+              : (data.priority || "medium") === "medium"
+                ? "bg-[color-mix(in_oklch,var(--warning)_18%,var(--surface))]"
+                : (data.priority || "medium") === "high"
+                  ? "bg-[color-mix(in_oklch,var(--accent)_16%,var(--surface))]"
+                  : (data.priority || "medium") === "critical"
+                    ? "bg-[color-mix(in_oklch,var(--error)_20%,var(--surface))]"
+                    : ""
+          }`}
+        >
           {data.priority || "medium"}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 border border-[var(--line)] text-xs bg-[color-mix(in_oklch,var(--surface),white_8%)] dark:bg-[color-mix(in_oklch,var(--surface),black_18%)]">
@@ -118,7 +130,10 @@ export default function GraphNodeCard({
           role="status"
           aria-label={`Branch progress ${progress}%`}
         >
-          <span className="block h-full bg-[color-mix(in_oklch,var(--success),white_15%)]" style={{ width: `${progress}%` }} />
+          <span
+            className="block h-full bg-[color-mix(in_oklch,var(--success),white_15%)]"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       )}
 

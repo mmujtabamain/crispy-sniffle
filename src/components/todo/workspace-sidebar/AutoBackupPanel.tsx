@@ -8,7 +8,10 @@ export default function AutoBackupPanel({
 }: AutoBackupPanelProps) {
   return (
     <PanelSection title="Auto-Backup">
-      <label htmlFor="autosave-select" className="text-[0.83rem] text-[var(--ink-soft)]">
+      <label
+        htmlFor="autosave-select"
+        className="text-[0.83rem] text-[var(--ink-soft)]"
+      >
         Snapshot interval
       </label>
       <select
@@ -20,7 +23,9 @@ export default function AutoBackupPanel({
         <option value={5}>5 minutes</option>
         <option value={10}>10 minutes</option>
       </select>
-      <p className="text-sm text-[var(--ink-1)]">{backupsCount} local snapshots retained</p>
+      <p className="text-sm text-[var(--ink-1)]">
+        {backupsCount} local snapshots retained
+      </p>
     </PanelSection>
   );
 }

@@ -42,19 +42,24 @@ export default function ImportPanel({
         </p>
       ) : (
         <>
-          <ul className="list-none grid gap-2">
+          <ul className="grid gap-2 list-none">
             {importPreviews.map((preview) => (
               <li key={preview.id}>
-                <div className="flex justify-between items-baseline gap-3 text-sm">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
                   <span>
-                    {preview.fileName} <small className="text-[0.62rem] uppercase tracking-[0.05em]">{preview.kind}</small>
+                    {preview.fileName}{" "}
+                    <small className="text-[0.62rem] uppercase tracking-[0.05em]">
+                      {preview.kind}
+                    </small>
                   </span>
-                  <small className="text-[var(--ink-soft)]">{preview.previewCount} items</small>
+                  <small className="text-[var(--ink-soft)]">
+                    {preview.previewCount} items
+                  </small>
                 </div>
               </li>
             ))}
           </ul>
-          <div className="grid gap-2 flex flex-wrap gap-2">
+          <div className="grid flex-wrap gap-2">
             <button
               type="button"
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"

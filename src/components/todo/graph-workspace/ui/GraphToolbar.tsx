@@ -109,7 +109,11 @@ export default function GraphToolbar({
         </div>
 
         <div className="flex gap-[0.35rem] flex-wrap items-center">
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onSelectAll}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onSelectAll}
+          >
             <BringToFront size={14} /> Select all
           </button>
           <button
@@ -136,7 +140,9 @@ export default function GraphToolbar({
             <select
               value={defaultEdgeType}
               onChange={(event) =>
-                onDefaultEdgeTypeChange(event.target.value as typeof defaultEdgeType)
+                onDefaultEdgeTypeChange(
+                  event.target.value as typeof defaultEdgeType,
+                )
               }
             >
               {EDGE_TYPES.map((entry) => (
@@ -162,7 +168,9 @@ export default function GraphToolbar({
               max={120}
               value={gridSize}
               onChange={(event) =>
-                onGridSizeChange(clamp(Number(event.target.value) || 28, 8, 120))
+                onGridSizeChange(
+                  clamp(Number(event.target.value) || 28, 8, 120),
+                )
               }
             />
           </label>
@@ -198,7 +206,9 @@ export default function GraphToolbar({
             <input
               type="checkbox"
               checked={showCriticalPath}
-              onChange={(event) => onShowCriticalPathChange(event.target.checked)}
+              onChange={(event) =>
+                onShowCriticalPathChange(event.target.checked)
+              }
             />
             <span>Critical path</span>
           </label>
@@ -323,7 +333,11 @@ export default function GraphToolbar({
             onChange={(event) => onSearchTextChange(event.target.value)}
             placeholder="Find nodes by name, tag, description"
           />
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onFindNext}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onFindNext}
+          >
             Find next
           </button>
         </div>
@@ -343,7 +357,9 @@ export default function GraphToolbar({
               max={5}
               value={exportScale}
               onChange={(event) =>
-                onExportScaleChange(clamp(Number(event.target.value) || 2, 1, 5))
+                onExportScaleChange(
+                  clamp(Number(event.target.value) || 2, 1, 5),
+                )
               }
             />
           </label>
@@ -377,7 +393,11 @@ export default function GraphToolbar({
           >
             <FileUp size={14} /> Import graph
           </button>
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportSvg}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onExportSvg}
+          >
             <FileDown size={14} /> SVG
           </button>
           <button
@@ -394,13 +414,25 @@ export default function GraphToolbar({
           >
             <FileImage size={14} /> JPG
           </button>
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onExportPdf}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onExportPdf}
+          >
             <FileDown size={14} /> PDF
           </button>
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onPrintGraph}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onPrintGraph}
+          >
             <FileDown size={14} /> Print
           </button>
-          <button type="button" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0" onClick={onClearGraph}>
+          <button
+            type="button"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold text-[color-mix(in_oklch,var(--error),var(--ink-0)_24%)] border border-[color-mix(in_oklch,var(--error)_50%,var(--line))] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            onClick={onClearGraph}
+          >
             <Trash2 size={14} /> Clear graph
           </button>
         </div>

@@ -1,7 +1,9 @@
 import PanelSection from "../PanelSection";
 import type { RecentFilesPanelProps } from "./types";
 
-export default function RecentFilesPanel({ recentFiles }: RecentFilesPanelProps) {
+export default function RecentFilesPanel({
+  recentFiles,
+}: RecentFilesPanelProps) {
   return (
     <PanelSection title="Recent Files">
       {recentFiles.length === 0 ? (

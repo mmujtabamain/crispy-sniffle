@@ -1,10 +1,5 @@
 import { Focus, Network } from "lucide-react";
-import {
-  PRIORITIES,
-  SHAPES,
-  SIZES,
-  STATUSES,
-} from "../constants";
+import { PRIORITIES, SHAPES, SIZES, STATUSES } from "../constants";
 import { getDescendantNodeIds } from "../../../../lib/graph-layout";
 import { parseTags } from "../utils";
 import type { GraphNode } from "../../../../lib/workspace";
@@ -308,8 +303,8 @@ export default function GraphInspector({
           </div>
 
           <p className="text-sm text-[var(--ink-1)]">
-            Created: {new Date(activeNode.createdAt).toLocaleString()} · Updated:{" "}
-            {new Date(activeNode.updatedAt).toLocaleString()}
+            Created: {new Date(activeNode.createdAt).toLocaleString()} ·
+            Updated: {new Date(activeNode.updatedAt).toLocaleString()}
           </p>
         </div>
       ) : (

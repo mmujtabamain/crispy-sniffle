@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, MutableRefObject } from "react";
 import {
   KeyboardSensor,
@@ -115,7 +109,8 @@ export function useWorkspacePageController(): WorkspacePageController {
   const [quotaStatus, setQuotaStatus] = useState(boot.quotaStatus);
 
   const [newTodoText, setNewTodoText] = useState("");
-  const [quickPriority, setQuickPriority] = useState<Todo["priority"]>("medium");
+  const [quickPriority, setQuickPriority] =
+    useState<Todo["priority"]>("medium");
   const [quickDueDate, setQuickDueDate] = useState("");
   const [quickTags, setQuickTags] = useState("");
 
@@ -186,15 +181,15 @@ export function useWorkspacePageController(): WorkspacePageController {
 
   const dragDisabled = Boolean(
     filters.sortBy !== "manual" ||
-      filters.completion !== "active" ||
-      filters.priority !== "all" ||
-      filters.status !== "all" ||
-      filters.startDate ||
-      filters.endDate ||
-      filters.tags.length > 0 ||
-      filters.searchText ||
-      filters.searchTag ||
-      filters.smartFilter !== "none",
+    filters.completion !== "active" ||
+    filters.priority !== "all" ||
+    filters.status !== "all" ||
+    filters.startDate ||
+    filters.endDate ||
+    filters.tags.length > 0 ||
+    filters.searchText ||
+    filters.searchTag ||
+    filters.smartFilter !== "none",
   );
 
   const sensors = useSensors(
@@ -242,7 +237,10 @@ export function useWorkspacePageController(): WorkspacePageController {
     });
   }
 
-  function replaceActiveListTodos(nextListTodos: Todo[], options?: CommitOptions) {
+  function replaceActiveListTodos(
+    nextListTodos: Todo[],
+    options?: CommitOptions,
+  ) {
     if (!activeList?.id) {
       return;
     }
@@ -250,7 +248,11 @@ export function useWorkspacePageController(): WorkspacePageController {
     commitWorkspace(
       (prevWorkspace) => ({
         ...prevWorkspace,
-        todos: mergeListTodos(prevWorkspace.todos, activeList.id, nextListTodos),
+        todos: mergeListTodos(
+          prevWorkspace.todos,
+          activeList.id,
+          nextListTodos,
+        ),
       }),
       options,
     );
@@ -1055,7 +1057,10 @@ export function useWorkspacePageController(): WorkspacePageController {
       setImportPreviews(
         parsed.map((entry) => ({ ...entry, id: makeId("import") })),
       );
-      notify("success", `${parsed.length} file(s) prepared for import preview.`);
+      notify(
+        "success",
+        `${parsed.length} file(s) prepared for import preview.`,
+      );
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Import parse failed.";
@@ -1239,7 +1244,10 @@ export function useWorkspacePageController(): WorkspacePageController {
         syncRecentFiles();
 
         if (result.warnings.length > 0) {
-          notify("warning", `Loaded with repairs: ${result.warnings.join(" ")}`);
+          notify(
+            "warning",
+            `Loaded with repairs: ${result.warnings.join(" ")}`,
+          );
         } else {
           notify("success", "Workspace file loaded.");
         }
@@ -1270,16 +1278,17 @@ export function useWorkspacePageController(): WorkspacePageController {
 
       if (lowerName.endsWith(".csv")) {
         const text = await file.text();
-        const importedTodos: Todo[] = importTodosFromCsv(text, activeList.id).map(
-          (todo: Todo, index: number) => ({
-            ...todo,
-            id: makeId("todo"),
-            listId: activeList.id,
-            order: index,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }),
-        );
+        const importedTodos: Todo[] = importTodosFromCsv(
+          text,
+          activeList.id,
+        ).map((todo: Todo, index: number) => ({
+          ...todo,
+          id: makeId("todo"),
+          listId: activeList.id,
+          order: index,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
         replaceActiveListTodos(importedTodos);
         notify(
           "success",
@@ -1551,7 +1560,10 @@ export function useWorkspacePageController(): WorkspacePageController {
 
   useEffect(() => {
     if (boot.errors.length > 0) {
-      notify("warning", `Workspace was repaired on load: ${boot.errors.join(" ")}`);
+      notify(
+        "warning",
+        `Workspace was repaired on load: ${boot.errors.join(" ")}`,
+      );
     }
   }, [boot.errors]);
 

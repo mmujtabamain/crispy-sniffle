@@ -90,7 +90,9 @@ export default function TodoDetailsForm({
           Category
           <input
             value={todo.category || ""}
-            onChange={(event) => onPatch(todo.id, { category: event.target.value })}
+            onChange={(event) =>
+              onPatch(todo.id, { category: event.target.value })
+            }
             placeholder="Category"
           />
         </label>

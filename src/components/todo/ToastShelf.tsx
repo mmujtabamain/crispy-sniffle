@@ -13,16 +13,23 @@ export interface ToastShelfProps {
 
 export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
   return (
-    <div className="fixed right-4 top-4 w-min(340px,calc(100vw-2rem)) z-80 grid gap-3" aria-live="polite" aria-atomic="true">
+    <div
+      className="fixed right-4 top-4 w-min(340px,calc(100vw-2rem)) z-80 grid gap-3"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <AnimatePresence>
         {toasts.map((toast: ToastItem) => (
           <motion.div
             key={toast.id}
             className={`border rounded-[0.75rem] bg-[var(--surface)] shadow-[var(--shadow)] p-2 flex items-center justify-between gap-3 text-sm ${
-              toast.type === "success" ? "border-[color-mix(in_oklch,var(--success)_50%,var(--line))]" :
-              toast.type === "warning" ? "border-[color-mix(in_oklch,var(--warning)_55%,var(--line))]" :
-              toast.type === "error" ? "border-[color-mix(in_oklch,var(--error)_58%,var(--line))]" :
-              "border-[color-mix(in_oklch,var(--line),transparent_20%)]"
+              toast.type === "success"
+                ? "border-[color-mix(in_oklch,var(--success)_50%,var(--line))]"
+                : toast.type === "warning"
+                  ? "border-[color-mix(in_oklch,var(--warning)_55%,var(--line))]"
+                  : toast.type === "error"
+                    ? "border-[color-mix(in_oklch,var(--error)_58%,var(--line))]"
+                    : "border-[color-mix(in_oklch,var(--line),transparent_20%)]"
             }`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

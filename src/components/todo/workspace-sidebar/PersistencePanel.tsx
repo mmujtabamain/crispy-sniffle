@@ -1,9 +1,4 @@
-import {
-  FileDown,
-  FileUp,
-  LoaderCircle,
-  Save,
-} from "lucide-react";
+import { FileDown, FileUp, LoaderCircle, Save } from "lucide-react";
 import PanelSection from "../PanelSection";
 import type { PersistencePanelProps } from "./types";
 
