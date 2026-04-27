@@ -83,6 +83,8 @@ export interface TodoListPanelProps {
   onFocusTodo: (todoId: string | null) => void;
   onRenameTodo: (todoId: string, nextText: string) => boolean;
   onAddSubtask: (todoId: string, text: string) => void;
+  onToggleSubtask: (todoId: string, subtaskId: string) => void;
+  onDeleteSubtask: (todoId: string, subtaskId: string) => void;
 }
 
 export interface WorkspaceMainProps {

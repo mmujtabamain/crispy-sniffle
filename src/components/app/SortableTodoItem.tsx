@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
-import type { Todo } from "../../lib/workspace";
+import type { Subtask, Todo } from "../../lib/workspace";
 
 interface SortableTodoItemProps {
   todo: Todo;
@@ -31,6 +31,8 @@ interface SortableTodoItemProps {
   onFocus: (todoId: string) => void;
   onOpenContextMenu: (todoId: string, x: number, y: number) => void;
   onAddSubtask: (todoId: string, text: string) => void;
+  onToggleSubtask: (todoId: string, subtaskId: string) => void;
+  onDeleteSubtask: (todoId: string, subtaskId: string) => void;
   dragDisabled: boolean;
 }
 
@@ -52,6 +54,8 @@ export default function SortableTodoItem({
   onFocus,
   onOpenContextMenu,
   onAddSubtask,
+  onToggleSubtask,
+  onDeleteSubtask,
   dragDisabled,
 }: SortableTodoItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } =
@@ -325,6 +329,43 @@ export default function SortableTodoItem({
           </button>
         </div>
       )}
+
+      {(todo.subtasks || []).length > 0 ? (
+        <ul className="grid gap-1.5 list-none border-l border-[color-mix(in_oklch,var(--line),transparent_10%)] ml-[4.25rem] pl-3 pr-2 pb-2">
+          {(todo.subtasks || []).map((subtask: Subtask) => (
+            <li key={subtask.id} className="flex items-center gap-2 group/subtask min-w-0">
+              <label className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={subtask.completed}
+                  onChange={(event) => {
+                    event.stopPropagation();
+                    onToggleSubtask(todo.id, subtask.id);
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                />
+                <span
+                  className={`text-sm truncate ${subtask.completed ? "line-through text-[var(--ink-soft)]" : "text-[var(--ink-1)]"}`}
+                >
+                  {subtask.text}
+                </span>
+              </label>
+              <button
+                type="button"
+                className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[var(--ink-soft)] hover:text-[var(--error)] hover:bg-[color-mix(in_oklch,var(--error)_12%,var(--surface))] opacity-0 group-hover/subtask:opacity-100 transition-all"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDeleteSubtask(todo.id, subtask.id);
+                }}
+                aria-label="Delete subtask"
+                title="Delete subtask"
+              >
+                <Trash2 size={12} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </motion.li>
   );
 }

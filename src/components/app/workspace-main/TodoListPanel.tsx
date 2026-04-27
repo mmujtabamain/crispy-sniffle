@@ -29,6 +29,8 @@ export default function TodoListPanel({
   onFocusTodo,
   onRenameTodo,
   onAddSubtask,
+  onToggleSubtask,
+  onDeleteSubtask,
 }: TodoListPanelProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
@@ -173,6 +175,8 @@ export default function TodoListPanel({
                   onFocus={onFocusTodo}
                   onOpenContextMenu={openContextMenu}
                   onAddSubtask={onAddSubtask}
+                  onToggleSubtask={onToggleSubtask}
+                  onDeleteSubtask={onDeleteSubtask}
                   dragDisabled={dragDisabled}
                 />
               ))}
