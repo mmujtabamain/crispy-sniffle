@@ -701,10 +701,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     if (!listTodos.length) {
       return;
     }
-    const confirmed = window.confirm("Clear every todo in this list?");
-    if (!confirmed) {
-      return;
-    }
     replaceActiveListTodos([]);
     setSelectedTodoIds([]);
     notify("success", "All list todos cleared.");
@@ -752,156 +748,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     notify("success", `List "${name}" created.`);
   }
 
-  function handleRenameList(listId: string) {
-    const list = lists.find((entry) => entry.id === listId);
-    if (!list) {
-      return;
-    }
-
-    const name = window.prompt("Rename list", list.name);
-    if (!name) {
-      return;
-    }
-
-    const icon =
-      window.prompt("List icon or emoji", list.icon || "📋") || list.icon;
-    const color =
-      window.prompt("List color (hex)", list.color || "#b08968") || list.color;
-
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: prevWorkspace.lists.map((entry) =>
-        entry.id === listId
-          ? {
-              ...entry,
-              name,
-              icon,
-              color,
-              updatedAt: new Date().toISOString(),
-            }
-          : entry,
-      ),
-    }));
-  }
-
-  function handleDeleteList(listId: string) {
-    if (lists.length <= 1) {
-      notify("warning", "At least one list must remain.");
-      return;
-    }
-
-    const list = lists.find((entry) => entry.id === listId);
-    const confirmed = window.confirm(
-      `Delete list "${list?.name || "Untitled"}" and move its todos to another list?`,
-    );
-    if (!confirmed) {
-      return;
-    }
-
-    const fallback = lists.find((entry) => entry.id !== listId);
-    if (!fallback) {
-      return;
-    }
-
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: prevWorkspace.lists
-        .filter((entry) => entry.id !== listId)
-        .map((entry, index) => ({
-          ...entry,
-          order: index,
-        })),
-      todos: prevWorkspace.todos.map((todo) =>
-        todo.listId === listId
-          ? {
-              ...todo,
-              listId: fallback.id,
-              updatedAt: new Date().toISOString(),
-            }
-          : todo,
-      ),
-    }));
-
-    if (activeListId === listId) {
-      setActiveListId(fallback.id);
-    }
-
-    notify("success", "List deleted.");
-  }
-
-  function handleMoveList(listId: string, direction: number) {
-    const ordered = [...lists];
-    const fromIndex = ordered.findIndex((entry) => entry.id === listId);
-    const toIndex = fromIndex + direction;
-
-    if (fromIndex < 0 || toIndex < 0 || toIndex >= ordered.length) {
-      return;
-    }
-
-    const reordered = arrayMove(ordered, fromIndex, toIndex).map(
-      (entry, index) => ({
-        ...entry,
-        order: index,
-        updatedAt: new Date().toISOString(),
-      }),
-    );
-
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: prevWorkspace.lists.map(
-        (entry) =>
-          reordered.find((candidate) => candidate.id === entry.id) || entry,
-      ),
-    }));
-  }
-
-  function handleArchiveList(listId: string) {
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: prevWorkspace.lists.map((entry) =>
-        entry.id === listId
-          ? {
-              ...entry,
-              archived: true,
-              archivedAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }
-          : entry,
-      ),
-    }));
-
-    if (activeListId === listId) {
-      const nextActive =
-        lists.find((entry) => entry.id !== listId && !entry.archived) ||
-        lists.find((entry) => entry.id !== listId);
-      if (nextActive) {
-        setActiveListId(nextActive.id);
-      }
-    }
-  }
-
-  function handleRestoreList(listId: string) {
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: prevWorkspace.lists.map((entry) =>
-        entry.id === listId
-          ? {
-              ...entry,
-              archived: false,
-              archivedAt: null,
-              updatedAt: new Date().toISOString(),
-            }
-          : entry,
-      ),
-    }));
-  }
-
-  function handleSelectList(listId: string) {
-    setActiveListId(listId);
-    setSelectedTodoIds([]);
-    setFocusedTodoId(null);
-  }
-
   function handleFilterChange(
     key: keyof TodoFilters,
     value: TodoFilters[keyof TodoFilters],
@@ -917,11 +763,7 @@ export function useWorkspacePageController(): WorkspacePageController {
     notify("success", "Filters reset.");
   }
 
-  function handleSaveCurrentFilters() {
-    const name = window.prompt(
-      "Save current filter preset as",
-      `Preset ${savedFilters.length + 1}`,
-    );
+  function handleSaveCurrentFilters(name: string) {
     if (!name) {
       return;
     }
@@ -1399,18 +1241,10 @@ export function useWorkspacePageController(): WorkspacePageController {
         setFileHandle(saveResult.fileHandle);
         setFileName(saveResult.fileName || suggestedName);
       } else {
-        const requestedName = window.prompt(
-          "Save as filename",
-          fileName || DEFAULT_FILE_NAME,
-        );
-        if (!requestedName) {
-          setBusyAction("");
-          return;
-        }
         const normalizedName =
-          requestedName.endsWith(".json") || requestedName.endsWith(".todo")
-            ? requestedName
-            : `${requestedName}.todo.json`;
+          fileName.endsWith(".json") || fileName.endsWith(".todo")
+            ? fileName
+            : `${fileName}.todo.json`;
         downloadWorkspaceFile(workspaceWithPrefs, normalizedName);
         setFileName(normalizedName);
       }
@@ -1428,13 +1262,6 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   function handleClearLocalData() {
-    const confirmed = window.confirm(
-      "Clear all local workspace data, backups, and recent files?",
-    );
-    if (!confirmed) {
-      return;
-    }
-
     clearAllLocalData();
     pastRef.current = [];
     futureRef.current = [];
@@ -1678,23 +1505,14 @@ export function useWorkspacePageController(): WorkspacePageController {
       onOpenProperties: () => setPropertiesOpen(true),
       onCloseProperties: () => setPropertiesOpen(false),
     },
-    listsPanel: {
-      lists,
-      activeListId: activeList?.id || "",
-      onCreateList: handleCreateList,
-      onSelectList: handleSelectList,
-      onRenameList: handleRenameList,
-      onDeleteList: handleDeleteList,
-      onMoveList: handleMoveList,
-      onArchiveList: handleArchiveList,
-      onRestoreList: handleRestoreList,
-    },
     workspaceSummary: {
       title: workspace.meta.title,
       updatedAtLabel: formatRelativeDate(workspace.meta.updatedAt),
     },
     persistencePanel: {
       busyAction,
+      fileName,
+      onFileNameChange: (name: string) => setFileName(name),
       onOpen: handleOpenWorkspace,
       onSave: handleSaveWorkspace,
       onSaveAs: handleSaveWorkspaceAs,
@@ -1811,6 +1629,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       onDelete: handleDeleteTodo,
       onFocusTodo: setFocusedTodoId,
       onRenameTodo: handleRenameTodo,
+      onAddSubtask: handleAddSubtask,
     },
     inspector: {
       todo: focusedTodo,

@@ -4,6 +4,11 @@ import type { ImportMode } from "../../../features/workspace/types";
 import PanelSection from "../PanelSection";
 import type { ImportPanelProps } from "./types";
 
+const MODE_OPTIONS: { value: ImportMode; label: string }[] = [
+  { value: "merge", label: "Merge" },
+  { value: "replace", label: "Replace" },
+];
+
 export default function ImportPanel({
   importPreviews,
   onPickImportFiles,
@@ -14,27 +19,33 @@ export default function ImportPanel({
 
   return (
     <PanelSection title="Import">
-      <div className="grid gap-2">
-        <button
-          type="button"
-          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
-          onClick={onPickImportFiles}
-        >
-          <UploadCloud size={16} /> Import files
-        </button>
-      </div>
-
-      <label htmlFor="import-mode" className="text-xs text-[var(--ink-soft)]">
-        Import strategy
-      </label>
-      <select
-        id="import-mode"
-        value={importMode}
-        onChange={(event) => setImportMode(event.target.value as ImportMode)}
+      <button
+        type="button"
+        className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+        onClick={onPickImportFiles}
       >
-        <option value="merge">Merge imported todos</option>
-        <option value="replace">Replace current list todos</option>
-      </select>
+        <UploadCloud size={16} /> Import files
+      </button>
+
+      <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+        Import strategy
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {MODE_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => setImportMode(opt.value)}
+            className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition-all ${
+              importMode === opt.value
+                ? "bg-[var(--accent)] text-white shadow-sm"
+                : "bg-[color-mix(in_oklch,var(--bg-1),transparent_30%)] text-[var(--ink-1)] border border-[color-mix(in_oklch,var(--line),transparent_30%)] hover:bg-[color-mix(in_oklch,var(--line),transparent_40%)]"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
 
       {importPreviews.length === 0 ? (
         <p className="text-sm text-[var(--ink-1)]">
@@ -59,7 +70,7 @@ export default function ImportPanel({
               </li>
             ))}
           </ul>
-          <div className="grid flex-wrap gap-2">
+          <div className="grid gap-2">
             <button
               type="button"
               className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"

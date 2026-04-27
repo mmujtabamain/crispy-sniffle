@@ -12,7 +12,6 @@ import AutoBackupPanel from "./workspace-sidebar/AutoBackupPanel";
 import DangerZonePanel from "./workspace-sidebar/DangerZonePanel";
 import ExportPanel from "./workspace-sidebar/ExportPanel";
 import ImportPanel from "./workspace-sidebar/ImportPanel";
-import ListsPanel from "./workspace-sidebar/ListsPanel";
 import PersistencePanel from "./workspace-sidebar/PersistencePanel";
 import RecentFilesPanel from "./workspace-sidebar/RecentFilesPanel";
 import WorkspaceSummaryPanel from "./workspace-sidebar/WorkspaceSummaryPanel";
@@ -88,7 +87,6 @@ function RailButton({
 
 export default function WorkspaceSidebar({
   rail,
-  listsPanel,
   workspaceSummary,
   persistencePanel,
   autoBackupPanel,
@@ -156,7 +154,6 @@ export default function WorkspaceSidebar({
             aria-labelledby={propertiesTitleId}
             className="flex-1 overflow-y-auto p-3 grid gap-2 content-start"
           >
-            <ListsPanel {...listsPanel} />
             <WorkspaceSummaryPanel {...workspaceSummary} />
             <PersistencePanel {...persistencePanel} />
             <AutoBackupPanel {...autoBackupPanel} />

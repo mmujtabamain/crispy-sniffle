@@ -1,4 +1,5 @@
 import type { ChangeEvent } from "react";
+import { useRef, useState } from "react";
 import { BookmarkCheck, X } from "lucide-react";
 import type { TodoFiltersPanelProps } from "./types";
 
@@ -83,31 +84,88 @@ export default function TodoFiltersPanel({
   onApplySavedFilter,
   onDeleteSavedFilter,
 }: TodoFiltersPanelProps) {
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const presetInputRef = useRef<HTMLInputElement>(null);
+
+  function handleOpenSave() {
+    setSavingPreset(true);
+    setPresetName(`Preset ${savedFilters.length + 1}`);
+    window.setTimeout(() => {
+      presetInputRef.current?.select();
+    }, 0);
+  }
+
+  function handleCommitSave() {
+    const name = presetName.trim();
+    if (name) {
+      onSaveCurrentFilters(name);
+    }
+    setSavingPreset(false);
+    setPresetName("");
+  }
+
+  function handleCancelSave() {
+    setSavingPreset(false);
+    setPresetName("");
+  }
+
   return (
     <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-4 grid gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ink-soft)]">
           Filters & Sort
         </span>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
-            onClick={onSaveCurrentFilters}
-          >
-            <BookmarkCheck size={12} />
-            Save
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
-            onClick={onClearFilters}
-          >
-            <X size={12} />
-            Clear
-          </button>
-        </div>
+        {savingPreset ? (
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={presetInputRef}
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCommitSave();
+                if (e.key === "Escape") handleCancelSave();
+              }}
+              placeholder="Preset name"
+              className="h-7 text-xs px-2 rounded-lg border border-[var(--line)] bg-[var(--surface)]"
+              style={{ width: "120px" }}
+            />
+            <button
+              type="button"
+              className="inline-flex h-7 items-center rounded-lg px-2 text-xs font-semibold bg-[var(--accent)] text-white cursor-pointer transition-all hover:opacity-90"
+              onClick={handleCommitSave}
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-7 items-center rounded-lg px-2 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
+              onClick={handleCancelSave}
+            >
+              <X size={12} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
+              onClick={handleOpenSave}
+            >
+              <BookmarkCheck size={12} />
+              Save
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
+              onClick={onClearFilters}
+            >
+              <X size={12} />
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Completion · Priority · Status */}

@@ -9,6 +9,54 @@ import { DEFAULT_EXPORT_FILE_STEM } from "../../../lib/workspace-page-helpers";
 import PanelSection from "../PanelSection";
 import type { ExportPanelProps } from "./types";
 
+type ChipOption = { value: string; label: string };
+
+function ChipGroup({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: ChipOption[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition-all ${
+            value === opt.value
+              ? "bg-[var(--accent)] text-white shadow-sm"
+              : "bg-[color-mix(in_oklch,var(--bg-1),transparent_30%)] text-[var(--ink-1)] border border-[color-mix(in_oklch,var(--line),transparent_30%)] hover:bg-[color-mix(in_oklch,var(--line),transparent_40%)]"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const SCOPE_OPTIONS: ChipOption[] = [
+  { value: "list", label: "List" },
+  { value: "all", label: "All" },
+  { value: "selected", label: "Selected" },
+];
+
+const IMAGE_MODE_OPTIONS: ChipOption[] = [
+  { value: "single", label: "Single" },
+  { value: "gallery", label: "Gallery" },
+];
+
+const IMAGE_FORMAT_OPTIONS: ChipOption[] = [
+  { value: "png", label: "PNG" },
+  { value: "jpg", label: "JPG" },
+  { value: "both", label: "Both" },
+];
+
 export default function ExportPanel({
   exportConfig,
   onExportConfigChange,
@@ -22,33 +70,27 @@ export default function ExportPanel({
 }: ExportPanelProps) {
   return (
     <PanelSection title="Export">
-      <label htmlFor="export-scope" className="text-xs text-[var(--ink-soft)]">
+      <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
         Scope
-      </label>
-      <select
-        id="export-scope"
+      </span>
+      <ChipGroup
         value={exportConfig.scope}
-        onChange={(event) => onExportConfigChange("scope", event.target.value)}
-      >
-        <option value="list">Current list</option>
-        <option value="all">All lists</option>
-        <option value="selected">Selected todos</option>
-      </select>
-
-      <label
-        htmlFor="export-filename"
-        className="text-xs text-[var(--ink-soft)]"
-      >
-        Filename stem
-      </label>
-      <input
-        id="export-filename"
-        value={exportConfig.fileName}
-        onChange={(event) =>
-          onExportConfigChange("fileName", event.target.value)
-        }
-        placeholder={DEFAULT_EXPORT_FILE_STEM}
+        options={SCOPE_OPTIONS}
+        onChange={(v) => onExportConfigChange("scope", v)}
       />
+
+      <label className="grid gap-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+          Filename stem
+        </span>
+        <input
+          value={exportConfig.fileName}
+          onChange={(event) =>
+            onExportConfigChange("fileName", event.target.value)
+          }
+          placeholder={DEFAULT_EXPORT_FILE_STEM}
+        />
+      </label>
 
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -81,34 +123,29 @@ export default function ExportPanel({
         </button>
       </div>
 
-      <label htmlFor="pdf-header" className="text-xs text-[var(--ink-soft)]">
-        PDF header
+      <label className="grid gap-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">PDF header</span>
+        <input
+          value={exportConfig.pdfHeader}
+          onChange={(event) =>
+            onExportConfigChange("pdfHeader", event.target.value)
+          }
+          placeholder="Sprint notes"
+        />
       </label>
-      <input
-        id="pdf-header"
-        value={exportConfig.pdfHeader}
-        onChange={(event) =>
-          onExportConfigChange("pdfHeader", event.target.value)
-        }
-        placeholder="Sprint notes"
-      />
 
-      <label
-        htmlFor="pdf-footer"
-        className="text-[0.83rem] text-[var(--ink-soft)]"
-      >
-        PDF footer
+      <label className="grid gap-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">PDF footer</span>
+        <input
+          value={exportConfig.pdfFooter}
+          onChange={(event) =>
+            onExportConfigChange("pdfFooter", event.target.value)
+          }
+          placeholder="Confidential"
+        />
       </label>
-      <input
-        id="pdf-footer"
-        value={exportConfig.pdfFooter}
-        onChange={(event) =>
-          onExportConfigChange("pdfFooter", event.target.value)
-        }
-        placeholder="Confidential"
-      />
 
-      <div className="grid flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
@@ -125,37 +162,23 @@ export default function ExportPanel({
         </button>
       </div>
 
-      <div className="inspector-row two compact">
-        <label>
-          Image mode
-          <select
-            value={exportConfig.imageMode}
-            onChange={(event) =>
-              onExportConfigChange("imageMode", event.target.value)
-            }
-          >
-            <option value="single">Single image</option>
-            <option value="gallery">Gallery</option>
-          </select>
-        </label>
-        <label>
-          Format
-          <select
-            value={exportConfig.imageFormat}
-            onChange={(event) =>
-              onExportConfigChange("imageFormat", event.target.value)
-            }
-          >
-            <option value="png">PNG</option>
-            <option value="jpg">JPG</option>
-            <option value="both">PNG + JPG</option>
-          </select>
-        </label>
-      </div>
+      <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Image mode</span>
+      <ChipGroup
+        value={exportConfig.imageMode}
+        options={IMAGE_MODE_OPTIONS}
+        onChange={(v) => onExportConfigChange("imageMode", v)}
+      />
 
-      <div className="inspector-row two compact">
-        <label>
-          Width
+      <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Image format</span>
+      <ChipGroup
+        value={exportConfig.imageFormat}
+        options={IMAGE_FORMAT_OPTIONS}
+        onChange={(v) => onExportConfigChange("imageFormat", v)}
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Width</span>
           <input
             type="number"
             min={500}
@@ -168,8 +191,8 @@ export default function ExportPanel({
             }
           />
         </label>
-        <label>
-          Height
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Height</span>
           <input
             type="number"
             min={500}
@@ -184,9 +207,9 @@ export default function ExportPanel({
         </label>
       </div>
 
-      <div className="inspector-row two compact">
-        <label>
-          Font size
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Font size</span>
           <input
             type="number"
             min={14}
@@ -199,8 +222,8 @@ export default function ExportPanel({
             }
           />
         </label>
-        <label>
-          Todos per image
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Per image</span>
           <input
             type="number"
             min={1}
@@ -215,20 +238,16 @@ export default function ExportPanel({
         </label>
       </div>
 
-      <label
-        htmlFor="image-bg"
-        className="text-[0.83rem] text-[var(--ink-soft)]"
-      >
-        Image background
+      <label className="grid gap-1">
+        <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">Image background</span>
+        <input
+          value={exportConfig.imageBackground}
+          onChange={(event) =>
+            onExportConfigChange("imageBackground", event.target.value)
+          }
+          placeholder="#f6efe9"
+        />
       </label>
-      <input
-        id="image-bg"
-        value={exportConfig.imageBackground}
-        onChange={(event) =>
-          onExportConfigChange("imageBackground", event.target.value)
-        }
-        placeholder="#f6efe9"
-      />
 
       <button
         type="button"

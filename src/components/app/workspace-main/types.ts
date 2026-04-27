@@ -38,7 +38,7 @@ export interface TodoFiltersPanelProps {
   savedFilters: SavedFilterPreset[];
   onFilterChange: (key: keyof TodoFilters, value: string | string[]) => void;
   onClearFilters: () => void;
-  onSaveCurrentFilters: () => void;
+  onSaveCurrentFilters: (name: string) => void;
   onApplySavedFilter: (presetId: string) => void;
   onDeleteSavedFilter: (presetId: string) => void;
 }
@@ -82,6 +82,7 @@ export interface TodoListPanelProps {
   onDelete: (todoId: string) => void;
   onFocusTodo: (todoId: string | null) => void;
   onRenameTodo: (todoId: string, nextText: string) => boolean;
+  onAddSubtask: (todoId: string, text: string) => void;
 }
 
 export interface WorkspaceMainProps {

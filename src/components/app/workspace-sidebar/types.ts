@@ -1,4 +1,3 @@
-import type { List } from "../../../lib/workspace";
 import type {
   ExportConfig,
   ImportMode,
@@ -17,18 +16,6 @@ export interface WorkspaceRailProps {
   onCloseProperties: () => void;
 }
 
-export interface ListsPanelProps {
-  lists: List[];
-  activeListId: string;
-  onCreateList: (data: { name: string; icon: string; color: string }) => void;
-  onSelectList: (listId: string) => void;
-  onRenameList: (listId: string) => void;
-  onDeleteList: (listId: string) => void;
-  onMoveList: (listId: string, direction: number) => void;
-  onArchiveList: (listId: string) => void;
-  onRestoreList: (listId: string) => void;
-}
-
 export interface WorkspaceSummaryPanelProps {
   title: string;
   updatedAtLabel: string;
@@ -36,6 +23,8 @@ export interface WorkspaceSummaryPanelProps {
 
 export interface PersistencePanelProps {
   busyAction: string;
+  fileName: string;
+  onFileNameChange: (name: string) => void;
   onOpen: () => Promise<void> | void;
   onSave: () => Promise<void> | void;
   onSaveAs: () => Promise<void> | void;
@@ -76,7 +65,6 @@ export interface DangerZonePanelProps {
 
 export interface WorkspaceSidebarProps {
   rail: WorkspaceRailProps;
-  listsPanel: ListsPanelProps;
   workspaceSummary: WorkspaceSummaryPanelProps;
   persistencePanel: PersistencePanelProps;
   autoBackupPanel: AutoBackupPanelProps;
