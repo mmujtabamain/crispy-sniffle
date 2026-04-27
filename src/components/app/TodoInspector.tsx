@@ -38,9 +38,7 @@ export default function TodoInspector({
   }
 
   return (
-    <aside className="border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-[0.88rem] bg-[var(--surface)] shadow-[var(--shadow)] p-3 grid gap-2">
-      <h3>Todo Details</h3>
-
+    <div className="grid gap-2">
       <TodoDetailsForm todo={todo} onPatch={onPatch} />
       <TodoLinksPreview links={todo.links || []} />
       <TodoNotesSection todo={todo} onPatch={onPatch} />
@@ -58,6 +56,6 @@ export default function TodoInspector({
         onStopTimer={onStopTimer}
         onResetTimer={onResetTimer}
       />
-    </aside>
+    </div>
   );
 }

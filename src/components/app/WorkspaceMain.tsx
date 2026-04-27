@@ -1,4 +1,3 @@
-import TodoInspector from "./TodoInspector";
 import ShortcutStrip from "./workspace-main/ShortcutStrip";
 import TodoBulkBar from "./workspace-main/TodoBulkBar";
 import TodoComposer from "./workspace-main/TodoComposer";
@@ -19,10 +18,9 @@ export default function WorkspaceMain({
   primaryActions,
   bulkActions,
   todoList,
-  inspector,
 }: WorkspaceMainProps) {
   return (
-    <main className="grid min-w-0 gap-2">
+    <main className="grid min-w-0 gap-2 overflow-y-auto flex-1 p-8 px-8 content-start">
       <WorkspaceAlerts {...alerts} />
       <TodoComposer {...composer} />
       <div
@@ -41,7 +39,6 @@ export default function WorkspaceMain({
       <TodoPrimaryActions {...primaryActions} />
       {bulkActions ? <TodoBulkBar {...bulkActions} /> : null}
       <TodoListPanel {...todoList} />
-      <TodoInspector {...inspector} />
       <ShortcutStrip />
     </main>
   );

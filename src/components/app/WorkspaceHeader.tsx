@@ -24,7 +24,7 @@ export default function WorkspaceHeader({
   totalListTodos,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="flex justify-between items-start gap-4 border-b border-[color-mix(in_oklch,var(--line),transparent_20%)] pb-3">
+    <header className="sticky top-0 z-20 flex justify-between items-start gap-4 bg-transparent border-b border-[color-mix(in_oklch,var(--line),transparent_20%)] pb-3 px-8 pt-8">
       <div className="max-w-[80ch]">
         <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--ink-soft)]">
           Multi List Planner

@@ -1,6 +1,77 @@
 import type { ChangeEvent } from "react";
-import { Filter, X } from "lucide-react";
+import { BookmarkCheck, X } from "lucide-react";
 import type { TodoFiltersPanelProps } from "./types";
+
+type ChipOption = { value: string; label: string };
+
+function ChipGroup({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: ChipOption[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition-all ${
+            value === opt.value
+              ? "bg-[var(--accent)] text-white shadow-sm"
+              : "bg-[color-mix(in_oklch,var(--bg-1),transparent_30%)] text-[var(--ink-1)] border border-[color-mix(in_oklch,var(--line),transparent_30%)] hover:bg-[color-mix(in_oklch,var(--line),transparent_40%)]"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const COMPLETION_OPTIONS: ChipOption[] = [
+  { value: "active", label: "Active" },
+  { value: "completed", label: "Completed" },
+  { value: "pending", label: "Pending" },
+  { value: "archived", label: "Archived" },
+  { value: "all", label: "All" },
+];
+
+const PRIORITY_OPTIONS: ChipOption[] = [
+  { value: "all", label: "All" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "critical", label: "Critical" },
+];
+
+const STATUS_OPTIONS: ChipOption[] = [
+  { value: "all", label: "All" },
+  { value: "todo", label: "Todo" },
+  { value: "doing", label: "Doing" },
+  { value: "done", label: "Done" },
+  { value: "blocked", label: "Blocked" },
+];
+
+const SMART_OPTIONS: ChipOption[] = [
+  { value: "none", label: "None" },
+  { value: "today", label: "Today" },
+  { value: "overdue", label: "Overdue" },
+  { value: "thisWeek", label: "This week" },
+];
+
+const SORT_OPTIONS: ChipOption[] = [
+  { value: "manual", label: "Manual" },
+  { value: "created-desc", label: "Newest" },
+  { value: "created-asc", label: "Oldest" },
+  { value: "due-asc", label: "Due date" },
+  { value: "priority-desc", label: "Priority" },
+  { value: "alpha-asc", label: "A-Z" },
+];
 
 export default function TodoFiltersPanel({
   filters,
@@ -13,95 +84,96 @@ export default function TodoFiltersPanel({
   onDeleteSavedFilter,
 }: TodoFiltersPanelProps) {
   return (
-    <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-2 grid gap-2">
-      <div className="flex justify-between items-center gap-2">
-        <h3>
-          <Filter size={16} /> Filters & Sorting
-        </h3>
-        <div className="flex flex-wrap gap-2">
+    <div className="bg-[var(--surface)] border border-[color-mix(in_oklch,var(--line),transparent_20%)] rounded-2xl shadow-[var(--shadow)] p-4 grid gap-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-widest text-[var(--ink-soft)]">
+          Filters & Sort
+        </span>
+        <div className="flex gap-1.5">
           <button
             type="button"
-            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
             onClick={onSaveCurrentFilters}
           >
-            Save current filter
+            <BookmarkCheck size={12} />
+            Save
           </button>
           <button
             type="button"
-            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl px-3 font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:translate-y-[-1px] active:translate-y-0"
+            className="inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold border border-[var(--line)] bg-[var(--surface)] cursor-pointer transition-all hover:bg-[color-mix(in_oklch,var(--surface),white_12%)]"
             onClick={onClearFilters}
           >
-            <X size={14} /> Clear
+            <X size={12} />
+            Clear
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <label>
-          Completion
-          <select
+      {/* Completion · Priority · Status */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Completion
+          </span>
+          <ChipGroup
             value={filters.completion}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              onFilterChange("completion", event.target.value)
-            }
-          >
-            <option value="active">Active only</option>
-            <option value="completed">Completed only</option>
-            <option value="pending">Pending only</option>
-            <option value="archived">Archived only</option>
-            <option value="all">All statuses</option>
-          </select>
-        </label>
-
-        <label>
-          Priority
-          <select
+            options={COMPLETION_OPTIONS}
+            onChange={(v) => onFilterChange("completion", v)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Priority
+          </span>
+          <ChipGroup
             value={filters.priority}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              onFilterChange("priority", event.target.value)
-            }
-          >
-            <option value="all">All priorities</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </label>
-
-        <label>
-          Status
-          <select
+            options={PRIORITY_OPTIONS}
+            onChange={(v) => onFilterChange("priority", v)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Status
+          </span>
+          <ChipGroup
             value={filters.status}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              onFilterChange("status", event.target.value)
-            }
-          >
-            <option value="all">All statuses</option>
-            <option value="todo">Todo</option>
-            <option value="doing">Doing</option>
-            <option value="done">Done</option>
-            <option value="blocked">Blocked</option>
-          </select>
-        </label>
+            options={STATUS_OPTIONS}
+            onChange={(v) => onFilterChange("status", v)}
+          />
+        </div>
+      </div>
 
-        <label>
-          Smart filter
-          <select
+      {/* Quick date · Sort */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Quick date
+          </span>
+          <ChipGroup
             value={filters.smartFilter}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              onFilterChange("smartFilter", event.target.value)
-            }
-          >
-            <option value="none">None</option>
-            <option value="today">Today</option>
-            <option value="overdue">Overdue</option>
-            <option value="thisWeek">This week</option>
-          </select>
-        </label>
+            options={SMART_OPTIONS}
+            onChange={(v) => onFilterChange("smartFilter", v)}
+          />
+        </div>
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Sort by
+          </span>
+          <ChipGroup
+            value={filters.sortBy}
+            options={SORT_OPTIONS}
+            onChange={(v) => onFilterChange("sortBy", v)}
+          />
+        </div>
+      </div>
 
-        <label>
-          Search text
+      {/* Search + Date range */}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Search text
+          </span>
           <input
             value={filters.searchText}
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -110,9 +182,10 @@ export default function TodoFiltersPanel({
             placeholder="Search todos and notes"
           />
         </label>
-
-        <label>
-          Search tag
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Search tag
+          </span>
           <input
             value={filters.searchTag}
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -121,9 +194,10 @@ export default function TodoFiltersPanel({
             placeholder="tag name"
           />
         </label>
-
-        <label>
-          Date start
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            From
+          </span>
           <input
             type="date"
             value={filters.startDate}
@@ -132,9 +206,10 @@ export default function TodoFiltersPanel({
             }
           />
         </label>
-
-        <label>
-          Date end
+        <label className="grid gap-1">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            To
+          </span>
           <input
             type="date"
             value={filters.endDate}
@@ -143,78 +218,71 @@ export default function TodoFiltersPanel({
             }
           />
         </label>
-
-        <label>
-          Sort
-          <select
-            value={filters.sortBy}
-            onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-              onFilterChange("sortBy", event.target.value)
-            }
-          >
-            <option value="manual">Manual order</option>
-            <option value="created-desc">Created newest</option>
-            <option value="created-asc">Created oldest</option>
-            <option value="due-asc">Due date</option>
-            <option value="priority-desc">Priority</option>
-            <option value="alpha-asc">Alphabetical</option>
-          </select>
-        </label>
-
-        <label>
-          Saved presets
-          <select
-            value=""
-            onChange={(event: ChangeEvent<HTMLSelectElement>) => {
-              if (!event.target.value) {
-                return;
-              }
-              onApplySavedFilter(event.target.value);
-            }}
-          >
-            <option value="">Apply preset…</option>
-            {savedFilters.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.name}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
-      <div className="tag-toggle-row">
-        {availableTags.map((tag) => {
-          const isActive = filters.tags.includes(tag);
-          return (
-            <button
-              key={tag}
-              type="button"
-              className={`chip-button ${isActive ? "active" : ""}`}
-              onClick={() => {
-                const next = isActive
-                  ? filters.tags.filter((entry) => entry !== tag)
-                  : [...filters.tags, tag];
-                onFilterChange("tags", next);
-              }}
-            >
-              #{tag}
-            </button>
-          );
-        })}
-      </div>
+      {/* Tag toggles */}
+      {availableTags.length > 0 && (
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Tags
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {availableTags.map((tag) => {
+              const isActive = filters.tags.includes(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`inline-flex h-7 items-center rounded-full px-3 text-xs font-semibold transition-all ${
+                    isActive
+                      ? "bg-[var(--accent)] text-white shadow-sm"
+                      : "bg-[color-mix(in_oklch,var(--bg-1),transparent_30%)] text-[var(--ink-1)] border border-[color-mix(in_oklch,var(--line),transparent_30%)] hover:bg-[color-mix(in_oklch,var(--line),transparent_40%)]"
+                  }`}
+                  onClick={() => {
+                    const next = isActive
+                      ? filters.tags.filter((entry) => entry !== tag)
+                      : [...filters.tags, tag];
+                    onFilterChange("tags", next);
+                  }}
+                >
+                  #{tag}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
+      {/* Saved presets */}
       {savedFilters.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          {savedFilters.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              className="chip-button"
-              onClick={() => onDeleteSavedFilter(preset.id)}
-            >
-              Delete {preset.name}
-            </button>
-          ))}
+        <div className="grid gap-1.5">
+          <span className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+            Saved presets
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {savedFilters.map((preset) => (
+              <div
+                key={preset.id}
+                className="inline-flex items-center rounded-full border border-[var(--line)] bg-[var(--surface)] overflow-hidden"
+              >
+                <button
+                  type="button"
+                  className="pl-3 pr-2 py-1 text-xs font-semibold text-[var(--ink-1)] hover:text-[var(--ink-0)] transition-colors"
+                  onClick={() => onApplySavedFilter(preset.id)}
+                >
+                  {preset.name}
+                </button>
+                <button
+                  type="button"
+                  className="pr-2 py-1 text-[var(--ink-soft)] hover:text-[var(--error)] transition-colors"
+                  onClick={() => onDeleteSavedFilter(preset.id)}
+                  aria-label={`Delete ${preset.name}`}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
