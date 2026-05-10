@@ -252,7 +252,6 @@ export function todosToText(
 
 function rowToTodo(
   row: Record<string, unknown>,
-  listId: string,
   index: number,
 ): Todo {
   const text =
@@ -262,7 +261,7 @@ function rowToTodo(
     (typeof row.name === "string" && row.name) ||
     `Imported todo ${index + 1}`;
 
-  return createTodo(text, listId, {
+  return createTodo(text, {
     completed:
       String(row.completed || "").toLowerCase() === "true" ||
       String(row.completed || "").toLowerCase() === "x",
@@ -289,19 +288,19 @@ function rowToTodo(
   });
 }
 
-export function importTodosFromJson(text: string, listId: string): Todo[] {
+export function importTodosFromJson(text: string): Todo[] {
   const parsed = JSON.parse(text) as unknown;
 
   if (Array.isArray(parsed)) {
     return parsed.map((row, index) => {
       if (typeof row === "string") {
-        return createTodo(row, listId, { order: index });
+        return createTodo(row, { order: index });
       }
       const record =
         typeof row === "object" && row !== null
           ? (row as Record<string, unknown>)
           : {};
-      return rowToTodo(record, listId, index);
+      return rowToTodo(record, index);
     });
   }
 
@@ -316,7 +315,7 @@ export function importTodosFromJson(text: string, listId: string): Todo[] {
         typeof row === "object" && row !== null
           ? (row as Record<string, unknown>)
           : {};
-      return rowToTodo(record, listId, index);
+      return rowToTodo(record, index);
     });
   }
 
@@ -325,12 +324,12 @@ export function importTodosFromJson(text: string, listId: string): Todo[] {
   );
 }
 
-export function importTodosFromCsv(text: string, listId: string): Todo[] {
+export function importTodosFromCsv(text: string): Todo[] {
   const rows = parseCsv(text);
-  return rows.map((row, index) => rowToTodo(row, listId, index));
+  return rows.map((row, index) => rowToTodo(row, index));
 }
 
-export function importTodosFromMarkdown(text: string, listId: string): Todo[] {
+export function importTodosFromMarkdown(text: string): Todo[] {
   const lines = text.split(/\r?\n/);
   const todos: Todo[] = [];
 
@@ -341,7 +340,7 @@ export function importTodosFromMarkdown(text: string, listId: string): Todo[] {
     }
 
     todos.push(
-      createTodo(match[2], listId, {
+      createTodo(match[2], {
         completed: match[1].toLowerCase() === "x",
       }),
     );
@@ -354,17 +353,17 @@ export function importTodosFromMarkdown(text: string, listId: string): Todo[] {
   return lines
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith("#"))
-    .map((line, index) => createTodo(line, listId, { order: index }));
+    .map((line, index) => createTodo(line, { order: index }));
 }
 
-export function importTodosFromText(text: string, listId: string): Todo[] {
+export function importTodosFromText(text: string): Todo[] {
   return text
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line, index) => {
       const clean = line.replace(/^\d+\.\s*/, "").replace(/^\[.?\]\s*/, "");
-      return createTodo(clean, listId, {
+      return createTodo(clean, {
         order: index,
         completed: /^\[x\]/i.test(line),
       });
@@ -373,7 +372,6 @@ export function importTodosFromText(text: string, listId: string): Todo[] {
 
 export async function parseImportFile(
   file: File,
-  listId: string,
 ): Promise<ImportPreview> {
   const text = await file.text();
   const ext = file.name.toLowerCase().split(".").pop() || "";
@@ -402,7 +400,7 @@ export async function parseImportFile(
       };
     }
 
-    const todos = importTodosFromJson(text, listId);
+    const todos = importTodosFromJson(text);
     return {
       kind: "todos",
       fileName: file.name,
@@ -413,7 +411,7 @@ export async function parseImportFile(
   }
 
   if (ext === "csv") {
-    const todos = importTodosFromCsv(text, listId);
+    const todos = importTodosFromCsv(text);
     return {
       kind: "todos",
       fileName: file.name,
@@ -424,7 +422,7 @@ export async function parseImportFile(
   }
 
   if (ext === "md" || ext === "markdown") {
-    const todos = importTodosFromMarkdown(text, listId);
+    const todos = importTodosFromMarkdown(text);
     return {
       kind: "todos",
       fileName: file.name,
@@ -435,7 +433,7 @@ export async function parseImportFile(
   }
 
   if (ext === "txt") {
-    const todos = importTodosFromText(text, listId);
+    const todos = importTodosFromText(text);
     return {
       kind: "todos",
       fileName: file.name,

@@ -34,29 +34,6 @@ export function stampWorkspace(workspace: Workspace): Workspace {
 }
 
 /**
- * Merges list todos with other todos, normalizing order.
- * @param {Todo[]} allTodos - Full todo collection across all lists.
- * @param {string} listId - List identifier to replace.
- * @param {Todo[]} listTodos - Todos that belong to the target list.
- * @returns {Todo[]} Combined todo array with normalized ordering for the target list.
- */
-export function mergeListTodos(
-  allTodos: Todo[],
-  listId: string,
-  listTodos: Todo[],
-): Todo[] {
-  const outsideList = allTodos.filter((todo: Todo) => todo.listId !== listId);
-  const normalized = listTodos.map((todo: Todo, index: number) => ({
-    ...todo,
-    listId,
-    order: index,
-    updatedAt: todo.updatedAt || new Date().toISOString(),
-  }));
-
-  return [...outsideList, ...normalized];
-}
-
-/**
  * Parses comma-separated tag input.
  * @param {string} raw - Comma-separated tag string from user input.
  * @returns {string[]} Trimmed non-empty tag values.

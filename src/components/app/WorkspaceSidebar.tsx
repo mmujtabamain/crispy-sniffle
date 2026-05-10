@@ -115,11 +115,7 @@ export default function WorkspaceSidebar({
   return (
     <aside
       className={`relative z-30 flex flex-col h-full border-r border-[color-mix(in_oklch,var(--line),transparent_12%)] bg-[color-mix(in_oklch,var(--surface),white_12%)] shadow-[0_2px_8px_color-mix(in_oklch,var(--ink-0)_4%,transparent)] backdrop-blur-xl transition-[width] duration-300 ease-out ${
-        rail.propertiesOpen
-          ? "w-[19rem]"
-          : rail.collapsed
-            ? "w-[5.5rem]"
-            : "w-[15rem]"
+        rail.collapsed ? "w-[5.5rem]" : "w-[20rem]"
       }`}
     >
       {rail.propertiesOpen ? (
@@ -205,17 +201,6 @@ export default function WorkspaceSidebar({
               ) : null}
             </div>
 
-            {rail.collapsed ? (
-              <button
-                type="button"
-                className="inline-flex h-9 w-9 justify-self-center items-center justify-center rounded-[0.9rem] border border-[color-mix(in_oklch,var(--line),transparent_12%)] bg-[color-mix(in_oklch,var(--surface),white_10%)] transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),white_18%)] active:translate-y-0"
-                onClick={rail.onToggleCollapsed}
-                aria-label="Expand sidebar"
-              >
-                <ChevronRight size={16} />
-              </button>
-            ) : null}
-
             {/* Nav buttons */}
             <div className="grid gap-2">
               <RailButton
@@ -234,31 +219,26 @@ export default function WorkspaceSidebar({
                 expanded={false}
               />
             </div>
-          </div>
 
-          {/* Active list card */}
-          <div
-            className={`rounded-[1.25rem] border border-[color-mix(in_oklch,var(--line),transparent_12%)] bg-[color-mix(in_oklch,var(--surface),white_10%)] p-3 ${
-              rail.collapsed ? "text-center" : ""
-            }`}
-          >
-            <div className="text-[0.65rem] font-semibold uppercase tracking-widest text-[var(--ink-soft)]">
-              Active list
-            </div>
-            {!rail.collapsed ? (
-              <>
-                <div className="mt-1 truncate text-sm font-semibold">
-                  {rail.activeListName}
-                </div>
-                <div className="mt-1 text-xs text-[var(--ink-soft)]">
-                  {rail.visibleTodoCount} visible of {rail.totalTodoCount}
-                </div>
-              </>
-            ) : (
-              <div className="mt-1 text-lg font-semibold">
-                {rail.visibleTodoCount}
-              </div>
-            )}
+            {rail.collapsed ? (
+              // <button
+              //   type="button"
+              //   className="inline-flex h-9 w-9 justify-self-center items-center justify-center rounded-[0.9rem] border border-[color-mix(in_oklch,var(--line),transparent_12%)] bg-[color-mix(in_oklch,var(--surface),white_10%)] transition-all hover:translate-y-[-1px] hover:bg-[color-mix(in_oklch,var(--surface),white_18%)] active:translate-y-0"
+              //   onClick={rail.onToggleCollapsed}
+              //   aria-label="Expand sidebar"
+              // >
+              //   <ChevronRight size={16} />
+              // </button>
+
+              // collapse button
+              <RailButton
+                collapsed={rail.collapsed}
+                label=""
+                detail="Lists, persistence, import and export"
+                icon={<ChevronRight size={18} />}
+                onClick={rail.onToggleCollapsed}
+              />
+            ) : null}
           </div>
         </div>
       )}

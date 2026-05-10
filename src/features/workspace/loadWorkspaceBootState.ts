@@ -22,11 +22,6 @@ export function loadWorkspaceBootState(): WorkspaceBootState {
     Number.isFinite(settings.autosaveMinutes)
       ? settings.autosaveMinutes
       : loaded.workspace.preferences.autosaveMinutes;
-  const nextActiveListId =
-    typeof settings.activeListId === "string" && settings.activeListId
-      ? settings.activeListId
-      : loaded.workspace.preferences.activeListId ||
-        loaded.workspace.lists[0]?.id;
 
   const patchedWorkspace: Workspace = {
     ...loaded.workspace,
@@ -34,7 +29,6 @@ export function loadWorkspaceBootState(): WorkspaceBootState {
       ...loaded.workspace.preferences,
       theme: nextTheme,
       autosaveMinutes: nextAutosaveMinutes,
-      activeListId: nextActiveListId,
     },
   };
 

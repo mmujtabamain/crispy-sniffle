@@ -1,4 +1,3 @@
-import ShortcutStrip from "./workspace-main/ShortcutStrip";
 import TodoBulkBar from "./workspace-main/TodoBulkBar";
 import TodoComposer from "./workspace-main/TodoComposer";
 import TodoFiltersPanel from "./workspace-main/TodoFiltersPanel";
@@ -39,7 +38,6 @@ export default function WorkspaceMain({
       <TodoPrimaryActions {...primaryActions} />
       {bulkActions ? <TodoBulkBar {...bulkActions} /> : null}
       <TodoListPanel {...todoList} />
-      <ShortcutStrip />
     </main>
   );
 }

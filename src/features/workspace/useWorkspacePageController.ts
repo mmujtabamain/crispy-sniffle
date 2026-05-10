@@ -38,14 +38,12 @@ import {
   DEFAULT_TIMER_SECONDS,
   downloadTextFile,
   fileToAttachment,
-  mergeListTodos,
   parseTagInput,
   stampWorkspace,
 } from "../../lib/workspace-page-helpers";
 import {
   clearAllLocalData,
   createBackupSnapshot,
-  createList,
   createTodo,
   downloadWorkspaceFile,
   getRecentFiles,
@@ -63,7 +61,7 @@ import {
   validateWorkspace,
   writeSettings,
 } from "../../lib/workspace";
-import type { List, Todo, Workspace } from "../../lib/workspace";
+import type { Todo, Workspace } from "../../lib/workspace";
 import { loadWorkspaceBootState } from "./loadWorkspaceBootState";
 import type {
   CommitOptions,
@@ -135,9 +133,6 @@ export function useWorkspacePageController(): WorkspacePageController {
   const boot = useMemo(() => loadWorkspaceBootState(), []);
 
   const [workspace, setWorkspace] = useState(boot.workspace);
-  const [activeListId, setActiveListId] = useState(
-    boot.workspace.preferences.activeListId || boot.workspace.lists[0]?.id,
-  );
   const [recentFiles, setRecentFiles] = useState(boot.recentFiles);
   const [backups, setBackups] = useState(boot.backups);
   const [quotaStatus, setQuotaStatus] = useState(boot.quotaStatus);
@@ -187,25 +182,18 @@ export function useWorkspacePageController(): WorkspacePageController {
   const workspaceRef = useRef(workspace);
   const previousQuotaWarningRef = useRef(boot.quotaStatus.warning);
 
-  const lists = useMemo(
-    () => [...workspace.lists].sort((a, b) => a.order - b.order),
-    [workspace.lists],
-  );
-  const activeList = lists.find((list) => list.id === activeListId) || lists[0];
-
-  const listTodos = useMemo(
+  const todos = useMemo(
     () =>
       workspace.todos
-        .filter((todo) => todo.listId === activeList?.id)
         .sort((a, b) => a.order - b.order),
-    [workspace.todos, activeList?.id],
+    [workspace.todos],
   );
 
   const filteredTodos = useMemo(
-    () => applyFiltersAndSort(listTodos, filters),
-    [listTodos, filters],
+    () => applyFiltersAndSort(todos, filters),
+    [todos, filters],
   );
-  const availableTags = useMemo(() => collectTags(listTodos), [listTodos]);
+  const availableTags = useMemo(() => collectTags(todos), [todos]);
   const activeFilterCount = useMemo(
     () => countActiveFilters(filters),
     [filters],
@@ -215,7 +203,7 @@ export function useWorkspacePageController(): WorkspacePageController {
   const pendingCount = filteredTodos.filter(
     (todo) => !todo.completed && !todo.archived,
   ).length;
-  const archivedCount = listTodos.filter((todo) => todo.archived).length;
+  const archivedCount = todos.filter((todo) => todo.archived).length;
   const focusedTodo =
     workspace.todos.find((todo) => todo.id === focusedTodoId) || null;
 
@@ -277,32 +265,20 @@ export function useWorkspacePageController(): WorkspacePageController {
     });
   }
 
-  function replaceActiveListTodos(
-    nextListTodos: Todo[],
+  function replaceAllTodos(
+    nextTodos: Todo[],
     options?: CommitOptions,
   ) {
-    if (!activeList?.id) {
-      return;
-    }
-
     commitWorkspace(
       (prevWorkspace) => ({
         ...prevWorkspace,
-        todos: mergeListTodos(
-          prevWorkspace.todos,
-          activeList.id,
-          nextListTodos,
-        ),
+        todos: nextTodos,
       }),
       options,
     );
   }
 
   function handleAddTodo() {
-    if (!activeList?.id) {
-      return;
-    }
-
     const trimmed = newTodoText.trim();
     if (!trimmed) {
       setErrorMessage("Type a task before adding it.");
@@ -310,14 +286,14 @@ export function useWorkspacePageController(): WorkspacePageController {
       return;
     }
 
-    const todo = createTodo(trimmed, activeList.id, {
-      order: listTodos.length,
+    const todo = createTodo(trimmed, {
+      order: todos.length,
       priority: quickPriority,
       dueDate: quickDueDate || null,
       tags: parseTagInput(quickTags),
     });
 
-    replaceActiveListTodos([...listTodos, todo]);
+    replaceAllTodos([...todos, todo]);
     setNewTodoText("");
     setQuickTags("");
     setErrorMessage("");
@@ -325,7 +301,7 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   function handleToggleTodo(todoId: string) {
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
@@ -335,12 +311,12 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleDeleteTodo(todoId: string) {
-    const updatedTodos = listTodos.filter((todo) => todo.id !== todoId);
-    replaceActiveListTodos(updatedTodos);
+    const updatedTodos = todos.filter((todo) => todo.id !== todoId);
+    replaceAllTodos(updatedTodos);
     setSelectedTodoIds((prev) => prev.filter((id) => id !== todoId));
     if (focusedTodoId === todoId) {
       setFocusedTodoId(null);
@@ -349,12 +325,12 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   function handleDuplicateTodo(todoId: string) {
-    const index = listTodos.findIndex((todo) => todo.id === todoId);
+    const index = todos.findIndex((todo) => todo.id === todoId);
     if (index < 0) {
       return;
     }
 
-    const original = listTodos[index];
+    const original = todos[index];
     const duplicate: Todo = {
       ...original,
       id: makeId("todo"),
@@ -366,16 +342,16 @@ export function useWorkspacePageController(): WorkspacePageController {
     };
 
     const updatedTodos: Todo[] = [
-      ...listTodos.slice(0, index + 1),
+      ...todos.slice(0, index + 1),
       duplicate,
-      ...listTodos.slice(index + 1),
+      ...todos.slice(index + 1),
     ];
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     notify("success", "Todo duplicated.");
   }
 
   function handleArchiveTodo(todoId: string) {
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
@@ -385,11 +361,11 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleRestoreTodo(todoId: string) {
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
@@ -399,7 +375,7 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleRenameTodo(todoId: string, nextText: string) {
@@ -410,17 +386,17 @@ export function useWorkspacePageController(): WorkspacePageController {
       return false;
     }
 
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? { ...todo, text: trimmed, updatedAt: new Date().toISOString() }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     return true;
   }
 
   function handlePatchTodo(todoId: string, patch: Partial<Todo>) {
-    const updatedTodos = listTodos.map((todo) => {
+    const updatedTodos = todos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
       }
@@ -435,7 +411,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       };
     });
 
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleAddSubtask(todoId: string, text: string) {
@@ -444,7 +420,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       return;
     }
 
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
@@ -457,11 +433,11 @@ export function useWorkspacePageController(): WorkspacePageController {
         : todo,
     );
 
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleToggleSubtask(todoId: string, subtaskId: string) {
-    const updatedTodos = listTodos.map((todo) => {
+    const updatedTodos = todos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
       }
@@ -477,11 +453,11 @@ export function useWorkspacePageController(): WorkspacePageController {
       };
     });
 
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   function handleDeleteSubtask(todoId: string, subtaskId: string) {
-    const updatedTodos = listTodos.map((todo) => {
+    const updatedTodos = todos.map((todo) => {
       if (todo.id !== todoId) {
         return todo;
       }
@@ -495,7 +471,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       };
     });
 
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
   }
 
   async function handleAttachFiles(todoId: string, files: File[]) {
@@ -503,7 +479,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       const attachments = await Promise.all(
         files.map((file) => fileToAttachment(file)),
       );
-      const updatedTodos = listTodos.map((todo) =>
+      const updatedTodos = todos.map((todo) =>
         todo.id === todoId
           ? {
               ...todo,
@@ -512,7 +488,7 @@ export function useWorkspacePageController(): WorkspacePageController {
             }
           : todo,
       );
-      replaceActiveListTodos(updatedTodos);
+      replaceAllTodos(updatedTodos);
       notify("success", `${attachments.length} file(s) attached.`);
     } catch (error) {
       notify(
@@ -527,7 +503,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       return;
     }
 
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.id === todoId
         ? {
             ...todo,
@@ -540,7 +516,7 @@ export function useWorkspacePageController(): WorkspacePageController {
         : todo,
     );
 
-    replaceActiveListTodos(updatedTodos, { recordHistory: false });
+    replaceAllTodos(updatedTodos, { recordHistory: false });
   }
 
   function handleStartTimer(todoId: string) {
@@ -593,7 +569,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
   function handleBulkSetPriority(priority: Todo["priority"]) {
     const ids = new Set(selectedTodoIds);
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       ids.has(todo.id)
         ? {
             ...todo,
@@ -602,13 +578,13 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     notify("success", `Priority updated for ${selectedTodoIds.length} todos.`);
   }
 
   function handleBulkArchive() {
     const ids = new Set(selectedTodoIds);
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       ids.has(todo.id)
         ? {
             ...todo,
@@ -618,14 +594,14 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     notify("success", `${selectedTodoIds.length} todos archived.`);
   }
 
   function handleBulkDelete() {
     const ids = new Set(selectedTodoIds);
-    const updatedTodos = listTodos.filter((todo) => !ids.has(todo.id));
-    replaceActiveListTodos(updatedTodos);
+    const updatedTodos = todos.filter((todo) => !ids.has(todo.id));
+    replaceAllTodos(updatedTodos);
     setSelectedTodoIds([]);
     notify("success", "Selected todos deleted.");
   }
@@ -665,17 +641,17 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   function handleClearCompleted() {
-    const updatedTodos = listTodos.filter((todo) => !todo.completed);
-    if (updatedTodos.length === listTodos.length) {
+    const updatedTodos = todos.filter((todo) => !todo.completed);
+    if (updatedTodos.length === todos.length) {
       notify("warning", "There are no completed todos to clear.");
       return;
     }
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     notify("success", "Completed todos cleared.");
   }
 
   function handleArchiveCompleted() {
-    const changed = listTodos.filter(
+    const changed = todos.filter(
       (todo) => todo.completed && !todo.archived,
     ).length;
     if (changed === 0) {
@@ -683,7 +659,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       return;
     }
 
-    const updatedTodos = listTodos.map((todo) =>
+    const updatedTodos = todos.map((todo) =>
       todo.completed
         ? {
             ...todo,
@@ -693,15 +669,15 @@ export function useWorkspacePageController(): WorkspacePageController {
           }
         : todo,
     );
-    replaceActiveListTodos(updatedTodos);
+    replaceAllTodos(updatedTodos);
     notify("success", `${changed} completed todos archived.`);
   }
 
   function handleClearAll() {
-    if (!listTodos.length) {
+    if (!todos.length) {
       return;
     }
-    replaceActiveListTodos([]);
+    replaceAllTodos([]);
     setSelectedTodoIds([]);
     notify("success", "All list todos cleared.");
   }
@@ -716,36 +692,13 @@ export function useWorkspacePageController(): WorkspacePageController {
       return;
     }
 
-    const oldIndex = listTodos.findIndex((todo) => todo.id === active.id);
-    const newIndex = listTodos.findIndex((todo) => todo.id === over.id);
+    const oldIndex = todos.findIndex((todo) => todo.id === active.id);
+    const newIndex = todos.findIndex((todo) => todo.id === over.id);
     if (oldIndex < 0 || newIndex < 0) {
       return;
     }
 
-    replaceActiveListTodos(arrayMove(listTodos, oldIndex, newIndex));
-  }
-
-  function handleCreateList(payload: {
-    name: string;
-    icon?: string;
-    color?: string;
-  }) {
-    const name = payload.name.trim();
-    if (!name) {
-      return;
-    }
-
-    const list = createList(name);
-    list.icon = payload.icon || "🗂️";
-    list.color = payload.color || "#b08968";
-    list.order = lists.length;
-
-    commitWorkspace((prevWorkspace) => ({
-      ...prevWorkspace,
-      lists: [...prevWorkspace.lists, list],
-    }));
-    setActiveListId(list.id);
-    notify("success", `List "${name}" created.`);
+    replaceAllTodos(arrayMove(todos, oldIndex, newIndex));
   }
 
   function handleFilterChange(
@@ -805,7 +758,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       return [...workspace.todos].sort((a, b) => a.order - b.order);
     }
 
-    return [...listTodos].sort((a, b) => a.order - b.order);
+    return [...todos].sort((a, b) => a.order - b.order);
   }
 
   function syncRecentFiles() {
@@ -836,7 +789,7 @@ export function useWorkspacePageController(): WorkspacePageController {
     const todos = getScopedTodos(exportConfig.scope);
     const output = todosToMarkdown(
       todos,
-      `${activeList?.name || "Todos"} export`,
+      `Todos export`,
     );
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.md`;
     downloadTextFile(output, exportName, "text/markdown;charset=utf-8");
@@ -847,7 +800,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
   function handleExportTxt() {
     const todos = getScopedTodos(exportConfig.scope);
-    const output = todosToText(todos, `${activeList?.name || "Todos"} export`);
+    const output = todosToText(todos, `Todo export`);
     const exportName = `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.txt`;
     downloadTextFile(output, exportName, "text/plain;charset=utf-8");
     registerRecentFile({ name: exportName, source: "export-txt" });
@@ -864,7 +817,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
     exportTodosToPdf(todos, {
       fileName: `${exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM}.pdf`,
-      title: activeList?.name || "Todo export",
+      title: "Todo export",
       headerText: exportConfig.pdfHeader,
       footerText: exportConfig.pdfFooter,
       includeCheckbox: true,
@@ -886,7 +839,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
     try {
       printTodos(todos, {
-        title: activeList?.name || "Todo print view",
+        title: "Todo print view",
         includeCheckbox: true,
         includeCompletion: true,
         includeDue: true,
@@ -912,7 +865,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
     exportTodosToImages(todos, {
       fileNameBase: exportConfig.fileName || DEFAULT_EXPORT_FILE_STEM,
-      title: activeList?.name || "Todo export",
+      title: "Todo export",
       mode: exportConfig.imageMode,
       width: exportConfig.imageWidth,
       height: exportConfig.imageHeight,
@@ -926,7 +879,7 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   async function handleImportFiles(files: File[]) {
-    if (!activeList?.id || files.length === 0) {
+    if (files.length === 0) {
       return;
     }
 
@@ -934,7 +887,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       setBusyAction("import");
       setErrorMessage("");
       const parsed: ImportPreview[] = await Promise.all(
-        files.map((file) => parseImportFile(file, activeList.id)),
+        files.map((file) => parseImportFile(file)),
       );
       setImportPreviews(
         parsed.map((entry) => ({ ...entry, id: makeId("import") })),
@@ -954,11 +907,9 @@ export function useWorkspacePageController(): WorkspacePageController {
   }
 
   function handleApplyImports(importMode: ImportMode) {
-    if (importPreviews.length === 0 || !activeList?.id) {
+    if (importPreviews.length === 0) {
       return;
     }
-
-    const scopeListId = activeList.id;
 
     commitWorkspace((prevWorkspace) => {
       let nextWorkspace: Workspace = { ...prevWorkspace };
@@ -977,7 +928,6 @@ export function useWorkspacePageController(): WorkspacePageController {
           const importedTodos = (validWorkspace.todos || []).map((todo) => ({
             ...todo,
             id: makeId("todo"),
-            listId: scopeListId,
             order: 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
@@ -991,14 +941,13 @@ export function useWorkspacePageController(): WorkspacePageController {
           const importedTodos = (preview.todos || []).map((todo: Todo) => ({
             ...todo,
             id: makeId("todo"),
-            listId: scopeListId,
             order: 0,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           }));
 
           if (importMode === "replace") {
-            nextTodos = nextTodos.filter((todo) => todo.listId !== scopeListId);
+            nextTodos = [];
           }
 
           nextTodos = [...nextTodos, ...importedTodos];
@@ -1014,44 +963,16 @@ export function useWorkspacePageController(): WorkspacePageController {
         return nextWorkspace;
       }
 
-      const listBuckets: Map<string, Todo[]> = new Map();
-      nextTodos.forEach((todo) => {
-        const bucket = listBuckets.get(todo.listId) || [];
-        bucket.push(todo);
-        listBuckets.set(todo.listId, bucket);
-      });
-
-      const normalizedTodos: Todo[] = [];
-      listBuckets.forEach((bucketTodos) => {
-        bucketTodos
-          .sort((a, b) => a.order - b.order)
-          .forEach((todo, index) => {
-            normalizedTodos.push({ ...todo, order: index });
-          });
-      });
+      const normalizedTodos = nextTodos.map((todo, index) => ({
+        ...todo,
+        order: index,
+      }));
 
       return {
         ...nextWorkspace,
         todos: normalizedTodos,
       };
     });
-
-    if (
-      importMode === "replace" &&
-      importPreviews.some((entry) => entry.kind === "workspace")
-    ) {
-      const workspacePreview = importPreviews.find(
-        (entry) => entry.kind === "workspace",
-      );
-      const nextWorkspace = workspacePreview
-        ? validateWorkspace(workspacePreview.payload).workspace
-        : null;
-      if (nextWorkspace?.lists?.[0]?.id) {
-        setActiveListId(
-          nextWorkspace.preferences?.activeListId || nextWorkspace.lists[0].id,
-        );
-      }
-    }
 
     setImportPreviews([]);
     notify("success", "Import applied.");
@@ -1081,10 +1002,6 @@ export function useWorkspacePageController(): WorkspacePageController {
           },
           { recordHistory: true },
         );
-
-        setActiveListId(
-          normalized.preferences?.activeListId || normalized.lists[0]?.id,
-        );
         setFileHandle(result.fileHandle);
         setFileName(result.fileName || fileName);
         syncRecentFiles();
@@ -1112,7 +1029,7 @@ export function useWorkspacePageController(): WorkspacePageController {
 
   async function handleOpenFromInput(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file || !activeList?.id) {
+    if (!file) {
       return;
     }
 
@@ -1124,21 +1041,19 @@ export function useWorkspacePageController(): WorkspacePageController {
 
       if (lowerName.endsWith(".csv")) {
         const text = await file.text();
-        const importedTodos: Todo[] = importTodosFromCsv(
-          text,
-          activeList.id,
-        ).map((todo: Todo, index: number) => ({
-          ...todo,
-          id: makeId("todo"),
-          listId: activeList.id,
-          order: index,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }));
-        replaceActiveListTodos(importedTodos);
+        const importedTodos: Todo[] = importTodosFromCsv(text).map(
+          (todo: Todo, index: number) => ({
+            ...todo,
+            id: makeId("todo"),
+            order: index,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }),
+        );
+        replaceAllTodos(importedTodos);
         notify(
           "success",
-          `Opened CSV and replaced current list with ${importedTodos.length} todos.`,
+          `Opened CSV and replaced todos with ${importedTodos.length} items.`,
         );
         return;
       }
@@ -1155,10 +1070,6 @@ export function useWorkspacePageController(): WorkspacePageController {
           },
         },
         { recordHistory: true },
-      );
-
-      setActiveListId(
-        normalized.preferences?.activeListId || normalized.lists[0]?.id,
       );
       setFileName(file.name);
       setFileHandle(null);
@@ -1189,7 +1100,6 @@ export function useWorkspacePageController(): WorkspacePageController {
         ...workspace,
         preferences: {
           ...workspace.preferences,
-          activeListId,
         },
       };
 
@@ -1228,7 +1138,6 @@ export function useWorkspacePageController(): WorkspacePageController {
         ...workspace,
         preferences: {
           ...workspace.preferences,
-          activeListId,
         },
       };
 
@@ -1268,7 +1177,6 @@ export function useWorkspacePageController(): WorkspacePageController {
 
     const fresh = loadWorkspaceFromStorage().workspace;
     setWorkspace(fresh);
-    setActiveListId(fresh.preferences.activeListId || fresh.lists[0]?.id);
     setRecentFiles([]);
     setBackups([]);
     setFileName(DEFAULT_FILE_NAME);
@@ -1326,7 +1234,6 @@ export function useWorkspacePageController(): WorkspacePageController {
       ...workspace,
       preferences: {
         ...workspace.preferences,
-        activeListId,
       },
     };
 
@@ -1338,7 +1245,6 @@ export function useWorkspacePageController(): WorkspacePageController {
     writeSettings({
       theme: workspace.preferences.theme,
       autosaveMinutes: workspace.preferences.autosaveMinutes,
-      activeListId,
       savedFilters,
     });
 
@@ -1349,7 +1255,7 @@ export function useWorkspacePageController(): WorkspacePageController {
       );
     }
     previousQuotaWarningRef.current = nextQuotaStatus.warning;
-  }, [workspace, activeListId, savedFilters]);
+  }, [workspace, savedFilters]);
 
   useEffect(() => {
     document.body.dataset.theme = workspace.preferences.theme;
@@ -1364,11 +1270,7 @@ export function useWorkspacePageController(): WorkspacePageController {
     }
   }, [boot.errors]);
 
-  useEffect(() => {
-    if (!workspace.lists.some((list) => list.id === activeListId)) {
-      setActiveListId(workspace.lists[0]?.id || "");
-    }
-  }, [workspace.lists, activeListId]);
+
 
   useEffect(() => {
     const backupIntervalMs =
@@ -1488,18 +1390,18 @@ export function useWorkspacePageController(): WorkspacePageController {
     onThemeToggle: handleThemeToggle,
     onUndo: handleUndo,
     onRedo: handleRedo,
-    activeListName: activeList?.name || "Untitled list",
+    activeListName: "Todos",
     visibleTodoCount: filteredTodos.length,
-    totalListTodos: listTodos.length,
+    totalListTodos: todos.length,
   };
 
   const sidebarProps: WorkspaceSidebarProps = {
     rail: {
       collapsed: sidebarCollapsed,
       propertiesOpen,
-      activeListName: activeList?.name || "Untitled list",
+      activeListName: "Todos",
       visibleTodoCount: filteredTodos.length,
-      totalTodoCount: listTodos.length,
+      totalTodoCount: todos.length,
       onToggleCollapsed: () =>
         setSidebarCollapsed((current) => !current),
       onOpenProperties: () => setPropertiesOpen(true),
@@ -1592,11 +1494,11 @@ export function useWorkspacePageController(): WorkspacePageController {
     },
     stats: {
       visibleCount: filteredTodos.length,
-      totalCount: listTodos.length,
+      totalCount: todos.length,
       completedCount,
       pendingCount,
       archivedCount,
-      activeListName: activeList?.name || "Current list",
+      activeListName: "Todos",
       storageUsedLabel: formatBytes(quotaStatus.usedBytes),
     },
     primaryActions: {

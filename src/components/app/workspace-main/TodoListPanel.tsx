@@ -124,11 +124,9 @@ export default function TodoListPanel({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <CloudUpload size={24} />
         <h3>Your runway is clear</h3>
         <p>
-          Use the composer, import panel, or saved filters to build your Tier 2
-          workspace.
+          Use the composer, import panel, or saved filters to build your workspace.
         </p>
       </motion.div>
     );
@@ -151,7 +149,7 @@ export default function TodoListPanel({
           items={todos.map((todo) => todo.id)}
           strategy={verticalListSortingStrategy}
         >
-          <motion.ul className="list-none grid gap-2" layout>
+          <motion.ul className="grid gap-2 list-none" layout>
             <AnimatePresence>
               {todos.map((todo) => (
                 <SortableTodoItem

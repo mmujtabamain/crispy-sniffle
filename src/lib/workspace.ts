@@ -29,21 +29,8 @@ export interface Attachment {
   previewUrl: string | null;
 }
 
-export interface List {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  archived: boolean;
-  archivedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-  order: number;
-}
-
 export interface Todo {
   id: string;
-  listId: string;
   text: string;
   completed: boolean;
   priority: Priority;
@@ -77,14 +64,12 @@ export interface WorkspaceMeta {
 export interface WorkspacePreferences {
   theme: Theme;
   autosaveMinutes: number;
-  activeListId: string;
 }
 
 export interface Workspace {
   schemaVersion: number;
   meta: WorkspaceMeta;
   preferences: WorkspacePreferences;
-  lists: List[];
   todos: Todo[];
 }
 
@@ -169,30 +154,13 @@ export function makeId(prefix: string = "id"): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function createList(name: string = "Inbox"): List {
-  const timestamp = nowIso();
-  return {
-    id: makeId("list"),
-    name,
-    icon: "📥",
-    color: "#b08968",
-    archived: false,
-    archivedAt: null,
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    order: 0,
-  };
-}
-
 export function createTodo(
   text: string,
-  listId: string,
   overrides: Partial<Todo> = {},
 ): Todo {
   const timestamp = nowIso();
   return {
     id: makeId("todo"),
-    listId,
     text: text.trim(),
     completed: false,
     priority: "medium",
@@ -219,7 +187,6 @@ export function createTodo(
 
 export function createWorkspace(): Workspace {
   const timestamp = nowIso();
-  const defaultList = createList("Inbox");
 
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -233,9 +200,7 @@ export function createWorkspace(): Workspace {
     preferences: {
       theme: "light",
       autosaveMinutes: 5,
-      activeListId: defaultList.id,
     },
-    lists: [{ ...defaultList, order: 0 }],
     todos: [],
   };
 }
@@ -248,7 +213,7 @@ function migrateV0ToV1(raw: unknown): Workspace {
         if (typeof todoText !== "string") {
           return null;
         }
-        const todo = createTodo(todoText, workspace.lists[0].id);
+        const todo = createTodo(todoText);
         todo.order = index;
         return todo;
       })
@@ -271,9 +236,6 @@ function migrateV0ToV1(raw: unknown): Workspace {
       ...seeded.preferences,
       ...asRecord(source.preferences),
     },
-    lists: Array.isArray(source.lists)
-      ? (source.lists as List[])
-      : seeded.lists,
     todos: Array.isArray(source.todos)
       ? (source.todos as Todo[])
       : seeded.todos,
@@ -284,11 +246,6 @@ function migrateV1ToV2(raw: unknown): Workspace {
   const source = asRecord(raw);
   const seeded = migrateV0ToV1(raw);
   const timestamp = nowIso();
-  const lists = Array.isArray(source.lists) ? source.lists : [];
-  const fallbackListId =
-    typeof (lists[0] as UnknownRecord | undefined)?.id === "string"
-      ? String((lists[0] as UnknownRecord).id)
-      : createList("Inbox").id;
   const sourcePreferences = asRecord(source.preferences);
   const todoRows = Array.isArray(source.todos) ? source.todos : [];
 
@@ -298,37 +255,12 @@ function migrateV1ToV2(raw: unknown): Workspace {
     preferences: {
       ...seeded.preferences,
       ...sourcePreferences,
-      activeListId:
-        typeof sourcePreferences.activeListId === "string" &&
-        sourcePreferences.activeListId
-          ? sourcePreferences.activeListId
-          : fallbackListId,
     },
-    lists: lists.map((listValue: unknown, index: number) => {
-      const list = asRecord(listValue);
-      const baseList = createList(
-        typeof list.name === "string" && list.name.trim()
-          ? list.name
-          : `List ${index + 1}`,
-      );
-      return {
-        ...baseList,
-        icon: "📋",
-        color: "#b08968",
-        archived: false,
-        archivedAt: null,
-        order: index,
-        ...list,
-        updatedAt:
-          typeof list.updatedAt === "string" ? list.updatedAt : timestamp,
-      };
-    }),
     todos: todoRows.map((todoValue: unknown, index: number) => {
       const todo = asRecord(todoValue);
       return {
         ...createTodo(
           typeof todo.text === "string" ? todo.text : "Untitled task",
-          typeof todo.listId === "string" ? todo.listId : fallbackListId,
         ),
         ...todo,
         priority: isPriority(todo.priority) ? todo.priority : "medium",
@@ -454,42 +386,6 @@ export function validateWorkspace(workspace: unknown): ValidationResult {
     },
   };
 
-  if (!Array.isArray(migrated.lists) || migrated.lists.length === 0) {
-    errors.push("Workspace must include at least one list.");
-    safeWorkspace.lists = [createList("Inbox")];
-  } else {
-    safeWorkspace.lists = migrated.lists
-      .filter((list: List) => typeof list.name === "string")
-      .map((list: List, index: number) => ({
-        id: typeof list.id === "string" ? list.id : makeId("list"),
-        name: list.name.trim() || `List ${index + 1}`,
-        icon:
-          typeof list.icon === "string" && list.icon.trim()
-            ? list.icon.trim()
-            : "📋",
-        color:
-          typeof list.color === "string" && list.color.trim()
-            ? list.color.trim()
-            : "#b08968",
-        archived: Boolean(list.archived),
-        archivedAt:
-          typeof list.archivedAt === "string" ? list.archivedAt : null,
-        createdAt:
-          typeof list.createdAt === "string" ? list.createdAt : nowIso(),
-        updatedAt:
-          typeof list.updatedAt === "string" ? list.updatedAt : nowIso(),
-        order: Number.isFinite(list.order) ? Number(list.order) : index,
-      }));
-
-    if (safeWorkspace.lists.length === 0) {
-      safeWorkspace.lists = [createList("Inbox")];
-    }
-  }
-
-  const validListIds: Set<string> = new Set(
-    safeWorkspace.lists.map((list: List) => list.id),
-  );
-
   if (!Array.isArray(migrated.todos)) {
     errors.push("Todos must be an array.");
     safeWorkspace.todos = [];
@@ -497,13 +393,8 @@ export function validateWorkspace(workspace: unknown): ValidationResult {
     safeWorkspace.todos = migrated.todos
       .filter((todo: Todo) => typeof todo.text === "string")
       .map((todo: Todo, index: number) => {
-        const resolvedListId = validListIds.has(todo.listId)
-          ? todo.listId
-          : safeWorkspace.lists[0].id;
-
         return {
           id: typeof todo.id === "string" ? todo.id : makeId("todo"),
-          listId: resolvedListId,
           text: todo.text.trim() || "Untitled task",
           completed: Boolean(todo.completed),
           priority: isPriority(todo.priority) ? todo.priority : "medium",
@@ -537,15 +428,6 @@ export function validateWorkspace(workspace: unknown): ValidationResult {
           order: Number.isFinite(todo.order) ? Number(todo.order) : index,
         };
       });
-  }
-
-  const validListIdsAfterValidation: Set<string> = new Set(
-    safeWorkspace.lists.map((list: List) => list.id),
-  );
-  if (
-    !validListIdsAfterValidation.has(safeWorkspace.preferences.activeListId)
-  ) {
-    safeWorkspace.preferences.activeListId = safeWorkspace.lists[0].id;
   }
 
   if (

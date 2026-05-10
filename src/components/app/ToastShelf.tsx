@@ -14,7 +14,7 @@ export interface ToastShelfProps {
 export default function ToastShelf({ toasts, onDismiss }: ToastShelfProps) {
   return (
     <div
-      className="fixed right-4 top-4 w-min(340px,calc(100vw-2rem)) z-80 grid gap-3"
+      className="fixed right-4 top-4 w-min(340px,calc(100vw-2rem)) z-[9999] grid gap-3"
       aria-live="polite"
       aria-atomic="true"
     >
